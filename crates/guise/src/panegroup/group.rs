@@ -51,6 +51,12 @@ pub enum PaneGroupEvent {
     /// An item was torn off (via [`PaneGroup::tear_off`]); the host should move
     /// its content into a new window. The item is already detached from here.
     TearOff(ItemId),
+    /// A tab was right-clicked, at this window position. The host owns what a
+    /// tab's context menu offers, so the group only reports the gesture.
+    ContextMenu {
+        item: ItemId,
+        position: gpui::Point<gpui::Pixels>,
+    },
 }
 
 /// The divider being dragged, identifying its split and owning group.
@@ -604,6 +610,26 @@ fn top_left(node: &Node) -> PaneId {
     }
 }
 
+/// Every leaf whose tab bar sits on the layout's top edge. A horizontal split
+/// puts both of its children up there; a vertical split only its first. These
+/// are the tab bars that are visually part of the window titlebar, so they all
+/// have to drag the window — not just the corner one.
+fn top_edge(node: &Node, out: &mut Vec<PaneId>) {
+    match node {
+        Node::Leaf(p) => out.push(*p),
+        Node::Split {
+            axis: SplitDirection::Horizontal,
+            first,
+            second,
+            ..
+        } => {
+            top_edge(first, out);
+            top_edge(second, out);
+        }
+        Node::Split { first, .. } => top_edge(first, out),
+    }
+}
+
 /// The leaf at the layout's top-right corner (right child of horizontal splits,
 /// top child of vertical splits).
 fn top_right(node: &Node) -> PaneId {
@@ -807,6 +833,18 @@ impl PaneGroup {
                 .text_color(text)
                 .hover(|s| s.bg(active_bg))
                 .on_click(cx.listener(move |this, _ev, _w, cx| this.activate(pane, item, cx)))
+                .on_mouse_down(
+                    MouseButton::Right,
+                    cx.listener(move |this, ev: &gpui::MouseDownEvent, _w, cx| {
+                        // Activate first: a menu acting on a tab the user did
+                        // not just select would be a trap.
+                        this.activate(pane, item, cx);
+                        cx.emit(PaneGroupEvent::ContextMenu {
+                            item,
+                            position: ev.position,
+                        });
+                    }),
+                )
                 // Drag this tab; drop on a tab to reorder / move-into, or on a
                 // pane body to split (handled on the content wrapper below).
                 .on_drag(
@@ -852,6 +890,11 @@ impl PaneGroup {
         // host's window controls, and the top-right filler drags the window.
         let is_top_left = self.titlebar.is_some() && top_left(self.tree.root()) == pane;
         let is_top_right = self.titlebar.is_some() && top_right(self.tree.root()) == pane;
+        let is_top_edge = self.titlebar.is_some() && {
+            let mut edge = Vec::new();
+            top_edge(self.tree.root(), &mut edge);
+            edge.contains(&pane)
+        };
         let (leading, trailing) = self.titlebar.unwrap_or((0.0, 0.0));
 
         let mut tab_bar = div()
@@ -863,8 +906,20 @@ impl PaneGroup {
             .bg(surface)
             .border_b_1()
             .border_color(border)
-            .when(is_top_left, |d| d.pl(px(leading)))
             .when(is_top_right, |d| d.pr(px(trailing)))
+            // The space reserved for the platform's window controls is part of
+            // the titlebar, so it drags too rather than being dead padding.
+            .when(is_top_left, |d| {
+                d.child(
+                    div()
+                        .id(("pg-titleinset", pane.0 as usize))
+                        .flex_none()
+                        .w(px(leading))
+                        .h_full()
+                        .window_control_area(WindowControlArea::Drag)
+                        .on_mouse_down(MouseButton::Left, |_, window, _| window.start_window_move()),
+                )
+            })
             .children(tabs)
             .child(
                 div()
@@ -880,9 +935,9 @@ impl PaneGroup {
                         cx.emit(PaneGroupEvent::NewRequested(pane));
                     })),
             );
-        // A window-drag filler fills the rest of the top row (double-click
-        // zooms, per the platform titlebar convention).
-        if is_top_right {
+        // A window-drag filler fills the rest of every top-row tab bar
+        // (double-click zooms, per the platform titlebar convention).
+        if is_top_edge {
             tab_bar = tab_bar.child(
                 div()
                     .id(("pg-titledrag", pane.0 as usize))
