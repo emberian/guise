@@ -31,7 +31,8 @@ use std::ops::Range;
 use gpui::prelude::*;
 use gpui::{
     div, px, uniform_list, AnyElement, ClickEvent, Context, EventEmitter, FocusHandle, IntoElement,
-    KeyDownEvent, MouseButton, ScrollStrategy, SharedString, UniformListScrollHandle, Window,
+    KeyDownEvent, MouseButton, MouseDownEvent, Pixels, Point, ScrollStrategy, SharedString,
+    UniformListScrollHandle, Window,
 };
 
 use crate::icon::{Glyph, Icon, IconName};
@@ -96,6 +97,12 @@ pub enum TreeViewEvent {
     Toggled(SharedString, bool),
     /// Enter or double-click on a node.
     Activated(SharedString),
+    /// A node was right-clicked, with the window coordinates of the click.
+    ///
+    /// Pass the point straight to [`ContextMenu::show`](crate::ContextMenu::show).
+    /// The node is selected first, so a menu built from the current selection
+    /// and one built from this id agree.
+    ContextMenu(SharedString, Point<Pixels>),
 }
 
 /// One visible (not hidden by a collapsed ancestor) row, in paint order.
@@ -438,6 +445,7 @@ impl TreeView {
             let is_selected = selected.as_ref() == Some(&row.id);
             let is_branch = row.is_branch;
             let id = row.id.clone();
+            let menu_id = row.id.clone();
             let hover_bg = if is_selected {
                 selected_bg
             } else {
@@ -491,7 +499,18 @@ impl TreeView {
                     } else if is_branch {
                         this.toggle(id.clone(), cx);
                     }
-                }));
+                }))
+                .on_mouse_down(
+                    MouseButton::Right,
+                    cx.listener(move |this, ev: &MouseDownEvent, _window, cx| {
+                        // Select first: right-clicking a row the user can see
+                        // highlighted is what every file manager does, and it
+                        // keeps a selection-driven menu honest.
+                        this.select(menu_id.clone(), cx);
+                        cx.emit(TreeViewEvent::ContextMenu(menu_id.clone(), ev.position));
+                        cx.stop_propagation();
+                    }),
+                );
             if is_selected {
                 el = el.bg(selected_bg);
             }

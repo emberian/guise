@@ -528,6 +528,9 @@ impl Gallery {
                     SharedString::from(format!("{id} expanded: {open}"))
                 }
                 TreeViewEvent::Activated(id) => SharedString::from(format!("activated: {id}")),
+                TreeViewEvent::ContextMenu(id, at) => {
+                    SharedString::from(format!("context menu: {id} at {}, {}", at.x, at.y))
+                }
             };
             cx.notify();
         })
