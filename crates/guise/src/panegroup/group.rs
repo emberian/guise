@@ -24,6 +24,7 @@ use super::drag::{
     drop_edge, drop_overlay, insert_line, tear_overlay, DropEdge, TabDrag, TabGhost, TearDrop,
     TearHint,
 };
+use super::motion::{slots, Ghosting, Slot, TabMotion};
 use super::tree::clamp_ratio;
 use super::{compute_layout, neighbor, Direction, ItemId, Node, Pane, PaneId, PaneIds, PaneTree, Rect, SplitId};
 
@@ -76,6 +77,10 @@ const MAX_TAB_W: f32 = 240.0;
 /// tab out of a row, so past here the width has to come from somewhere else.
 const MIN_TAB_W: f32 = 96.0;
 
+/// Width of the invisible stage a tab is laid out on while it grows in. Only
+/// has to be wider than any tab; it is clipped away either way.
+const STAGE: f32 = 4096.0;
+
 /// The hover-group name for one tab, so its close button can react to the tab
 /// being pointed at rather than only to itself.
 fn tab_group(pane: PaneId, index: usize) -> SharedString {
@@ -93,6 +98,14 @@ struct TabStrip {
     /// the keyboard follows the active one without pinning the strip to it and
     /// undoing every scroll the user makes by hand.
     followed: Option<ItemId>,
+    /// Which of the strip's children the last render put a tab in, and which of
+    /// those held a settled one. Everything read back off the scroll handle is
+    /// that render's, so it has to be counted in that render's children — a
+    /// ghost holds a slot exactly as a tab does, and one closing shifts every
+    /// index after it. Tabs still growing in are left out of `settled`: their
+    /// width is the animation's, not one to collapse from later.
+    tabs: Vec<usize>,
+    settled: Vec<Option<ItemId>>,
 }
 
 impl TabStrip {
@@ -101,21 +114,24 @@ impl TabStrip {
             scroll: ScrollHandle::new(),
             seen: None,
             followed: None,
+            tabs: Vec::new(),
+            settled: Vec::new(),
         }
     }
 }
 
-/// How many tabs sit off each end of `strip`. A tab counts by its middle rather
-/// than by whether any of it is clipped, so the two numbers plus the tabs you
-/// would count on screen come to the number of tabs there are. Child bounds are
-/// recorded before the scroll offset is applied, so it is added back here.
-fn hidden_tabs(strip: &ScrollHandle, count: usize) -> (usize, usize) {
+/// How many tabs sit off each end of `strip`, given where in its children each
+/// tab sits. A tab counts by its middle rather than by whether any of it is
+/// clipped, so the two numbers plus the tabs you would count on screen come to
+/// the number of tabs there are. Child bounds are recorded before the scroll
+/// offset is applied, so it is added back here.
+fn hidden_tabs(strip: &ScrollHandle, tabs: &[usize]) -> (usize, usize) {
     let view = strip.bounds();
     let offset = strip.offset().x;
     let mut before = 0;
     let mut after = 0;
-    for i in 0..count {
-        let Some(tab) = strip.bounds_for_item(i) else {
+    for &child in tabs {
+        let Some(tab) = strip.bounds_for_item(child) else {
             continue;
         };
         let middle = tab.center().x + offset;
@@ -213,6 +229,9 @@ pub struct PaneGroup {
     /// survives a repaint and so its overflow can be compared frame to frame.
     /// Behind a `RefCell` because rendering is `&self` the whole way down.
     strips: RefCell<HashMap<PaneId, TabStrip>>,
+    /// Tab-strip motion. Shared, because a tab growing in is measured by a
+    /// `'static` prepaint listener that cannot reach the group.
+    motion: Rc<RefCell<TabMotion>>,
     /// Shared with the live drag ghost so it can turn into a window-to-be the
     /// moment a release would stop being a move within this group.
     hint: Rc<Cell<TearHint>>,
@@ -259,6 +278,7 @@ impl PaneGroup {
             tab_drop: None,
             dragging: None,
             strips: RefCell::new(HashMap::new()),
+            motion: Rc::new(RefCell::new(TabMotion::default())),
             hint: Rc::new(Cell::new(TearHint::default())),
             tear_at: None,
             grab: Rc::new(Cell::new(Point::default())),
@@ -352,7 +372,13 @@ impl PaneGroup {
     /// Add `item` as a new tab in `pane` and activate it.
     pub fn add_item(&mut self, pane: PaneId, item: ItemId, cx: &mut Context<Self>) {
         if let Some(p) = self.panes.get_mut(&pane) {
+            // Re-adding an item just activates it; only a tab that is genuinely
+            // new has anywhere to grow in from.
+            let fresh = !p.contains(item);
             p.add(item, None);
+            if fresh {
+                self.motion.borrow_mut().opened(item);
+            }
             self.set_focus(pane, cx);
         }
     }
@@ -396,7 +422,11 @@ impl PaneGroup {
         let Some(pane) = self.pane_of(item) else {
             return;
         };
+        let slot = self.panes.get(&pane).and_then(|p| p.index_of(item));
         let emptied = self.panes.get_mut(&pane).map(|p| p.remove(item)).unwrap_or(false);
+        if let Some(slot) = slot {
+            self.motion.borrow_mut().closed(pane, slot, item);
+        }
         if emptied {
             // Capture the collapsing pane's traversal position before the
             // tree forgets it, so focus can land on its neighbor instead of
@@ -455,6 +485,7 @@ impl PaneGroup {
             None => {
                 if let Some(p) = self.panes.get_mut(&to_pane) {
                     p.add(item, None);
+                    self.motion.borrow_mut().opened(item);
                     self.set_focus(to_pane, cx);
                 } else {
                     self.reattach_somewhere(item, cx);
@@ -483,7 +514,10 @@ impl PaneGroup {
         };
         if from == to_pane {
             if let Some(p) = self.panes.get_mut(&to_pane) {
+                let before = p.items().to_vec();
                 p.move_to_gap(item, index);
+                let after = p.items().to_vec();
+                self.motion.borrow_mut().reordered(&before, &after);
             }
             cx.notify();
             return;
@@ -491,6 +525,7 @@ impl PaneGroup {
         self.detach(from, item);
         if let Some(p) = self.panes.get_mut(&to_pane) {
             p.add(item, Some(index));
+            self.motion.borrow_mut().opened(item);
             self.set_focus(to_pane, cx);
         } else {
             self.reattach_somewhere(item, cx);
@@ -504,7 +539,10 @@ impl PaneGroup {
         if let Some(pane) = self.pane_of(item) {
             if let Some(p) = self.panes.get_mut(&pane) {
                 if let Some(from) = p.index_of(item) {
+                    let before = p.items().to_vec();
                     p.reorder(from, index);
+                    let after = p.items().to_vec();
+                    self.motion.borrow_mut().reordered(&before, &after);
                     cx.notify();
                 }
             }
@@ -540,9 +578,13 @@ impl PaneGroup {
     /// Remove `item` from `pane`, collapsing the pane out of the tree if empty.
     fn detach(&mut self, pane: PaneId, item: ItemId) {
         if let Some(p) = self.panes.get_mut(&pane) {
+            let slot = p.index_of(item);
             if p.remove(item) {
                 self.panes.remove(&pane);
                 self.tree.remove(pane);
+            }
+            if let Some(slot) = slot {
+                self.motion.borrow_mut().closed(pane, slot, item);
             }
         }
     }
@@ -552,6 +594,7 @@ impl PaneGroup {
         if let Some(&pane) = self.tree.panes().first() {
             if let Some(p) = self.panes.get_mut(&pane) {
                 p.add(item, None);
+                self.motion.borrow_mut().opened(item);
                 self.set_focus(pane, cx);
             }
         }
@@ -735,6 +778,80 @@ fn top_right(node: &Node) -> PaneId {
     }
 }
 
+/// A tab on its way out of the strip: the shape it had, clipped to a width
+/// closing on zero. It carries its own label because the item behind it is
+/// already gone, and no handlers because there is nothing left to act on.
+fn collapsing(g: &Ghosting, text: Hsla, tab_h: f32) -> AnyElement {
+    div()
+        .flex_none()
+        .h(px(tab_h))
+        .w(px(g.now))
+        .overflow_hidden()
+        .text_color(text)
+        .child(
+            // Held at the width it had, so the label stays put and the tab
+            // reads as sliding under its neighbour instead of reflowing.
+            div()
+                .flex()
+                .flex_none()
+                .items_center()
+                .px_2()
+                .h(px(tab_h))
+                .w(px(g.was))
+                .child(
+                    div()
+                        .flex_1()
+                        .min_w_0()
+                        .text_size(px(12.0))
+                        .whitespace_nowrap()
+                        .text_ellipsis()
+                        .child(g.title.clone()),
+                ),
+        )
+        .into_any_element()
+}
+
+/// A tab growing into the strip. It takes the room an ordinary tab of its width
+/// would, scaled by how far in it is — floor and ceiling included, so the frame
+/// the animation stops on is laid out under exactly the constraints the settled
+/// tab meets and there is nothing left to snap.
+///
+/// Inside, the tab sits on a stage wider than any tab. Laid out against the
+/// width it is animating towards it would only ever measure that width back,
+/// and the target has to keep up with a title that changes mid-animation — as a
+/// freshly spawned shell's does.
+fn growing(
+    tab: impl Styled + IntoElement,
+    natural: f32,
+    grown: f32,
+    crowded: bool,
+    tab_h: f32,
+    measured: impl Fn(f32) + 'static,
+) -> AnyElement {
+    div()
+        .flex_shrink_1()
+        .h(px(tab_h))
+        .w(px(natural * grown))
+        .max_w(px(MAX_TAB_W * grown))
+        .when(crowded, |d| d.min_w(px(MIN_TAB_W * grown)))
+        .overflow_hidden()
+        .child(
+            div()
+                .flex()
+                .flex_row()
+                .flex_none()
+                .w(px(STAGE))
+                .h(px(tab_h))
+                .on_children_prepainted(move |bounds, _w, _cx| {
+                    if let Some(b) = bounds.first() {
+                        measured(f32::from(b.size.width));
+                    }
+                })
+                .child(tab.flex_none()),
+        )
+        .into_any_element()
+}
+
 impl gpui::Focusable for PaneGroup {
     fn focus_handle(&self, _cx: &App) -> FocusHandle {
         self.focus.clone()
@@ -747,6 +864,15 @@ impl Render for PaneGroup {
         // reused, so nothing would ever come back to claim it.
         let live = &self.panes;
         self.strips.borrow_mut().retain(|pane, _| live.contains_key(pane));
+
+        // Retire finished tab motion before the strips are built, and ask for
+        // the next frame only while something is still moving. This is what
+        // keeps a busy terminal's repaints from driving the animation: they
+        // land here, find nothing in flight, and render the settled strip.
+        let items = self.items();
+        if self.motion.borrow_mut().settle(&items) {
+            window.request_animation_frame();
+        }
 
         let root = self.tree.root().clone();
         let render_item = self.render_item.clone();
@@ -920,33 +1046,77 @@ impl PaneGroup {
         let active = p.active();
         let group = cx.entity().entity_id();
         let count = p.len();
+        let items = p.items();
+
+        // Tabs on their way out keep the slot they held, shrinking, so the
+        // strip closes the gap where the tab was instead of the neighbours
+        // jumping into it. That makes them children of the scroller exactly as
+        // tabs are, which is the order every per-child measurement below counts
+        // in — ghosts included.
+        let ghosts = self.motion.borrow().ghosts(pane);
+        let ghost_slots: Vec<usize> = ghosts.iter().map(|g| g.slot).collect();
+        let plan = slots(count, &ghost_slots);
+        let tab_child: Vec<usize> = plan
+            .iter()
+            .enumerate()
+            .filter_map(|(child, slot)| matches!(slot, Slot::Tab(_)).then_some(child))
+            .collect();
+        let settled: Vec<Option<ItemId>> = plan
+            .iter()
+            .map(|slot| match *slot {
+                Slot::Tab(i) => {
+                    let item = items[i];
+                    self.motion.borrow().opening(item).is_none().then_some(item)
+                }
+                Slot::Ghost(_) => None,
+            })
+            .collect();
+
         // Reading the strip's extents here reads what prepaint left behind last
         // frame, which on the strip's very first render is nothing. Asking for
         // another frame whenever the measurement moves is what makes the arrows
         // show up at all. The arrows only ever appear on a strip that is already
         // overflowing, so the width they take cannot tip it back to fitting and
         // set them blinking.
-        let (scroll, remeasure) = {
+        let (scroll, remeasure, counted) = {
             let mut strips = self.strips.borrow_mut();
             let strip = strips.entry(pane).or_insert_with(TabStrip::new);
+            // A width only becomes real in layout, and a tab that is closing
+            // needs one after its item has gone — so each frame reads the last
+            // one's tabs back off the scroll handle and holds those widths for
+            // whichever frame has to collapse one.
+            {
+                let mut motion = self.motion.borrow_mut();
+                for (child, was) in strip.settled.iter().enumerate() {
+                    let (Some(&item), Some(b)) = (was.as_ref(), strip.scroll.bounds_for_item(child))
+                    else {
+                        continue;
+                    };
+                    motion.laid_out(item, f32::from(b.size.width));
+                }
+            }
+            strip.settled = settled;
             let now = f32::from(strip.scroll.max_offset().x);
             let moved = strip.seen.is_none_or(|seen| (seen - now).abs() > 0.5);
             strip.seen = Some(now);
+            // Scrolling into view is the one thing that counts in *this* frame:
+            // gpui applies it in prepaint, after the children it acts on have
+            // been laid out again.
             if strip.followed != Some(active) {
                 strip.followed = Some(active);
-                if let Some(i) = p.index_of(active) {
-                    strip.scroll.scroll_to_item(i);
+                if let Some(&child) = p.index_of(active).and_then(|i| tab_child.get(i)) {
+                    strip.scroll.scroll_to_item(child);
                 }
             }
-            (strip.scroll.clone(), moved)
+            let counted = std::mem::replace(&mut strip.tabs, tab_child);
+            (strip.scroll.clone(), moved, counted)
         };
         if remeasure {
             window.request_animation_frame();
         }
         let offset = f32::from(scroll.offset().x);
         let max_offset = f32::from(scroll.max_offset().x);
-        let (before, after) = hidden_tabs(&scroll, count);
-
+        let (before, after) = hidden_tabs(&scroll, &counted);
 
         // The gap the insertion line marks, if the drag is over this strip.
         let gap = match self.tab_drop {
@@ -954,17 +1124,28 @@ impl PaneGroup {
             _ => None,
         };
         let tearing = self.tear_at.is_some();
-        let tabs = p.items().iter().copied().enumerate().map(|(i, item)| {
+        let mut children: Vec<AnyElement> = Vec::with_capacity(plan.len());
+        for slot in &plan {
+            let i = match *slot {
+                Slot::Ghost(g) => {
+                    children.push(collapsing(&ghosts[g], text, tab_h));
+                    continue;
+                }
+                Slot::Tab(i) => i,
+            };
+            let item = items[i];
             let title = item_title
                 .as_ref()
                 .map(|f| f(item, cx))
                 .unwrap_or_else(|| SharedString::from("untitled"));
+            self.motion.borrow_mut().label(item, &title);
             let dot = item_dot.as_ref().and_then(|f| f(item, cx));
             let is_active = item == active;
             // The item is on its way out of the window, so its slot fades to
             // the gap it would leave rather than claiming it is still here.
             let leaving = tearing && self.dragging == Some(item);
-            div()
+            let shift = self.motion.borrow().slide(item);
+            let tab = div()
                 .id(("pg-tab", (pane.0 as usize) << 20 | i))
                 .group(tab_group(pane, i))
                 .relative()
@@ -986,6 +1167,9 @@ impl PaneGroup {
                 .when(count > 1, |d| d.min_w(px(MIN_TAB_W)))
                 .when(is_active && !leaving, |d| d.bg(active_bg))
                 .when(leaving, |d| d.opacity(0.3))
+                // A reordered tab is drawn back at the slot it left and closes
+                // the distance, rather than appearing in its new place.
+                .when_some(shift, |d, shift| d.left(px(shift)))
                 .text_color(text)
                 .hover(|s| s.bg(active_bg))
                 .on_click(cx.listener(move |this, _ev, _w, cx| this.activate(pane, item, cx)))
@@ -1098,8 +1282,22 @@ impl PaneGroup {
                 .when(gap == Some(i), |d| d.child(insert_line(false)))
                 .when(gap == Some(count) && i + 1 == count, |d| {
                     d.child(insert_line(true))
-                })
-        });
+                });
+
+            let (opening, natural) = {
+                let motion = self.motion.borrow();
+                (motion.opening(item), motion.width(item))
+            };
+            children.push(match opening {
+                Some(grown) => {
+                    let motion = self.motion.clone();
+                    growing(tab, natural, grown, count > 1, tab_h, move |w| {
+                        motion.borrow_mut().laid_out(item, w);
+                    })
+                }
+                None => tab.into_any_element(),
+            });
+        }
 
         // Tabs scroll inside their own strip, which is what lets the floor above
         // hold: past it the width has to come out of the strip's ends instead of
@@ -1115,7 +1313,7 @@ impl PaneGroup {
             .min_w_0()
             .h(px(tab_h))
             .overflow_x_scroll()
-            .children(tabs);
+            .children(children);
         let arrow = (text, active_bg, border);
         let lead_arrow = (offset < -0.5).then(|| {
             let scroll = scroll.clone();

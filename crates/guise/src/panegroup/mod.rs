@@ -16,6 +16,7 @@ mod drag;
 mod group;
 mod id;
 mod layout;
+mod motion;
 mod nav;
 mod pane;
 mod tree;
