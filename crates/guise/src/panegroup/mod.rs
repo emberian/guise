@@ -20,7 +20,7 @@ mod nav;
 mod pane;
 mod tree;
 
-pub use drag::{DropEdge, TabDrag};
+pub use drag::{DropEdge, TabDrag, TearDrop, TearHint};
 pub use id::{ItemId, ItemIds, PaneId, PaneIds, SplitId};
 pub use layout::{compute_layout, Layout, Rect};
 pub use nav::{neighbor, next, prev, Direction};

@@ -1,11 +1,16 @@
 //! Tab drag-and-drop for [`PaneGroup`](super::PaneGroup): the drag payload +
 //! ghost, the edge-zone geometry that turns a cursor over a pane into a drop
-//! edge (mirroring Zed), and the drop affordances — the pane overlay and the
-//! tab-strip insertion line.
+//! edge (mirroring Zed), and the drop affordances — the pane overlay, the
+//! tab-strip insertion line, and the tear overlay for a drag that has left the
+//! group and would pull the item into a window of its own.
+
+use std::cell::Cell;
+use std::rc::Rc;
 
 use gpui::prelude::*;
 use gpui::{
-    div, px, relative, Bounds, Context, EntityId, Hsla, Pixels, Point, SharedString, Window,
+    div, px, relative, AnyElement, App, Bounds, Context, EntityId, Hsla, Pixels, Point,
+    SharedString, Size, Window,
 };
 
 use crate::theme::theme;
@@ -34,6 +39,30 @@ impl DropEdge {
     }
 }
 
+/// Where a tab drag let go, for a host that has to place whatever the release
+/// creates. Both points are in the group's window coordinates.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct TearDrop {
+    /// The pointer position the drag released at.
+    pub position: Point<Pixels>,
+    /// The pointer's offset inside the tab when the drag began. gpui anchors the
+    /// ghost at `position - grab`, so a host that reuses that corner puts what
+    /// it opens exactly where the ghost was.
+    pub grab: Point<Pixels>,
+}
+
+/// What the owning group tells the live drag ghost, refreshed as the pointer
+/// moves. gpui takes the ghost as an entity of its own the moment a drag
+/// starts, so a shared cell is the group's only channel to it.
+#[derive(Clone, Copy, Default, PartialEq)]
+pub struct TearHint {
+    /// The pointer has left the group: a release here tears the item off.
+    pub outside: bool,
+    /// The group's own size, so the ghost stands in for the window a release
+    /// would open at the proportions it would really have.
+    pub group: Size<Pixels>,
+}
+
 /// The payload carried while dragging a tab.
 #[derive(Clone)]
 pub struct TabDrag {
@@ -50,10 +79,18 @@ pub struct TabGhost {
     pub label: SharedString,
     pub dot: Option<Hsla>,
     pub height: f32,
+    /// Shared with the owning group, which flips it as the pointer crosses the
+    /// group's edge. The ghost has to stop promising to move a tab the moment a
+    /// release would stop moving one.
+    pub hint: Rc<Cell<TearHint>>,
 }
 
 impl Render for TabGhost {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let hint = self.hint.get();
+        if hint.outside {
+            return window_ghost(self.label.clone(), hint.group, cx);
+        }
         let t = theme(cx);
         let bg = t.surface_hover().hsla();
         let text = t.text().hsla();
@@ -85,8 +122,87 @@ impl Render for TabGhost {
                 )
             })
             .child(self.label.clone())
+            .into_any_element()
     }
 }
+
+/// The ghost once the pointer is outside the group: a shrunken window carrying
+/// the tab in its own strip, at the proportions the real one would have.
+fn window_ghost(label: SharedString, group: Size<Pixels>, cx: &App) -> AnyElement {
+    let t = theme(cx);
+    let (w, h) = preview_size(group);
+    div()
+        .w(w)
+        .h(h)
+        .flex()
+        .flex_col()
+        .rounded(px(8.0))
+        .overflow_hidden()
+        .bg(t.body().hsla())
+        .border_1()
+        .border_color(t.primary().alpha(0.7))
+        .shadow_lg()
+        .child(
+            div()
+                .flex()
+                .items_center()
+                .w_full()
+                .h(px(26.0))
+                .px(px(6.0))
+                .bg(t.surface().hsla())
+                .child(
+                    div()
+                        .px(px(8.0))
+                        .py(px(3.0))
+                        .rounded(px(4.0))
+                        .bg(t.surface_hover().hsla())
+                        .text_color(t.text().hsla())
+                        .text_size(px(11.0))
+                        .child(label),
+                ),
+        )
+        .into_any_element()
+}
+
+/// The window preview's share of the group it is leaving.
+const PREVIEW_SCALE: f32 = 0.32;
+/// The range that share is held to, so the ghost reads at a glance from a small
+/// group without swallowing the screen from a large one.
+const PREVIEW_MIN: (f32, f32) = (220.0, 150.0);
+const PREVIEW_MAX: (f32, f32) = (400.0, 280.0);
+
+fn preview_size(group: Size<Pixels>) -> (Pixels, Pixels) {
+    let w = f32::from(group.width) * PREVIEW_SCALE;
+    let h = f32::from(group.height) * PREVIEW_SCALE;
+    (
+        px(w.clamp(PREVIEW_MIN.0, PREVIEW_MAX.0)),
+        px(h.clamp(PREVIEW_MIN.1, PREVIEW_MAX.1)),
+    )
+}
+
+/// The half of the tear signal the group draws itself, at `at` in its own
+/// coordinates. gpui paints the ghost into the window that owns the drag, so
+/// past that window's edge it is clipped away and the ghost alone would leave
+/// the gesture looking like nothing is happening — this stays on screen. Same
+/// language as [`drop_overlay`]: a highlight over where a release would land.
+pub fn tear_overlay(at: Point<Pixels>, group: Size<Pixels>) -> impl IntoElement {
+    let (w, h) = preview_size(group);
+    // Held whole inside the group: the edge the pointer left by is the edge the
+    // card presses against, so it reads as being carried out that way.
+    let x = f32::from(at.x) - f32::from(w) / 2.0;
+    let y = f32::from(at.y) - f32::from(h) / 2.0;
+    div()
+        .absolute()
+        .left(px(x.clamp(0.0, (f32::from(group.width) - f32::from(w)).max(0.0))))
+        .top(px(y.clamp(0.0, (f32::from(group.height) - f32::from(h)).max(0.0))))
+        .w(w)
+        .h(h)
+        .rounded(px(8.0))
+        .bg(gpui::rgba(0x4a9eff26))
+        .border_2()
+        .border_color(gpui::rgb(0x4a9eff))
+}
+
 
 /// The accent every drop affordance shares, so the pane overlay and the strip's
 /// insertion line read as one gesture.

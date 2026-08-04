@@ -5,22 +5,25 @@
 //! interactions (activate/close/new tab, and later tear-off) surface as
 //! [`PaneGroupEvent`]s the host reacts to.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
 
 use gpui::prelude::*;
 use gpui::{
     div, px, AnyElement, App, ClickEvent, Context, Div, DragMoveEvent, Empty, EntityId,
-    EventEmitter, FocusHandle, Hsla, IntoElement, MouseButton, ScrollHandle, SharedString, Stateful,
-    Window, WindowControlArea,
+    EventEmitter, FocusHandle, Hsla, IntoElement, MouseButton, MouseUpEvent, Pixels, Point,
+    ScrollHandle, SharedString, Size, Stateful, Window, WindowControlArea,
 };
 
 use crate::style::FlexExt;
 use crate::theme::theme;
 use crate::SplitDirection;
 
-use super::drag::{drop_edge, drop_overlay, insert_line, DropEdge, TabDrag, TabGhost};
+use super::drag::{
+    drop_edge, drop_overlay, insert_line, tear_overlay, DropEdge, TabDrag, TabGhost, TearDrop,
+    TearHint,
+};
 use super::tree::clamp_ratio;
 use super::{compute_layout, neighbor, Direction, ItemId, Node, Pane, PaneId, PaneIds, PaneTree, Rect, SplitId};
 
@@ -49,7 +52,13 @@ pub enum PaneGroupEvent {
     FocusChanged(PaneId),
     /// An item was torn off (via [`PaneGroup::tear_off`]); the host should move
     /// its content into a new window. The item is already detached from here.
-    TearOff(ItemId),
+    /// `drop` locates the gesture that asked for it, so the host can open the
+    /// window where the drag let go; a tear with no gesture behind it (a menu
+    /// item) leaves it unset and the host places the window itself.
+    TearOff {
+        item: ItemId,
+        drop: Option<TearDrop>,
+    },
     /// A tab was right-clicked, at this window position. The host owns what a
     /// tab's context menu offers, so the group only reports the gesture.
     ContextMenu {
@@ -204,6 +213,16 @@ pub struct PaneGroup {
     /// survives a repaint and so its overflow can be compared frame to frame.
     /// Behind a `RefCell` because rendering is `&self` the whole way down.
     strips: RefCell<HashMap<PaneId, TabStrip>>,
+    /// Shared with the live drag ghost so it can turn into a window-to-be the
+    /// moment a release would stop being a move within this group.
+    hint: Rc<Cell<TearHint>>,
+    /// Where the pointer is, in the group's own coordinates, while it is outside
+    /// the group. Drives the tear overlay; `None` whenever a release would still
+    /// land inside.
+    tear_at: Option<Point<Pixels>>,
+    /// The pointer's offset inside the tab the drag started from, captured when
+    /// gpui builds the ghost and handed on with the tear.
+    grab: Rc<Cell<Point<Pixels>>>,
     /// When set, the focused pane fills the group (the rest is hidden).
     zoomed: bool,
     /// Height of each pane's tab bar in px (also the titlebar height when the
@@ -240,6 +259,9 @@ impl PaneGroup {
             tab_drop: None,
             dragging: None,
             strips: RefCell::new(HashMap::new()),
+            hint: Rc::new(Cell::new(TearHint::default())),
+            tear_at: None,
+            grab: Rc::new(Cell::new(Point::default())),
             tab_height: 28.0,
             zoomed: false,
             titlebar: None,
@@ -406,9 +428,7 @@ impl PaneGroup {
         edge: Option<DropEdge>,
         cx: &mut Context<Self>,
     ) {
-        self.drag_over = None;
-        self.tab_drop = None;
-        self.dragging = None; // a drop landed inside; not a tear-off
+        self.end_drag(); // a drop landed inside; not a tear-off
         let Some(from) = self.pane_of(item) else {
             cx.notify();
             return;
@@ -480,9 +500,7 @@ impl PaneGroup {
 
     /// Reorder `item` within its pane to `index` (a tab-bar drop).
     pub fn reorder_in_pane(&mut self, item: ItemId, index: usize, cx: &mut Context<Self>) {
-        self.drag_over = None;
-        self.tab_drop = None;
-        self.dragging = None;
+        self.end_drag();
         if let Some(pane) = self.pane_of(item) {
             if let Some(p) = self.panes.get_mut(&pane) {
                 if let Some(from) = p.index_of(item) {
@@ -490,6 +508,32 @@ impl PaneGroup {
                     cx.notify();
                 }
             }
+        }
+    }
+
+    /// Forget the in-flight drag: no drop target, nothing dragged, and a ghost
+    /// that is a plain tab again next time one starts.
+    fn end_drag(&mut self) {
+        self.drag_over = None;
+        self.tab_drop = None;
+        self.dragging = None;
+        self.tear_at = None;
+        self.hint.set(TearHint::default());
+    }
+
+    /// Track the pointer against the group's own bounds: `at` is where it is in
+    /// group coordinates once it has left, `None` while a release would still
+    /// land inside.
+    fn set_tear(&mut self, at: Option<Point<Pixels>>, group: Size<Pixels>, cx: &mut Context<Self>) {
+        self.hint.set(TearHint {
+            outside: at.is_some(),
+            group,
+        });
+        // The overlay follows the pointer and the tab strip shows the gap the
+        // item would leave, so this has to reach the group's own render too.
+        if self.tear_at != at {
+            self.tear_at = at;
+            cx.notify();
         }
     }
 
@@ -611,9 +655,13 @@ impl PaneGroup {
     /// its content to a new window. The host wires the gesture (e.g. a tab
     /// dragged outside the window, or a menu item).
     pub fn tear_off(&mut self, item: ItemId, cx: &mut Context<Self>) {
-        self.drag_over = None;
-        self.tab_drop = None;
-        self.dragging = None;
+        self.tear_off_at(item, None, cx);
+    }
+
+    /// [`tear_off`](Self::tear_off), reporting where the drag that asked for it
+    /// released so the host can open the window there.
+    pub fn tear_off_at(&mut self, item: ItemId, drop: Option<TearDrop>, cx: &mut Context<Self>) {
+        self.end_drag();
         if let Some(pane) = self.pane_of(item) {
             // Don't tear off the group's last remaining item.
             if self.tree.panes().len() == 1
@@ -628,7 +676,7 @@ impl PaneGroup {
                 }
             }
         }
-        cx.emit(PaneGroupEvent::TearOff(item));
+        cx.emit(PaneGroupEvent::TearOff { item, drop });
         cx.notify();
     }
 
@@ -710,26 +758,48 @@ impl Render for PaneGroup {
         } else {
             self.node_el(&root, &render_item, &item_title, &item_dot, window, cx)
         };
+        let tear = self
+            .tear_at
+            .map(|at| tear_overlay(at, self.hint.get().group));
         div()
             .size_full()
+            .relative()
             .track_focus(&self.focus)
+            // Only the whole group's bounds can say whether a release would
+            // still land inside it, and both the ghost and the overlay have to
+            // know that before the release rather than after.
+            .on_drag_move::<TabDrag>(cx.listener(
+                |this, ev: &DragMoveEvent<TabDrag>, _window, cx| {
+                    this.dragging = Some(ev.drag(cx).item);
+                    let at = (!ev.bounds.contains(&ev.event.position))
+                        .then(|| ev.event.position - ev.bounds.origin);
+                    this.set_tear(at, ev.bounds.size, cx);
+                },
+            ))
             // A tab released outside the group (past the panes / the window) is
             // torn off into a new window (the host handles `TearOff`).
             .on_mouse_up_out(
                 MouseButton::Left,
-                cx.listener(|this, _ev, _window, cx| {
-                    let dragged = this.dragging.take();
-                    // Clear any lingering drop affordance from the aborted/torn drag.
-                    let stale = this.drag_over.take().is_some();
-                    if this.tab_drop.take().is_some() || stale {
-                        cx.notify();
-                    }
+                cx.listener(|this, ev: &MouseUpEvent, _window, cx| {
+                    // A drag released over the group's own dead space (the `+`,
+                    // the titlebar filler) leaves `dragging` set with nothing to
+                    // clear it; requiring the crossing keeps that stale item
+                    // from being torn off by the next unrelated drag.
+                    let dragged = this.dragging.filter(|_| this.tear_at.is_some());
+                    let grab = this.grab.get();
+                    this.end_drag();
+                    cx.notify();
                     if let Some(item) = dragged {
-                        this.tear_off(item, cx);
+                        let drop = TearDrop {
+                            position: ev.position,
+                            grab,
+                        };
+                        this.tear_off_at(item, Some(drop), cx);
                     }
                 }),
             )
             .child(inner)
+            .children(tear)
     }
 }
 
@@ -883,6 +953,7 @@ impl PaneGroup {
             Some((over, at)) if over == pane => Some(at),
             _ => None,
         };
+        let tearing = self.tear_at.is_some();
         let tabs = p.items().iter().copied().enumerate().map(|(i, item)| {
             let title = item_title
                 .as_ref()
@@ -890,6 +961,9 @@ impl PaneGroup {
                 .unwrap_or_else(|| SharedString::from("untitled"));
             let dot = item_dot.as_ref().and_then(|f| f(item, cx));
             let is_active = item == active;
+            // The item is on its way out of the window, so its slot fades to
+            // the gap it would leave rather than claiming it is still here.
+            let leaving = tearing && self.dragging == Some(item);
             div()
                 .id(("pg-tab", (pane.0 as usize) << 20 | i))
                 .group(tab_group(pane, i))
@@ -910,7 +984,8 @@ impl PaneGroup {
                 .flex_shrink_1()
                 .max_w(px(MAX_TAB_W))
                 .when(count > 1, |d| d.min_w(px(MIN_TAB_W)))
-                .when(is_active, |d| d.bg(active_bg))
+                .when(is_active && !leaving, |d| d.bg(active_bg))
+                .when(leaving, |d| d.opacity(0.3))
                 .text_color(text)
                 .hover(|s| s.bg(active_bg))
                 .on_click(cx.listener(move |this, _ev, _w, cx| this.activate(pane, item, cx)))
@@ -935,13 +1010,22 @@ impl PaneGroup {
                         from_pane: pane,
                         label: title.clone(),
                     },
-                    move |d, _off, _w, cx| {
-                        let ghost = TabGhost {
-                            label: d.label.clone(),
-                            dot,
-                            height: tab_h,
-                        };
-                        cx.new(|_| ghost)
+                    {
+                        let grab = self.grab.clone();
+                        let hint = self.hint.clone();
+                        move |d: &TabDrag, off, _w: &mut Window, cx: &mut App| {
+                            // Where inside the tab the drag began, so a host
+                            // placing what the release opens can put it exactly
+                            // where the ghost was.
+                            grab.set(off);
+                            let ghost = TabGhost {
+                                label: d.label.clone(),
+                                dot,
+                                height: tab_h,
+                                hint: hint.clone(),
+                            };
+                            cx.new(|_| ghost)
+                        }
                     },
                 )
                 // Runs after the bar's own handler (capture order follows paint
@@ -1172,16 +1256,17 @@ impl PaneGroup {
             .overflow_hidden()
             .on_drag_move::<TabDrag>(cx.listener(
                 move |this, ev: &DragMoveEvent<TabDrag>, _w, cx| {
-                    this.dragging = Some(ev.drag(cx).item);
-                    // Same unfiltered dispatch as the strip above: without the
-                    // containment test every pane would claim the overlay, and
-                    // the last one painted would win it.
+                    // Every pane hears every move, not just the one under the
+                    // pointer, so a pane it has left has to give the target up
+                    // instead of claiming a center drop from wherever it is.
+                    // The root handler owns `dragging`, since only the group's
+                    // own bounds can tell a move from a tear.
                     let next = if ev.bounds.contains(&ev.event.position) {
                         Some((pane, drop_edge(ev.bounds, ev.event.position)))
-                    } else if matches!(this.drag_over, Some((over, _)) if over == pane) {
+                    } else if matches!(this.drag_over, Some((p, _)) if p == pane) {
                         None
                     } else {
-                        return;
+                        this.drag_over
                     };
                     if this.drag_over != next {
                         this.drag_over = next;
