@@ -56,6 +56,16 @@ pub enum PaneGroupEvent {
     },
 }
 
+/// How wide a tab may get. Without a ceiling two tabs in a wide pane each take
+/// half the window, which reads as a segmented control rather than tabs.
+const MAX_TAB_W: f32 = 240.0;
+
+/// The hover-group name for one tab, so its close button can react to the tab
+/// being pointed at rather than only to itself.
+fn tab_group(pane: PaneId, index: usize) -> SharedString {
+    SharedString::from(format!("pg-tab-{}-{index}", pane.0))
+}
+
 /// The divider being dragged, identifying its split and owning group.
 #[derive(Clone, Copy)]
 struct DividerDrag {
@@ -681,6 +691,7 @@ impl PaneGroup {
 
         let active = p.active();
         let group = cx.entity().entity_id();
+        let count = p.len();
         let tabs = p.items().iter().copied().enumerate().map(|(i, item)| {
             let title = item_title
                 .as_ref()
@@ -690,11 +701,23 @@ impl PaneGroup {
             let is_active = item == active;
             div()
                 .id(("pg-tab", (pane.0 as usize) << 20 | i))
+                .group(tab_group(pane, i))
                 .flex()
                 .items_center()
                 .gap_1()
                 .px_2()
                 .h(px(tab_h))
+                // Tabs size to their title up to MAX_TAB_W and shrink together as
+                // more open, with the title ellipsizing rather than overflowing.
+                // They deliberately do not *grow* to fill: stretching two tabs
+                // across a wide pane reads as a segmented control, not as tabs.
+                //
+                // There is no shrink floor yet: a floor needs somewhere for the
+                // overflow to go, and a scroller with no sign that tabs are
+                // hidden is worse than tabs that get narrow. See the tab-overflow
+                // work.
+                .flex_shrink_1()
+                .max_w(px(MAX_TAB_W))
                 .when(is_active, |d| d.bg(active_bg))
                 .text_color(text)
                 .hover(|s| s.bg(active_bg))
@@ -738,13 +761,39 @@ impl PaneGroup {
                             .bg(color),
                     )
                 })
-                .child(div().text_size(px(12.0)).child(title))
+                // The title takes the slack and gives it back first: it is the
+                // only part of a tab that can afford to be cut.
+                .child(
+                    div()
+                        .flex_1()
+                        .min_w_0()
+                        .text_size(px(12.0))
+                        .whitespace_nowrap()
+                        .text_ellipsis()
+                        .child(title),
+                )
                 .child(
                     div()
                         .id(("pg-tabclose", (pane.0 as usize) << 20 | i))
+                        .flex_none()
+                        .w(px(14.0))
+                        .h(px(14.0))
+                        .flex()
+                        .items_center()
+                        .justify_center()
+                        .rounded(px(3.0))
                         .text_size(px(12.0))
                         .text_color(text)
-                        .hover(|s| s.text_color(text))
+                        // Only the active tab and whichever one you are pointing
+                        // at carry a close button. A row of × glyphs is noise,
+                        // and hiding them buys back the width the titles want.
+                        // The last tab in a pane keeps its close hidden — the
+                        // pane goes with it, which is a different intent.
+                        .when(!is_active || count == 1, |d| d.invisible())
+                        .when(count > 1, |d| {
+                            d.group_hover(tab_group(pane, i), |s| s.visible())
+                        })
+                        .hover(|s| s.bg(active_bg))
                         .child("\u{00d7}")
                         .on_click(cx.listener(move |_this, _ev, _w, cx| {
                             cx.emit(PaneGroupEvent::CloseRequested(item));
