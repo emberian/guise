@@ -1145,9 +1145,14 @@ impl PaneGroup {
             // the gap it would leave rather than claiming it is still here.
             let leaving = tearing && self.dragging == Some(item);
             let shift = self.motion.borrow().slide(item);
+            // Built once and shared with the close button below. The strip
+            // re-renders with every frame of terminal output, so a second
+            // `format!` here is a heap allocation per tab per frame for a
+            // string that never changes.
+            let hover_group = tab_group(pane, i);
             let tab = div()
                 .id(("pg-tab", (pane.0 as usize) << 20 | i))
-                .group(tab_group(pane, i))
+                .group(hover_group.clone())
                 .relative()
                 .flex()
                 .items_center()
@@ -1270,7 +1275,7 @@ impl PaneGroup {
                         // normal thing to want, and the host decides what that
                         // means (Sinclair closes the window).
                         .when(!is_active, |d| d.invisible())
-                        .group_hover(tab_group(pane, i), |s| s.visible())
+                        .group_hover(hover_group, |s| s.visible())
                         .hover(|s| s.bg(active_bg))
                         .child("\u{00d7}")
                         .on_click(cx.listener(move |_this, _ev, _w, cx| {
