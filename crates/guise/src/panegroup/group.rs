@@ -1266,12 +1266,11 @@ impl PaneGroup {
                         // Only the active tab and whichever one you are pointing
                         // at carry a close button. A row of × glyphs is noise,
                         // and hiding them buys back the width the titles want.
-                        // The last tab in a pane keeps its close hidden — the
-                        // pane goes with it, which is a different intent.
-                        .when(!is_active || count == 1, |d| d.invisible())
-                        .when(count > 1, |d| {
-                            d.group_hover(tab_group(pane, i), |s| s.visible())
-                        })
+                        // A pane's last tab is no exception: closing it is a
+                        // normal thing to want, and the host decides what that
+                        // means (Sinclair closes the window).
+                        .when(!is_active, |d| d.invisible())
+                        .group_hover(tab_group(pane, i), |s| s.visible())
                         .hover(|s| s.bg(active_bg))
                         .child("\u{00d7}")
                         .on_click(cx.listener(move |_this, _ev, _w, cx| {

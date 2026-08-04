@@ -197,12 +197,25 @@ pub fn tear_overlay(at: Point<Pixels>, group: Size<Pixels>) -> impl IntoElement 
         .top(px(y.clamp(0.0, (f32::from(group.height) - f32::from(h)).max(0.0))))
         .w(w)
         .h(h)
+        .flex()
+        .items_center()
+        .justify_center()
         .rounded(px(8.0))
-        .bg(gpui::rgba(0x4a9eff26))
+        .bg(gpui::rgba(ACCENT << 8 | 0x26))
         .border_2()
-        .border_color(gpui::rgb(0x4a9eff))
+        .border_color(gpui::rgb(ACCENT))
+        // It has to say what it is. The ghost that would have shown the tab
+        // leaving is clipped away at the window's edge by the OS, so without a
+        // label this is an unexplained rectangle pinned inside the window you
+        // are dragging out of — which reads as the tab having got stuck.
+        .child(
+            div()
+                .px(px(10.0))
+                .text_size(px(12.0))
+                .text_color(gpui::rgb(0xf2f2f7))
+                .child("Release to open in a new window"),
+        )
 }
-
 
 /// The accent every drop affordance shares, so the pane overlay and the strip's
 /// insertion line read as one gesture.
