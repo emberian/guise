@@ -1,12 +1,14 @@
 //! Tab drag-and-drop for [`PaneGroup`](super::PaneGroup): the drag payload +
 //! ghost, the edge-zone geometry that turns a cursor over a pane into a drop
-//! edge (mirroring Zed), and the drop overlay.
+//! edge (mirroring Zed), and the drop affordances — the pane overlay and the
+//! tab-strip insertion line.
 
+use gpui::prelude::*;
 use gpui::{
-    div, px, relative, Bounds, Context, EntityId, IntoElement, ParentElement, Pixels, Point,
-    Render, SharedString, Styled, Window,
+    div, px, relative, Bounds, Context, EntityId, Hsla, Pixels, Point, SharedString, Window,
 };
 
+use crate::theme::theme;
 use crate::SplitDirection;
 
 use super::{ItemId, PaneId};
@@ -32,7 +34,7 @@ impl DropEdge {
     }
 }
 
-/// The payload carried while dragging a tab, and its own ghost renderer.
+/// The payload carried while dragging a tab.
 #[derive(Clone)]
 pub struct TabDrag {
     pub group: EntityId,
@@ -41,18 +43,54 @@ pub struct TabDrag {
     pub label: SharedString,
 }
 
-impl Render for TabDrag {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+/// The tab that follows the cursor while dragging. gpui paints it at the grab
+/// point's offset into the real tab, so it carries the strip's metrics (height,
+/// dot) — at any other size it slides out from under the cursor.
+pub struct TabGhost {
+    pub label: SharedString,
+    pub dot: Option<Hsla>,
+    pub height: f32,
+}
+
+impl Render for TabGhost {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let t = theme(cx);
+        let bg = t.surface_hover().hsla();
+        let text = t.text().hsla();
+        let edge = t.primary().alpha(0.7);
         div()
-            .px(px(10.0))
-            .py(px(4.0))
+            .flex()
+            .items_center()
+            .gap_1()
+            .px_2()
+            .h(px(self.height))
             .rounded(px(6.0))
-            .bg(gpui::rgb(0x2a2a2e))
-            .text_color(gpui::rgb(0xf2f2f7))
+            .bg(bg)
+            .border_1()
+            .border_color(edge)
+            .shadow_lg()
+            // Lifted, not opaque: the tab is in transit, and what it will land
+            // on has to stay readable underneath it.
+            .opacity(0.85)
+            .text_color(text)
             .text_size(px(12.0))
+            .when_some(self.dot, |d, color| {
+                d.child(
+                    div()
+                        .flex_none()
+                        .w(px(6.0))
+                        .h(px(6.0))
+                        .rounded_full()
+                        .bg(color),
+                )
+            })
             .child(self.label.clone())
     }
 }
+
+/// The accent every drop affordance shares, so the pane overlay and the strip's
+/// insertion line read as one gesture.
+const ACCENT: u32 = 0x4a9eff;
 
 /// Fraction of a pane's short side that counts as an edge zone.
 const EDGE: f32 = 0.28;
@@ -90,8 +128,8 @@ pub fn drop_edge(bounds: Bounds<Pixels>, cursor: Point<Pixels>) -> Option<DropEd
 /// A translucent highlight over the half of the pane the split would occupy (or
 /// the whole pane for a center/tab drop), shown while a tab is dragged over it.
 pub fn drop_overlay(edge: Option<DropEdge>) -> impl IntoElement {
-    let fill = gpui::rgba(0x4a9eff33);
-    let border = gpui::rgb(0x4a9eff);
+    let fill = gpui::rgba(ACCENT << 8 | 0x33);
+    let border = gpui::rgb(ACCENT);
     let base = div().absolute().bg(fill).border_2().border_color(border);
     match edge {
         None => base.top_0().left_0().size_full(),
@@ -99,5 +137,18 @@ pub fn drop_overlay(edge: Option<DropEdge>) -> impl IntoElement {
         Some(DropEdge::Right) => base.top_0().right_0().bottom_0().w(relative(0.5)),
         Some(DropEdge::Top) => base.top_0().left_0().right_0().h(relative(0.5)),
         Some(DropEdge::Bottom) => base.bottom_0().left_0().right_0().h(relative(0.5)),
+    }
+}
+
+/// The bar marking the gap a dragged tab would drop into. It is drawn inside
+/// the tab it sits against — tabs are flush neighbours, so a tab's leading edge
+/// *is* the gap before it, and `at_end` puts it on the last tab's trailing edge
+/// for the one gap no tab leads.
+pub fn insert_line(at_end: bool) -> impl IntoElement {
+    let bar = div().absolute().top_0().bottom_0().w(px(2.0)).bg(gpui::rgb(ACCENT));
+    if at_end {
+        bar.right_0()
+    } else {
+        bar.left_0()
     }
 }

@@ -20,7 +20,7 @@ use crate::style::FlexExt;
 use crate::theme::theme;
 use crate::SplitDirection;
 
-use super::drag::{drop_edge, drop_overlay, DropEdge, TabDrag};
+use super::drag::{drop_edge, drop_overlay, insert_line, DropEdge, TabDrag, TabGhost};
 use super::tree::clamp_ratio;
 use super::{compute_layout, neighbor, Direction, ItemId, Node, Pane, PaneId, PaneIds, PaneTree, Rect, SplitId};
 
@@ -193,6 +193,10 @@ pub struct PaneGroup {
     /// The pane a tab is dragged over + the edge the drop would take (`None` =
     /// center = add as a tab). Drives the drop overlay; cleared on drop.
     drag_over: Option<(PaneId, Option<DropEdge>)>,
+    /// The tab strip a tab is dragged over + the gap the drop would open, as an
+    /// index into that pane's tabs (`0..=len`). Drives the insertion line, and
+    /// the drop reads it back so the tab lands where the line promised.
+    tab_drop: Option<(PaneId, usize)>,
     /// The item currently being dragged (tracked from `on_drag_move`); if the
     /// drag is released *outside* the group it's torn off. Cleared on any drop.
     dragging: Option<ItemId>,
@@ -233,6 +237,7 @@ impl PaneGroup {
             item_title: None,
             item_dot: None,
             drag_over: None,
+            tab_drop: None,
             dragging: None,
             strips: RefCell::new(HashMap::new()),
             tab_height: 28.0,
@@ -402,6 +407,7 @@ impl PaneGroup {
         cx: &mut Context<Self>,
     ) {
         self.drag_over = None;
+        self.tab_drop = None;
         self.dragging = None; // a drop landed inside; not a tear-off
         let Some(from) = self.pane_of(item) else {
             cx.notify();
@@ -438,9 +444,44 @@ impl PaneGroup {
         cx.notify();
     }
 
+    /// Move `item` into `pane`'s tab strip at `index` — the gap the insertion
+    /// line marked, counted in the strip exactly as the user saw it. Used on a
+    /// tab-strip drop, for both reordering and moving between panes.
+    pub fn move_item_at(
+        &mut self,
+        item: ItemId,
+        to_pane: PaneId,
+        index: usize,
+        cx: &mut Context<Self>,
+    ) {
+        self.drag_over = None;
+        self.tab_drop = None;
+        self.dragging = None;
+        let Some(from) = self.pane_of(item) else {
+            cx.notify();
+            return;
+        };
+        if from == to_pane {
+            if let Some(p) = self.panes.get_mut(&to_pane) {
+                p.move_to_gap(item, index);
+            }
+            cx.notify();
+            return;
+        }
+        self.detach(from, item);
+        if let Some(p) = self.panes.get_mut(&to_pane) {
+            p.add(item, Some(index));
+            self.set_focus(to_pane, cx);
+        } else {
+            self.reattach_somewhere(item, cx);
+        }
+        cx.notify();
+    }
+
     /// Reorder `item` within its pane to `index` (a tab-bar drop).
     pub fn reorder_in_pane(&mut self, item: ItemId, index: usize, cx: &mut Context<Self>) {
         self.drag_over = None;
+        self.tab_drop = None;
         self.dragging = None;
         if let Some(pane) = self.pane_of(item) {
             if let Some(p) = self.panes.get_mut(&pane) {
@@ -571,6 +612,7 @@ impl PaneGroup {
     /// dragged outside the window, or a menu item).
     pub fn tear_off(&mut self, item: ItemId, cx: &mut Context<Self>) {
         self.drag_over = None;
+        self.tab_drop = None;
         self.dragging = None;
         if let Some(pane) = self.pane_of(item) {
             // Don't tear off the group's last remaining item.
@@ -677,8 +719,9 @@ impl Render for PaneGroup {
                 MouseButton::Left,
                 cx.listener(|this, _ev, _window, cx| {
                     let dragged = this.dragging.take();
-                    // Clear any lingering drop overlay from the aborted/torn drag.
-                    if this.drag_over.take().is_some() {
+                    // Clear any lingering drop affordance from the aborted/torn drag.
+                    let stale = this.drag_over.take().is_some();
+                    if this.tab_drop.take().is_some() || stale {
                         cx.notify();
                     }
                     if let Some(item) = dragged {
@@ -807,7 +850,6 @@ impl PaneGroup {
         let active = p.active();
         let group = cx.entity().entity_id();
         let count = p.len();
-
         // Reading the strip's extents here reads what prepaint left behind last
         // frame, which on the strip's very first render is nothing. Asking for
         // another frame whenever the measurement moves is what makes the arrows
@@ -835,6 +877,12 @@ impl PaneGroup {
         let max_offset = f32::from(scroll.max_offset().x);
         let (before, after) = hidden_tabs(&scroll, count);
 
+
+        // The gap the insertion line marks, if the drag is over this strip.
+        let gap = match self.tab_drop {
+            Some((over, at)) if over == pane => Some(at),
+            _ => None,
+        };
         let tabs = p.items().iter().copied().enumerate().map(|(i, item)| {
             let title = item_title
                 .as_ref()
@@ -845,6 +893,7 @@ impl PaneGroup {
             div()
                 .id(("pg-tab", (pane.0 as usize) << 20 | i))
                 .group(tab_group(pane, i))
+                .relative()
                 .flex()
                 .items_center()
                 .gap_1()
@@ -877,8 +926,8 @@ impl PaneGroup {
                         });
                     }),
                 )
-                // Drag this tab; drop on a tab to reorder / move-into, or on a
-                // pane body to split (handled on the content wrapper below).
+                // Drag this tab; the drop itself is handled by the tab bar and
+                // the pane body below, which own the whole target area.
                 .on_drag(
                     TabDrag {
                         group,
@@ -886,14 +935,33 @@ impl PaneGroup {
                         from_pane: pane,
                         label: title.clone(),
                     },
-                    |d, _off, _w, cx| cx.new(|_| d.clone()),
+                    move |d, _off, _w, cx| {
+                        let ghost = TabGhost {
+                            label: d.label.clone(),
+                            dot,
+                            height: tab_h,
+                        };
+                        cx.new(|_| ghost)
+                    },
                 )
-                .on_drop(cx.listener(move |this, d: &TabDrag, _w, cx| {
-                    if d.from_pane != pane {
-                        this.move_item(d.item, pane, None, cx);
-                    }
-                    this.reorder_in_pane(d.item, i, cx);
-                }))
+                // Runs after the bar's own handler (capture order follows paint
+                // order), refining its "append" into the nearer side of this
+                // tab: past the middle the drop belongs after it, which is what
+                // dragging a tab one place along asks for.
+                .on_drag_move::<TabDrag>(cx.listener(
+                    move |this, ev: &DragMoveEvent<TabDrag>, _w, cx| {
+                        if !ev.bounds.contains(&ev.event.position) {
+                            return;
+                        }
+                        let past_middle =
+                            ev.event.position.x - ev.bounds.left() > ev.bounds.size.width / 2.0;
+                        let at = i + usize::from(past_middle);
+                        if this.tab_drop != Some((pane, at)) {
+                            this.tab_drop = Some((pane, at));
+                            cx.notify();
+                        }
+                    },
+                ))
                 .when_some(dot, |d, color| {
                     d.child(
                         div()
@@ -942,6 +1010,11 @@ impl PaneGroup {
                             cx.emit(PaneGroupEvent::CloseRequested(item));
                         })),
                 )
+                // Last, so the line sits over the tab it marks the edge of.
+                .when(gap == Some(i), |d| d.child(insert_line(false)))
+                .when(gap == Some(count) && i + 1 == count, |d| {
+                    d.child(insert_line(true))
+                })
         });
 
         // Tabs scroll inside their own strip, which is what lets the floor above
@@ -1009,6 +1082,33 @@ impl PaneGroup {
             .bg(surface)
             .border_b_1()
             .border_color(border)
+            // gpui hands every drag move to every listener, so a strip claims
+            // the insertion line only while the cursor is inside it and only
+            // ever clears its own. Anywhere past the tabs — the `+`, the
+            // window-drag filler — means append; a tab under the cursor
+            // narrows that down afterwards.
+            .on_drag_move::<TabDrag>(cx.listener(
+                move |this, ev: &DragMoveEvent<TabDrag>, _w, cx| {
+                    let next = if ev.bounds.contains(&ev.event.position) {
+                        Some((pane, count))
+                    } else if matches!(this.tab_drop, Some((over, _)) if over == pane) {
+                        None
+                    } else {
+                        return;
+                    };
+                    if this.tab_drop != next {
+                        this.tab_drop = next;
+                        cx.notify();
+                    }
+                },
+            ))
+            .on_drop(cx.listener(move |this, d: &TabDrag, _w, cx| {
+                let at = match this.tab_drop {
+                    Some((over, at)) if over == pane => at,
+                    _ => count,
+                };
+                this.move_item_at(d.item, pane, at, cx);
+            }))
             .when(is_top_right, |d| d.pr(px(trailing)))
             // The space reserved for the platform's window controls is part of
             // the titlebar, so it drags too rather than being dead padding.
@@ -1073,9 +1173,18 @@ impl PaneGroup {
             .on_drag_move::<TabDrag>(cx.listener(
                 move |this, ev: &DragMoveEvent<TabDrag>, _w, cx| {
                     this.dragging = Some(ev.drag(cx).item);
-                    let edge = drop_edge(ev.bounds, ev.event.position);
-                    if this.drag_over != Some((pane, edge)) {
-                        this.drag_over = Some((pane, edge));
+                    // Same unfiltered dispatch as the strip above: without the
+                    // containment test every pane would claim the overlay, and
+                    // the last one painted would win it.
+                    let next = if ev.bounds.contains(&ev.event.position) {
+                        Some((pane, drop_edge(ev.bounds, ev.event.position)))
+                    } else if matches!(this.drag_over, Some((over, _)) if over == pane) {
+                        None
+                    } else {
+                        return;
+                    };
+                    if this.drag_over != next {
+                        this.drag_over = next;
                         cx.notify();
                     }
                 },
