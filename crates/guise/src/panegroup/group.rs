@@ -5,13 +5,15 @@
 //! interactions (activate/close/new tab, and later tear-off) surface as
 //! [`PaneGroupEvent`]s the host reacts to.
 
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
 use gpui::prelude::*;
 use gpui::{
-    div, px, AnyElement, App, Context, DragMoveEvent, Empty, EntityId, EventEmitter, FocusHandle,
-    IntoElement, MouseButton, SharedString, Window, WindowControlArea,
+    div, px, AnyElement, App, ClickEvent, Context, Div, DragMoveEvent, Empty, EntityId,
+    EventEmitter, FocusHandle, Hsla, IntoElement, MouseButton, ScrollHandle, SharedString, Stateful,
+    Window, WindowControlArea,
 };
 
 use crate::style::FlexExt;
@@ -60,10 +62,113 @@ pub enum PaneGroupEvent {
 /// half the window, which reads as a segmented control rather than tabs.
 const MAX_TAB_W: f32 = 240.0;
 
+/// How narrow a tab may get before the strip scrolls instead. Under this a tab
+/// shows two or three characters of a title, which is not enough to pick one
+/// tab out of a row, so past here the width has to come from somewhere else.
+const MIN_TAB_W: f32 = 96.0;
+
 /// The hover-group name for one tab, so its close button can react to the tab
 /// being pointed at rather than only to itself.
 fn tab_group(pane: PaneId, index: usize) -> SharedString {
     SharedString::from(format!("pg-tab-{}-{index}", pane.0))
+}
+
+/// One pane's tab strip. gpui measures a scroller during prepaint, so a render
+/// only ever reads the *previous* frame's extents: the first render of a strip
+/// sees zero overflow and would draw no overflow chrome at all. `seen` is the
+/// overflow the last render drew for, and a mismatch buys one more frame.
+struct TabStrip {
+    scroll: ScrollHandle,
+    seen: Option<f32>,
+    /// The active item the last render scrolled into view, so cycling tabs from
+    /// the keyboard follows the active one without pinning the strip to it and
+    /// undoing every scroll the user makes by hand.
+    followed: Option<ItemId>,
+}
+
+impl TabStrip {
+    fn new() -> Self {
+        Self {
+            scroll: ScrollHandle::new(),
+            seen: None,
+            followed: None,
+        }
+    }
+}
+
+/// How many tabs sit off each end of `strip`. A tab counts by its middle rather
+/// than by whether any of it is clipped, so the two numbers plus the tabs you
+/// would count on screen come to the number of tabs there are. Child bounds are
+/// recorded before the scroll offset is applied, so it is added back here.
+fn hidden_tabs(strip: &ScrollHandle, count: usize) -> (usize, usize) {
+    let view = strip.bounds();
+    let offset = strip.offset().x;
+    let mut before = 0;
+    let mut after = 0;
+    for i in 0..count {
+        let Some(tab) = strip.bounds_for_item(i) else {
+            continue;
+        };
+        let middle = tab.center().x + offset;
+        if middle < view.left() {
+            before += 1;
+        } else if middle > view.right() {
+            after += 1;
+        }
+    }
+    (before, after)
+}
+
+/// Scroll `strip` most of a viewport towards `dir` (`1` = left, `-1` = right).
+/// Short of a viewport so a tab straddling the edge stays on screen and the eye
+/// keeps its place.
+fn page_strip(strip: &ScrollHandle, dir: f32) {
+    let step = f32::from(strip.bounds().size.width) * 0.75;
+    let max = f32::from(strip.max_offset().x);
+    let mut offset = strip.offset();
+    offset.x = px((f32::from(offset.x) + dir * step).clamp(-max, 0.0));
+    strip.set_offset(offset);
+}
+
+/// An overflow arrow's label. The count is what makes the arrow an answer
+/// rather than a hint, but it comes from a measurement that lands a frame
+/// behind, so the bare chevron stands in until the number is real.
+fn arrow_label(count: usize, leading: bool) -> SharedString {
+    let chevron = if leading { "\u{2039}" } else { "\u{203a}" };
+    match (count, leading) {
+        (0, _) => SharedString::from(chevron),
+        (n, true) => SharedString::from(format!("{chevron} {n}")),
+        (n, false) => SharedString::from(format!("{n} {chevron}")),
+    }
+}
+
+/// One end of an overflowing tab strip: how many tabs lie that way, and an
+/// arrow that pages towards them.
+fn overflow_arrow(
+    id: (&'static str, usize),
+    label: SharedString,
+    leading: bool,
+    tab_h: f32,
+    colors: (Hsla, Hsla, Hsla),
+    on_click: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+) -> Stateful<Div> {
+    let (text, hover_bg, border) = colors;
+    div()
+        .id(id)
+        .flex_none()
+        .flex()
+        .items_center()
+        .h(px(tab_h))
+        .px_1()
+        .gap_1()
+        .text_size(px(11.0))
+        .text_color(text)
+        .border_color(border)
+        .when(leading, |d| d.border_r_1())
+        .when(!leading, |d| d.border_l_1())
+        .hover(|s| s.bg(hover_bg))
+        .child(label)
+        .on_click(on_click)
 }
 
 /// The divider being dragged, identifying its split and owning group.
@@ -91,6 +196,10 @@ pub struct PaneGroup {
     /// The item currently being dragged (tracked from `on_drag_move`); if the
     /// drag is released *outside* the group it's torn off. Cleared on any drop.
     dragging: Option<ItemId>,
+    /// Per-pane tab strips, kept across renders so a pane's scroll position
+    /// survives a repaint and so its overflow can be compared frame to frame.
+    /// Behind a `RefCell` because rendering is `&self` the whole way down.
+    strips: RefCell<HashMap<PaneId, TabStrip>>,
     /// When set, the focused pane fills the group (the rest is hidden).
     zoomed: bool,
     /// Height of each pane's tab bar in px (also the titlebar height when the
@@ -125,6 +234,7 @@ impl PaneGroup {
             item_dot: None,
             drag_over: None,
             dragging: None,
+            strips: RefCell::new(HashMap::new()),
             tab_height: 28.0,
             zoomed: false,
             titlebar: None,
@@ -543,6 +653,11 @@ impl gpui::Focusable for PaneGroup {
 
 impl Render for PaneGroup {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // A collapsed pane leaves its strip behind, and pane ids are never
+        // reused, so nothing would ever come back to claim it.
+        let live = &self.panes;
+        self.strips.borrow_mut().retain(|pane, _| live.contains_key(pane));
+
         let root = self.tree.root().clone();
         let render_item = self.render_item.clone();
         let item_title = self.item_title.clone();
@@ -692,6 +807,34 @@ impl PaneGroup {
         let active = p.active();
         let group = cx.entity().entity_id();
         let count = p.len();
+
+        // Reading the strip's extents here reads what prepaint left behind last
+        // frame, which on the strip's very first render is nothing. Asking for
+        // another frame whenever the measurement moves is what makes the arrows
+        // show up at all. The arrows only ever appear on a strip that is already
+        // overflowing, so the width they take cannot tip it back to fitting and
+        // set them blinking.
+        let (scroll, remeasure) = {
+            let mut strips = self.strips.borrow_mut();
+            let strip = strips.entry(pane).or_insert_with(TabStrip::new);
+            let now = f32::from(strip.scroll.max_offset().x);
+            let moved = strip.seen.is_none_or(|seen| (seen - now).abs() > 0.5);
+            strip.seen = Some(now);
+            if strip.followed != Some(active) {
+                strip.followed = Some(active);
+                if let Some(i) = p.index_of(active) {
+                    strip.scroll.scroll_to_item(i);
+                }
+            }
+            (strip.scroll.clone(), moved)
+        };
+        if remeasure {
+            window.request_animation_frame();
+        }
+        let offset = f32::from(scroll.offset().x);
+        let max_offset = f32::from(scroll.max_offset().x);
+        let (before, after) = hidden_tabs(&scroll, count);
+
         let tabs = p.items().iter().copied().enumerate().map(|(i, item)| {
             let title = item_title
                 .as_ref()
@@ -712,12 +855,12 @@ impl PaneGroup {
                 // They deliberately do not *grow* to fill: stretching two tabs
                 // across a wide pane reads as a segmented control, not as tabs.
                 //
-                // There is no shrink floor yet: a floor needs somewhere for the
-                // overflow to go, and a scroller with no sign that tabs are
-                // hidden is worse than tabs that get narrow. See the tab-overflow
-                // work.
+                // The floor only binds once a pane has a second tab. A lone tab
+                // has nothing to be told apart from, so holding it open to the
+                // floor would pad a three-letter title out over dead space.
                 .flex_shrink_1()
                 .max_w(px(MAX_TAB_W))
+                .when(count > 1, |d| d.min_w(px(MIN_TAB_W)))
                 .when(is_active, |d| d.bg(active_bg))
                 .text_color(text)
                 .hover(|s| s.bg(active_bg))
@@ -801,6 +944,51 @@ impl PaneGroup {
                 )
         });
 
+        // Tabs scroll inside their own strip, which is what lets the floor above
+        // hold: past it the width has to come out of the strip's ends instead of
+        // out of every tab. Both arrows sit in the flow rather than over the
+        // tabs, so neither one covers a tab you were about to click.
+        let strip = div()
+            .id(("pg-tabstrip", pane.0 as usize))
+            .track_scroll(&scroll)
+            .flex()
+            .flex_row()
+            .items_center()
+            .flex_shrink_1()
+            .min_w_0()
+            .h(px(tab_h))
+            .overflow_x_scroll()
+            .children(tabs);
+        let arrow = (text, active_bg, border);
+        let lead_arrow = (offset < -0.5).then(|| {
+            let scroll = scroll.clone();
+            overflow_arrow(
+                ("pg-taboverflow-lead", pane.0 as usize),
+                arrow_label(before, true),
+                true,
+                tab_h,
+                arrow,
+                cx.listener(move |_this, _ev, _w, cx| {
+                    page_strip(&scroll, 1.0);
+                    cx.notify();
+                }),
+            )
+        });
+        let trail_arrow = (offset > 0.5 - max_offset).then(|| {
+            let scroll = scroll.clone();
+            overflow_arrow(
+                ("pg-taboverflow-trail", pane.0 as usize),
+                arrow_label(after, false),
+                false,
+                tab_h,
+                arrow,
+                cx.listener(move |_this, _ev, _w, cx| {
+                    page_strip(&scroll, -1.0);
+                    cx.notify();
+                }),
+            )
+        });
+
         // Titlebar integration: the top-row tab bars reserve space for the
         // host's window controls, and the top-right filler drags the window.
         let is_top_left = self.titlebar.is_some() && top_left(self.tree.root()) == pane;
@@ -835,10 +1023,15 @@ impl PaneGroup {
                         .on_mouse_down(MouseButton::Left, |_, window, _| window.start_window_move()),
                 )
             })
-            .children(tabs)
+            .when_some(lead_arrow, |d, a| d.child(a))
+            .child(strip)
+            .when_some(trail_arrow, |d, a| d.child(a))
             .child(
                 div()
                     .id(("pg-newtab", pane.0 as usize))
+                    // The one control on the bar that must never be squeezed
+                    // out: it is how you get back to a pane with room in it.
+                    .flex_none()
                     .px_2()
                     .h(px(tab_h))
                     .flex()
