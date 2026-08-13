@@ -18,7 +18,11 @@ impl TextEdit {
     pub fn new(text: &str) -> Self {
         let chars: Vec<char> = text.chars().collect();
         let cursor = chars.len();
-        Self { chars, cursor, anchor: None }
+        Self {
+            chars,
+            cursor,
+            anchor: None,
+        }
     }
 
     pub fn text(&self) -> String {
@@ -404,7 +408,10 @@ mod tests {
         e.left(); // select "cd"
         assert_eq!(e.selected_text().as_deref(), Some("cd"));
         let (before, sel, after) = e.split_selection().unwrap();
-        assert_eq!((before.as_str(), sel.as_str(), after.as_str()), ("ab", "cd", ""));
+        assert_eq!(
+            (before.as_str(), sel.as_str(), after.as_str()),
+            ("ab", "cd", "")
+        );
     }
 
     #[test]

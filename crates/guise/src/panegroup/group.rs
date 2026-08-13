@@ -11,7 +11,7 @@ use std::rc::Rc;
 
 use gpui::prelude::*;
 use gpui::{
-    div, px, AnyElement, App, ClickEvent, Context, Div, DragMoveEvent, Empty, EntityId,
+    div, px, relative, AnyElement, App, ClickEvent, Context, Div, DragMoveEvent, Empty, EntityId,
     EventEmitter, FocusHandle, Hsla, IntoElement, MouseButton, MouseUpEvent, Pixels, Point,
     ScrollHandle, SharedString, Size, Stateful, Window, WindowControlArea,
 };
@@ -26,7 +26,10 @@ use super::drag::{
 };
 use super::motion::{slots, Ghosting, Slot, TabMotion};
 use super::tree::clamp_ratio;
-use super::{compute_layout, neighbor, Direction, ItemId, Node, Pane, PaneId, PaneIds, PaneTree, Rect, SplitId};
+use super::{
+    compute_layout, neighbor, Direction, ItemId, Node, Pane, PaneId, PaneIds, PaneTree, Rect,
+    SplitId,
+};
 
 /// Per-item content, re-invoked every render so content stays live.
 type RenderItem = Rc<dyn Fn(ItemId, &mut Window, &mut App) -> AnyElement>;
@@ -49,6 +52,14 @@ pub enum PaneGroupEvent {
     /// The `+` on a pane's tab bar was clicked; the host should create an item
     /// and call [`PaneGroup::add_item`] on this pane.
     NewRequested(PaneId),
+    /// A pane's split control was clicked; the host should create an item and
+    /// call [`PaneGroup::split`] on *this* pane — not the focused one, which is
+    /// a different pane whenever the click is what focused this one.
+    SplitRequested {
+        pane: PaneId,
+        axis: SplitDirection,
+        first: bool,
+    },
     /// The focused pane changed.
     FocusChanged(PaneId),
     /// An item was torn off (via [`PaneGroup::tear_off`]); the host should move
@@ -193,6 +204,66 @@ fn overflow_arrow(
         .when(!leading, |d| d.border_l_1())
         .hover(|s| s.bg(hover_bg))
         .child(label)
+        .on_click(on_click)
+}
+
+/// A pane's split control: a stroked rectangle divided the way the split would
+/// divide the pane, over a hit area the size of the `+` beside it.
+///
+/// Drawn rather than lettered. The control has to say *which* way it splits,
+/// and the glyphs that mean "split" (`\u{2016}`, `\u{2261}`) read as neither a
+/// pane nor a direction at 11px — the shape of the result is the only thing
+/// that carries it at this size.
+fn split_control(
+    id: (&'static str, usize),
+    axis: SplitDirection,
+    tab_h: f32,
+    colors: (Hsla, Hsla),
+    on_click: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+) -> Stateful<Div> {
+    let (line, hover_bg) = colors;
+    // Sized off the tab bar rather than fixed: the host sets `tab_h`, and an
+    // icon that ignores it drifts off centre in a taller bar.
+    let h = (tab_h * 0.4).clamp(9.0, 14.0);
+    let w = h * 1.2;
+    let frame = div()
+        .relative()
+        .w(px(w))
+        .h(px(h))
+        .border_1()
+        .border_color(line)
+        .rounded(px(2.0));
+    div()
+        .id(id)
+        .flex_none()
+        .flex()
+        .items_center()
+        .justify_center()
+        .w(px(tab_h))
+        .h(px(tab_h))
+        .hover(|s| s.bg(hover_bg))
+        .child(match axis {
+            // Horizontal lays the panes side by side, so the divider the icon
+            // draws is the vertical one.
+            SplitDirection::Horizontal => frame.child(
+                div()
+                    .absolute()
+                    .top_0()
+                    .bottom_0()
+                    .left(relative(0.5))
+                    .w(px(1.0))
+                    .bg(line),
+            ),
+            SplitDirection::Vertical => frame.child(
+                div()
+                    .absolute()
+                    .left_0()
+                    .right_0()
+                    .top(relative(0.5))
+                    .h(px(1.0))
+                    .bg(line),
+            ),
+        })
         .on_click(on_click)
 }
 
@@ -423,7 +494,11 @@ impl PaneGroup {
             return;
         };
         let slot = self.panes.get(&pane).and_then(|p| p.index_of(item));
-        let emptied = self.panes.get_mut(&pane).map(|p| p.remove(item)).unwrap_or(false);
+        let emptied = self
+            .panes
+            .get_mut(&pane)
+            .map(|p| p.remove(item))
+            .unwrap_or(false);
         if let Some(slot) = slot {
             self.motion.borrow_mut().closed(pane, slot, item);
         }
@@ -707,9 +782,7 @@ impl PaneGroup {
         self.end_drag();
         if let Some(pane) = self.pane_of(item) {
             // Don't tear off the group's last remaining item.
-            if self.tree.panes().len() == 1
-                && self.panes.get(&pane).is_some_and(|p| p.len() == 1)
-            {
+            if self.tree.panes().len() == 1 && self.panes.get(&pane).is_some_and(|p| p.len() == 1) {
                 return;
             }
             self.detach(pane, item);
@@ -863,7 +936,9 @@ impl Render for PaneGroup {
         // A collapsed pane leaves its strip behind, and pane ids are never
         // reused, so nothing would ever come back to claim it.
         let live = &self.panes;
-        self.strips.borrow_mut().retain(|pane, _| live.contains_key(pane));
+        self.strips
+            .borrow_mut()
+            .retain(|pane, _| live.contains_key(pane));
 
         // Retire finished tab motion before the strips are built, and ask for
         // the next frame only while something is still moving. This is what
@@ -880,7 +955,14 @@ impl Render for PaneGroup {
         let item_dot = self.item_dot.clone();
         // Zoomed: only the focused pane, filling the group.
         let inner = if self.zoomed {
-            self.pane_el(self.focused, &render_item, &item_title, &item_dot, window, cx)
+            self.pane_el(
+                self.focused,
+                &render_item,
+                &item_title,
+                &item_dot,
+                window,
+                cx,
+            )
         } else {
             self.node_el(&root, &render_item, &item_title, &item_dot, window, cx)
         };
@@ -970,26 +1052,43 @@ impl PaneGroup {
                     .overflow_hidden()
                     .child(s);
 
+                // A divider is 6px of otherwise unmarked background, so the
+                // handle is what says it can be dragged at all. It rides the
+                // hover group rather than the divider's own `hover` because it
+                // is a child: styling the divider cannot reveal it.
+                let handle = SharedString::from(format!("pg-divider-{}", split.0));
+                let pill = div()
+                    .absolute()
+                    .rounded_full()
+                    .bg(theme(cx).primary().hsla())
+                    .invisible()
+                    .group_hover(handle.clone(), |s| s.visible());
                 let mut divider = div()
                     .id(("pg-divider", split.0 as usize))
+                    .group(handle)
+                    .relative()
                     .flex_none()
                     .flex()
                     .items_center()
                     .justify_center()
                     .hover(move |st| st.bg(grip))
-                    .on_drag(DividerDrag { group, split }, |_, _off, _w, cx| cx.new(|_| Empty));
+                    .on_drag(DividerDrag { group, split }, |_, _off, _w, cx| {
+                        cx.new(|_| Empty)
+                    });
                 divider = if horizontal {
                     divider
                         .w(px(6.0))
                         .h_full()
                         .cursor_col_resize()
                         .child(div().w(px(1.0)).h_full().bg(line))
+                        .child(pill.w(px(3.0)).h(px(28.0)))
                 } else {
                     divider
                         .h(px(6.0))
                         .w_full()
                         .cursor_row_resize()
                         .child(div().h(px(1.0)).w_full().bg(line))
+                        .child(pill.h(px(3.0)).w(px(28.0)))
                 };
 
                 let mut container = div().size_full().flex().on_drag_move(cx.listener(
@@ -1000,9 +1099,15 @@ impl PaneGroup {
                         }
                         let b = ev.bounds;
                         let (pos, extent) = if horizontal {
-                            (f32::from(ev.event.position.x - b.left()), f32::from(b.size.width))
+                            (
+                                f32::from(ev.event.position.x - b.left()),
+                                f32::from(b.size.width),
+                            )
                         } else {
-                            (f32::from(ev.event.position.y - b.top()), f32::from(b.size.height))
+                            (
+                                f32::from(ev.event.position.y - b.top()),
+                                f32::from(b.size.height),
+                            )
                         };
                         if extent > 0.0 {
                             this.set_ratio(split, pos / extent, cx);
@@ -1041,6 +1146,7 @@ impl PaneGroup {
         let text = t.text().hsla();
         let border = t.border().hsla();
         let active_bg = t.surface_hover().hsla();
+        let dimmed = t.dimmed().hsla();
         let tab_h = self.tab_height;
 
         let active = p.active();
@@ -1088,7 +1194,8 @@ impl PaneGroup {
             {
                 let mut motion = self.motion.borrow_mut();
                 for (child, was) in strip.settled.iter().enumerate() {
-                    let (Some(&item), Some(b)) = (was.as_ref(), strip.scroll.bounds_for_item(child))
+                    let (Some(&item), Some(b)) =
+                        (was.as_ref(), strip.scroll.bounds_for_item(child))
                     else {
                         continue;
                     };
@@ -1406,7 +1513,9 @@ impl PaneGroup {
                         .w(px(leading))
                         .h_full()
                         .window_control_area(WindowControlArea::Drag)
-                        .on_mouse_down(MouseButton::Left, |_, window, _| window.start_window_move()),
+                        .on_mouse_down(MouseButton::Left, |_, window, _| {
+                            window.start_window_move()
+                        }),
                 )
             })
             .when_some(lead_arrow, |d, a| d.child(a))
@@ -1428,7 +1537,38 @@ impl PaneGroup {
                     .on_click(cx.listener(move |_this, _ev, _w, cx| {
                         cx.emit(PaneGroupEvent::NewRequested(pane));
                     })),
-            );
+            )
+            // Splitting was reachable only from a keybinding or a menu, which
+            // is why most windows only ever have one pane. The controls sit
+            // with the `+` because they answer the same question — where the
+            // next terminal goes — and they are drawn dimmed so a row of panes
+            // does not turn into a row of buttons.
+            .child(split_control(
+                ("pg-splitright", pane.0 as usize),
+                SplitDirection::Horizontal,
+                tab_h,
+                (dimmed, active_bg),
+                cx.listener(move |_this, _ev, _w, cx| {
+                    cx.emit(PaneGroupEvent::SplitRequested {
+                        pane,
+                        axis: SplitDirection::Horizontal,
+                        first: false,
+                    });
+                }),
+            ))
+            .child(split_control(
+                ("pg-splitdown", pane.0 as usize),
+                SplitDirection::Vertical,
+                tab_h,
+                (dimmed, active_bg),
+                cx.listener(move |_this, _ev, _w, cx| {
+                    cx.emit(PaneGroupEvent::SplitRequested {
+                        pane,
+                        axis: SplitDirection::Vertical,
+                        first: false,
+                    });
+                }),
+            ));
         // A window-drag filler fills the rest of every top-row tab bar
         // (double-click zooms, per the platform titlebar convention).
         if is_top_edge {

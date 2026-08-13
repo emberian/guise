@@ -22,9 +22,9 @@ mod pane;
 mod tree;
 
 pub use drag::{DropEdge, TabDrag, TearDrop, TearHint};
+pub use group::{PaneGroup, PaneGroupEvent};
 pub use id::{ItemId, ItemIds, PaneId, PaneIds, SplitId};
 pub use layout::{compute_layout, Layout, Rect};
 pub use nav::{neighbor, next, prev, Direction};
-pub use group::{PaneGroup, PaneGroupEvent};
 pub use pane::Pane;
 pub use tree::{clamp_ratio, Node, PaneTree, MAX_RATIO, MIN_RATIO};

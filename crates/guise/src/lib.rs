@@ -62,11 +62,11 @@ mod image;
 mod indicator;
 mod kbd;
 mod mark;
+pub mod panegroup;
 mod panel;
 mod paper;
 mod scrollarea;
 mod skeleton;
-pub mod panegroup;
 mod splitpanel;
 mod spoiler;
 mod text;
@@ -91,11 +91,11 @@ pub use image::{Image, ObjectFit};
 pub use indicator::Indicator;
 pub use kbd::Kbd;
 pub use mark::Mark;
+pub use panegroup::{PaneGroup, PaneGroupEvent};
 pub use panel::Panel;
 pub use paper::Paper;
 pub use scrollarea::ScrollArea;
 pub use skeleton::Skeleton;
-pub use panegroup::{PaneGroup, PaneGroupEvent};
 pub use splitpanel::{SplitDirection, SplitPanel, SplitPanelEvent};
 pub use spoiler::Spoiler;
 pub use text::Text;
@@ -110,7 +110,9 @@ pub use data::{
     SelectionMode, SortDir, TabBar, TabBarEvent, Table, TableView, TableViewEvent, Tabs, Timeline,
     TreeNode, TreeView, TreeViewEvent,
 };
-pub use editor::{Editor, EditorEvent, EditorModel, EditorStyle, Highlighter, Language, Pos, TokenKind};
+pub use editor::{
+    Editor, EditorEvent, EditorModel, EditorStyle, Highlighter, Language, Pos, TokenKind,
+};
 pub use feedback::{
     Alert, Loader, LoaderVariant, Notification, Progress, RingProgress, ToastStack,
 };

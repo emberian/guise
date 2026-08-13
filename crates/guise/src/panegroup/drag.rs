@@ -193,8 +193,13 @@ pub fn tear_overlay(at: Point<Pixels>, group: Size<Pixels>) -> impl IntoElement 
     let y = f32::from(at.y) - f32::from(h) / 2.0;
     div()
         .absolute()
-        .left(px(x.clamp(0.0, (f32::from(group.width) - f32::from(w)).max(0.0))))
-        .top(px(y.clamp(0.0, (f32::from(group.height) - f32::from(h)).max(0.0))))
+        .left(px(
+            x.clamp(0.0, (f32::from(group.width) - f32::from(w)).max(0.0))
+        ))
+        .top(px(y.clamp(
+            0.0,
+            (f32::from(group.height) - f32::from(h)).max(0.0),
+        )))
         .w(w)
         .h(h)
         .flex()
@@ -274,7 +279,12 @@ pub fn drop_overlay(edge: Option<DropEdge>) -> impl IntoElement {
 /// *is* the gap before it, and `at_end` puts it on the last tab's trailing edge
 /// for the one gap no tab leads.
 pub fn insert_line(at_end: bool) -> impl IntoElement {
-    let bar = div().absolute().top_0().bottom_0().w(px(2.0)).bg(gpui::rgb(ACCENT));
+    let bar = div()
+        .absolute()
+        .top_0()
+        .bottom_0()
+        .w(px(2.0))
+        .bg(gpui::rgb(ACCENT));
     if at_end {
         bar.right_0()
     } else {
