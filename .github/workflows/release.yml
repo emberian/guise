@@ -14,7 +14,7 @@ permissions:
   contents: write
 
 jobs:
-  # Create the GitHub Release with auto-generated notes.
+  # Create the GitHub Release, with notes from the CHANGELOG.
   github-release:
     runs-on: ubuntu-latest
     steps:
@@ -22,6 +22,25 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.inputs.tag || github.ref }}
+      # Prefer the hand-written CHANGELOG section for this version — a list of
+      # commit subjects is not release notes. Falls back to generated notes for
+      # a tag the changelog doesn't cover.
+      - name: Extract the changelog section
+        id: notes
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          VERSION="${TAG#v}"
+          if [ -f CHANGELOG.md ] && awk -v v="## $VERSION" '$0 ~ "^"v" " || $0 == v {found=1} END {exit !found}' CHANGELOG.md; then
+            awk -v v="## $VERSION" '
+              $0 ~ "^"v" " || $0 == v {inside=1; next}
+              inside && /^## / {exit}
+              inside {print}
+            ' CHANGELOG.md > release-notes.md
+            echo "have_notes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "have_notes=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -29,12 +48,13 @@ jobs:
           TAG="${{ github.event.inputs.tag || github.ref_name }}"
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG already exists — skipping."
+          elif [ "${{ steps.notes.outputs.have_notes }}" = "true" ]; then
+            gh release create "$TAG" --title "$TAG" --notes-file release-notes.md --verify-tag
           else
             gh release create "$TAG" --title "$TAG" --generate-notes --verify-tag
           fi
 
-  # crates.io publishing is intentionally omitted: the library builds against a
-  # pinned zed gpui git rev (see the root [patch.crates-io]), and `cargo publish`
-  # verifies against the crates.io gpui, which the components no longer target.
-  # Consume guise as a git dependency (mirror the patch section). Restore a
-  # publish job here if the library is moved back onto a released gpui.
+  # crates.io publishing is deliberately manual, not blocked: the library builds
+  # against plain crates.io `gpui = "0.2.2"` with no patch section, so
+  # `cargo publish -p guise-ui` works. It stays a human step because publishing
+  # is irreversible — a version can be yanked but never replaced.
