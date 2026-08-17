@@ -11,7 +11,7 @@ pub enum Orientation {
     Vertical,
 }
 
-/// A separator line. The Mantine `Divider`.
+/// A separator line.
 #[derive(IntoElement)]
 pub struct Divider {
     orientation: Orientation,

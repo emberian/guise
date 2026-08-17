@@ -26,7 +26,7 @@ use crate::theme::theme;
 /// `data::Content`, kept private to `layout`).
 type Content = Box<dyn Fn(&mut Window, &mut App) -> AnyElement + 'static>;
 
-/// The application frame. The Mantine `AppShell`.
+/// The application frame.
 ///
 /// Layout: header across the top, footer across the bottom, and a middle
 /// row of navbar | main | aside. Every region gets the theme surface

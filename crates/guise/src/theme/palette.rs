@@ -1,5 +1,6 @@
-//! The Mantine / open-color palette: 14 named colors, each a 10-step shade
-//! ramp from lightest (index 0) to darkest (index 9).
+//! The [open-color](https://yeun.github.io/open-color/) palette: 14 named
+//! colors, each a 10-step shade ramp from lightest (index 0) to darkest
+//! (index 9).
 
 use super::color::Color;
 
@@ -97,12 +98,12 @@ impl Palette {
 
 impl Default for Palette {
     fn default() -> Self {
-        mantine()
+        open_color()
     }
 }
 
-/// The default Mantine palette.
-pub fn mantine() -> Palette {
+/// The default palette.
+pub fn open_color() -> Palette {
     let ramp = |hexes: [&str; 10]| Shades(hexes.map(Color::hex));
     Palette {
         shades: [

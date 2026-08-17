@@ -20,7 +20,7 @@ use gpui::{div, px, AnyElement, App, ClickEvent, ElementId, IntoElement, SharedS
 use crate::input::ClickHandler;
 use crate::theme::{theme, ColorName, Size};
 
-/// A collapsible content clip. The Mantine `Spoiler`.
+/// A collapsible content clip.
 ///
 /// While collapsed the children render inside an `overflow-hidden` box capped
 /// at `max_height`; the toggle below is styled like an `Anchor` link.

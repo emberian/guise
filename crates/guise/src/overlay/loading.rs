@@ -18,7 +18,7 @@ use gpui::{div, px, App, IntoElement, Window};
 use crate::feedback::Loader;
 use crate::theme::theme;
 
-/// A busy overlay for one container. The Mantine `LoadingOverlay`.
+/// A busy overlay for one container.
 #[derive(IntoElement)]
 pub struct LoadingOverlay {
     visible: bool,

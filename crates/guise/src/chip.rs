@@ -8,7 +8,7 @@ use crate::reactive::Binding;
 use crate::style::ColorValue;
 use crate::theme::{theme, Size};
 
-/// A selectable chip. The Mantine `Chip`. Controlled: pass `checked` and a
+/// A selectable chip. Controlled: pass `checked` and a
 /// change handler via `cx.listener`, or two-way bind with [`Chip::bind`].
 #[derive(IntoElement)]
 pub struct Chip {

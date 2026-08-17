@@ -24,7 +24,7 @@ pub use gpui::ObjectFit;
 
 use crate::theme::{theme, Size};
 
-/// An image element. The Mantine `Image`.
+/// An image element.
 ///
 /// The source accepts anything gpui's [`ImageSource`] converts from: `&str` /
 /// `String` (an `http(s)://` URI, else an embedded-asset path), a
@@ -66,8 +66,8 @@ impl Image {
         self
     }
 
-    /// Corner radius from the theme scale (Mantine images are square-cornered
-    /// by default).
+    /// Corner radius from the theme scale (images are square-cornered by
+    /// default).
     pub fn radius(mut self, radius: Size) -> Self {
         self.radius = Some(radius);
         self

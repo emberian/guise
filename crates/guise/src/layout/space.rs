@@ -22,7 +22,7 @@ enum SpaceAxis {
     Vertical,
 }
 
-/// A fixed gap between siblings. The Mantine `Space`.
+/// A fixed gap between siblings.
 #[derive(IntoElement)]
 pub struct Space {
     axis: SpaceAxis,

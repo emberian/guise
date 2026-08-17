@@ -7,7 +7,7 @@ use crate::icon::Glyph;
 use crate::style::{surface, Variant};
 use crate::theme::{theme, ColorName, Size};
 
-/// A decorative colored icon chip. The Mantine `ThemeIcon`.
+/// A decorative colored icon chip.
 #[derive(IntoElement)]
 pub struct ThemeIcon {
     icon: Glyph,

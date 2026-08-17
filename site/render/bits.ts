@@ -1,5 +1,5 @@
 // Shared specimen-sheet building blocks: the palette ribbon (guise's real
-// Mantine hues) and the captioned "plate" frame that components sit inside.
+// open-color hues) and the captioned "plate" frame that components sit inside.
 
 // The 14 open-color hues guise ships, at shade 6 — the palette as identity.
 export const hues: { name: string; hex: string }[] = [

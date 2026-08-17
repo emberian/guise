@@ -5,14 +5,13 @@
 [![CI](https://github.com/wess/guise/actions/workflows/ci.yml/badge.svg)](https://github.com/wess/guise/actions/workflows/ci.yml)
 [![license](https://img.shields.io/crates/l/guise-ui.svg)](https://github.com/wess/guise/blob/main/LICENSE)
 
-A [Mantine](https://mantine.dev)-inspired component library for
-[gpui](https://github.com/zed-industries/zed) — the GPU-accelerated Rust UI
-framework that powers Zed.
+A component library for [gpui](https://github.com/zed-industries/zed) — the
+GPU-accelerated Rust UI framework that powers Zed.
 
-`guise` brings Mantine's ergonomics to gpui: a themed palette, sizing tokens,
-120+ composable components, a reactive state layer with two-way bindings, and
-the full [Lucide](https://lucide.dev) icon set embedded as the default icons —
-no asset pipeline needed.
+`guise` gives gpui a batteries-included component layer: a themed palette,
+sizing tokens, 130+ composable components, a reactive state layer with two-way
+bindings, and the full [Lucide](https://lucide.dev) icon set embedded as the
+default icons — no asset pipeline needed.
 
 ```rust
 use guise::prelude::*;
@@ -36,14 +35,15 @@ Full docs live in [`docs/`](docs/readme.md) (also rendered at
 - **[Tutorial](docs/tutorial.md)** — build a complete app step by step ([web version](https://wess.github.io/guise/tutorial.html))
 - **[App walkthrough](docs/appguide.md)** — a project tracker wired the way a real guise app fits together
 - [Getting started](docs/gettingstarted.md) · [Theming](docs/theming.md) · [Component model](docs/components.md)
-- Components: [Buttons](docs/buttons.md) · [Icons](docs/icons.md) · [Inputs](docs/inputs.md) · [Dates & times](docs/dates.md) · [File handling](docs/files.md) · [Typography](docs/typography.md) · [Layout](docs/layout.md) · [Panels](docs/panels.md) · [Feedback](docs/feedback.md) · [Data](docs/data.md) · [Charts](docs/charts.md) · [Editor](docs/editor.md) · [Markdown editor](docs/markdowneditor.md) · [Overlays](docs/overlays.md) · [Navigation](docs/navigation.md)
-- Systems: [Flex layout](docs/flex.md) · [Macros](docs/macros.md) · [Transitions & animation](docs/transitions.md) · [Drag & drop](docs/dnd.md) · [Reactive state](docs/reactive.md) · [Window menu](docs/windowmenu.md) · [Architecture](docs/architecture.md)
+- Components: [Buttons](docs/buttons.md) · [Icons](docs/icons.md) · [Inputs](docs/inputs.md) · [Dates & times](docs/dates.md) · [File handling](docs/files.md) · [Typography](docs/typography.md) · [Layout](docs/layout.md) · [Panels](docs/panels.md) · [Feedback](docs/feedback.md) · [Data](docs/data.md) · [Charts](docs/charts.md) · [Editor](docs/editor.md) · [Markdown editor](docs/markdowneditor.md) · [AI](docs/ai.md) · [Overlays](docs/overlays.md) · [Navigation](docs/navigation.md)
+- Systems: [Flex layout](docs/flex.md) · [Macros](docs/macros.md) · [Transitions & animation](docs/transitions.md) · [Drag & drop](docs/dnd.md) · [Reactive state](docs/reactive.md) · [Software update](docs/update.md) · [Window menu](docs/windowmenu.md) · [Architecture](docs/architecture.md) · [Size & performance](docs/performance.md)
+- [Changelog](CHANGELOG.md)
 
 ## Workspace
 
 - **`crates/guise`** — the component library.
-- **`crates/gallery`** — a live showcase of every component (the Mantine-docs
-  equivalent). Run it with `cargo run -p gallery`.
+- **`crates/gallery`** — a live showcase of every component. Run it with
+  `cargo run -p gallery`.
 
 ## How guise compares
 
@@ -55,11 +55,11 @@ of July 2026:
 
 |  | **guise** | **gpui-component** | **adabraka-ui** |
 | --- | --- | --- | --- |
-| Design language | Mantine | shadcn/ui | shadcn/ui |
-| Components | 120+ | 60+ | ~140 |
+| Design language | open-color palette + token scales | shadcn/ui | shadcn/ui |
+| Components | 130+ | 60+ | ~140 |
 | Reactive layer | `Signal` / `Binding` / lenses, reactive `Form` | — (entities + subscriptions) | — |
 | Icons | all 1,991 Lucide glyphs as an embedded font, zero setup | 99 Lucide SVGs via an assets crate | ~1,600 SVGs, copied into your app manually |
-| Theming | Mantine palette, JSON theme files, 6 presets, per-slot overrides | ~140 tokens, JSON themes with hot reload, 22 presets | 19 presets, theme behind a global `Mutex` |
+| Theming | open-color palette, JSON theme files, 6 presets, per-slot overrides | ~140 tokens, JSON themes with hot reload, 22 presets | 19 presets, theme behind a global `Mutex` |
 | Code editor | 10-language highlighter + diagnostics API | tree-sitter (~35 languages) + LSP client | tree-sitter (22 languages) |
 | Docking / panels | `PaneGroup` splits-with-tabs + layout persistence | `DockArea` + floating `Tiles` + serialization | resizable/split panels |
 | Charts | 6 types with axes, legends, hover | 6 types incl. candlestick & Sankey on a plot framework | 11 types |
@@ -70,7 +70,7 @@ of July 2026:
 | gpui dependency | crates.io releases | crates.io releases; dev tracks zed main | a custom gpui fork |
 | License | MIT | Apache-2.0 | MIT |
 
-Reach for **guise** if you want Mantine's ergonomics, SwiftUI-style two-way
+Reach for **guise** if you want chainable builders, SwiftUI-style two-way
 bindings, and icons that just work with zero asset setup. **gpui-component**
 is the bigger ecosystem — a production code editor with LSP, a full dock
 system, and a WASM story. **adabraka-ui** ships the largest effects/animation
@@ -85,8 +85,8 @@ guise::Theme::dark().init(cx);       // or Theme::light()
 guise::Theme::catppuccin().init(cx); // or nord / tokyonight / gruvbox / dracula / solarized_light
 ```
 
-The theme carries the full Mantine / open-color palette (14 colors × 10 shades),
-`xs..xl` scales for spacing, radius and font size, and scheme-aware semantic
+The theme carries the full [open-color](https://yeun.github.io/open-color/)
+palette (14 colors × 10 shades), `xs..xl` scales for spacing, radius and font size, and scheme-aware semantic
 colors (`body`, `surface`, `text`, `dimmed`, `border`, plus `success` /
 `warning` / `danger` / `info` feedback accents). Themes also load from flat
 JSON files — `Theme::from_json(source)` — with no serde dependency.
@@ -132,6 +132,7 @@ string (hex must be a string — `#228be6` isn't a Rust token). Component
 | Navigation | `Breadcrumbs`, `NavLink`, `NavigationMenu`, `Stepper`, `Pagination`, `StatusBar` |
 | Drag & drop | `Draggable`, `DropTarget`, `SortableList` — typed payloads |
 | Motion  | `Transition`, `Collapse` (true height animation), `Presence` (exit animations), `Easing` curves + `Spring` physics |
+| Update  | `Updater` (release check + in-place install), `UpdatePrompt`, `UpdateNotice` — a whole self-update feature |
 | Polish  | `Icon` (all of [Lucide](https://lucide.dev) embedded), `ActionIcon`, `ThemeIcon`, `CloseButton`, `CopyButton`, `Anchor`, `Code`, `Kbd`, `Chip`, `Indicator`, `Skeleton`, `SegmentedControl` |
 
 Inputs come in two flavors that match how each control behaves in gpui:
@@ -237,9 +238,32 @@ Collapse::new("details")
 
 See [Transitions & animation](docs/transitions.md).
 
+## Self-update
+
+`guise::update` is a whole self-update feature, not just its UI: it checks a
+release feed, installs the new version **in place**, and restarts into it.
+
+```rust
+let updater = Updater::github("Acme", env!("CARGO_PKG_VERSION"), "acme/acme")
+    .codesign_requirement("anchor apple generic and certificate leaf[subject.OU] = TEAMID")
+    .before_restart(|cx| save_session(cx));
+
+guise::update::start(updater.clone(), cx);      // at launch, then hourly
+guise::update::check_now(updater, cx);          // "Check for Updates…"
+```
+
+On macOS the release `.dmg` is mounted and rsynced onto the installed `.app`, so
+the bundle keeps its path *and* inode and LaunchServices never sees a stale
+registration; a Linux AppImage is renamed over itself. Everything else opens the
+release page — and the prompt's button says so rather than promising an install it
+can't perform. Updates are verified against your `codesign` requirement before
+anything touches the installed app. `UpdatePrompt` and `UpdateNotice` are ordinary
+entities, so they work embedded in a window you own as readily as in the ones
+`update::open` creates. See [Software update](docs/update.md).
+
 ## Variants
 
-Colored components share Mantine's variant system: `Filled`, `Light`,
+Colored components share one variant system: `Filled`, `Light`,
 `Outline`, `Subtle`, `Default`, `Transparent`, `White`.
 
 ## Installation

@@ -411,11 +411,13 @@ fn serve_local(
     use std::borrow::Cow;
     use wry::http::{Response, StatusCode};
 
+    // Built by hand rather than through `Response::builder().….unwrap()`:
+    // this runs on wry's request thread, where a panic takes the process with
+    // it, and there is no reason for serving a static 404 to be fallible.
     let not_found = || {
-        Response::builder()
-            .status(StatusCode::NOT_FOUND)
-            .body(Cow::Borrowed(&b"not found"[..]))
-            .unwrap()
+        let mut response = Response::new(Cow::Borrowed(&b"not found"[..]));
+        *response.status_mut() = StatusCode::NOT_FOUND;
+        response
     };
 
     let rel = url_path.trim_start_matches('/');
@@ -428,12 +430,21 @@ fn serve_local(
         return not_found();
     }
     match std::fs::read(dir.join(rel)) {
-        Ok(bytes) => Response::builder()
-            .status(StatusCode::OK)
-            .header("Content-Type", content_type(rel))
-            .header("Access-Control-Allow-Origin", "*")
-            .body(Cow::Owned(bytes))
-            .unwrap(),
+        Ok(bytes) => {
+            let mut response = Response::new(Cow::Owned(bytes));
+            // Both header values are crate constants, so neither can fail to
+            // parse; inserting them directly keeps that fact local.
+            let headers = response.headers_mut();
+            headers.insert(
+                wry::http::header::CONTENT_TYPE,
+                wry::http::HeaderValue::from_static(content_type(rel)),
+            );
+            headers.insert(
+                wry::http::header::ACCESS_CONTROL_ALLOW_ORIGIN,
+                wry::http::HeaderValue::from_static("*"),
+            );
+            response
+        }
         Err(_) => not_found(),
     }
 }

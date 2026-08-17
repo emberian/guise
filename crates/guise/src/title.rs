@@ -5,7 +5,7 @@ use gpui::{div, px, App, FontWeight, IntoElement, SharedString, Window};
 
 use crate::theme::{theme, Color};
 
-/// A heading. The Mantine `Title`; `order` 1..=6 selects the heading level.
+/// A heading. `order` 1..=6 selects the heading level.
 #[derive(IntoElement)]
 pub struct Title {
     content: SharedString,

@@ -42,7 +42,16 @@ pub fn nice_ticks(lo: f32, hi: f32, target: usize) -> Vec<f32> {
         (0.0, 1.0)
     };
     let range = nice_num(hi - lo, false);
+    // `nice_num` scales by a power of ten, which underflows to zero for a
+    // denormal range. A zero step turns every tick into NaN and every later
+    // division into one too, so the axis is drawn with a single unit step
+    // instead — degenerate data gets a degenerate axis, not NaN geometry.
     let step = nice_num(range / target.max(1) as f32, true);
+    let step = if step.is_finite() && step > 0.0 {
+        step
+    } else {
+        1.0
+    };
     let start = (lo / step).floor() * step;
     let end = (hi / step).ceil() * step;
     let count = ((end - start) / step).round() as usize;

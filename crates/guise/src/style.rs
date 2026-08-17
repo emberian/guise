@@ -1,10 +1,16 @@
-//! Shared visual variants. Mantine resolves a `(color, variant)` pair into a
+//! Shared visual variants: a `(color, variant)` pair resolves into a
 //! background / foreground / border triple that every interactive component
 //! (Button, Badge, ActionIcon, ...) draws from. This is that resolver.
 
 use gpui::{Div, Hsla, Styled};
 
 use crate::theme::{ColorName, Size, Theme};
+
+/// The family every code surface renders in — the editor, fenced markdown,
+/// and tool output. Named explicitly because the text system resolves real
+/// family names only: a generic `"monospace"` fails to resolve and silently
+/// falls back to the prose font, which is how code stops looking like code.
+pub(crate) const MONO_FAMILY: &str = "Menlo";
 
 /// Apply an element transform — notably a [`style!`](crate::style) block — to
 /// any styled element: `div().apply(style! { … })`.
@@ -66,7 +72,7 @@ pub(crate) fn icon_size(size: Size) -> f32 {
     }
 }
 
-/// How a colored component is filled. Matches Mantine's `variant` prop.
+/// How a colored component is filled.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Variant {
     /// Solid fill in the color (the default for Button).
@@ -178,6 +184,15 @@ pub fn surface(theme: &Theme, color: impl Into<ColorValue>, variant: Variant) ->
     }
 }
 
+/// Resolve a component color to the solid fill it paints with — a palette
+/// family at the theme's primary shade, or an explicit color as given.
+pub(crate) fn solid(theme: &Theme, color: ColorValue) -> Hsla {
+    match color {
+        ColorValue::Named(name) => theme.color(name, theme.primary_shade()).hsla(),
+        ColorValue::Custom(c) => c,
+    }
+}
+
 /// Variant resolution for a single explicit color (no palette shades to draw
 /// on, so hover/tints are derived algorithmically).
 fn surface_custom(theme: &Theme, c: Hsla, variant: Variant) -> Surface {
@@ -234,7 +249,7 @@ fn surface_custom(theme: &Theme, c: Hsla, variant: Variant) -> Surface {
     }
 }
 
-/// Variant resolution for a named palette color (the original Mantine mapping).
+/// Variant resolution for a named palette color.
 fn surface_named(theme: &Theme, name: ColorName, variant: Variant) -> Surface {
     let dark = theme.scheme.is_dark();
     let transparent = gpui::transparent_black();

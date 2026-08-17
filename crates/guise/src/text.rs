@@ -5,7 +5,7 @@ use gpui::{div, px, App, FontWeight, IntoElement, SharedString, Window};
 
 use crate::theme::{theme, Color, Size};
 
-/// Themed body text. The Mantine `Text`.
+/// Themed body text.
 #[derive(IntoElement)]
 pub struct Text {
     content: SharedString,

@@ -14,7 +14,7 @@ use gpui::{div, px, AnyElement, App, IntoElement, SharedString, Window};
 use crate::icon::{Icon, IconName};
 use crate::theme::{theme, ColorName, Size};
 
-/// A quote block. The Mantine `Blockquote`.
+/// A quote block.
 ///
 /// Content is either [`Blockquote::text`], `ParentElement` children
 /// (`.child(..)`), or both — text renders first.

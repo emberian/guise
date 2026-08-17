@@ -10,7 +10,7 @@ const COUNT: usize = 1991;
 
 /// A named [Lucide](https://lucide.dev) icon, rendered from the icon font
 /// embedded in guise. Every icon in the set is available as a variant.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum IconName {
     AArrowDown,
     AArrowUp,
@@ -2005,7 +2005,10 @@ pub enum IconName {
     ZoomOut,
 }
 
-const GLYPHS: [&str; COUNT] = [
+// `static`, not `const`: a `const` array is materialised at each use site, so
+// a 1991-element table of fat pointers can be duplicated into the binary once
+// per reference. These are read through indexes, never inlined usefully.
+static GLYPHS: [&str; COUNT] = [
     "\u{e585}", "\u{e586}", "\u{e587}", "\u{e297}", "\u{e038}", "\u{e4b4}", "\u{e700}", "\u{e34d}",
     "\u{e039}", "\u{e1ec}", "\u{e03a}", "\u{e1ec}", "\u{e1ed}", "\u{e23b}", "\u{e1ee}", "\u{e1ed}",
     "\u{e1ee}", "\u{e57b}", "\u{e03b}", "\u{e077}", "\u{e127}", "\u{e193}", "\u{e182}", "\u{e26c}",
@@ -2257,7 +2260,10 @@ const GLYPHS: [&str; COUNT] = [
     "\u{e6d3}", "\u{e6d4}", "\u{e6d5}", "\u{e6d6}", "\u{e6d7}", "\u{e1b6}", "\u{e1b7}",
 ];
 
-const NAMES: [&str; COUNT] = [
+// `static`, not `const`: a `const` array is materialised at each use site, so
+// a 1991-element table of fat pointers can be duplicated into the binary once
+// per reference. These are read through indexes, never inlined usefully.
+static NAMES: [&str; COUNT] = [
     "a-arrow-down",
     "a-arrow-up",
     "a-large-small",
@@ -4268,7 +4274,21 @@ impl IconName {
     }
 }
 
-const ALL: [IconName; COUNT] = [
+// Written out rather than derived: `derive(Debug)` on a fieldless enum emits a
+// match with one arm per variant, and at 1991 variants that is tens of
+// kilobytes of code in every binary that links guise — to print a string the
+// `NAMES` table already holds. Debug therefore shows the kebab-case name
+// (`arrow-up`), which is what lucide.dev lists it under.
+impl core::fmt::Debug for IconName {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(self.name())
+    }
+}
+
+// `static`, not `const`: a `const` array is materialised at each use site, so
+// a 1991-element table of fat pointers can be duplicated into the binary once
+// per reference. These are read through indexes, never inlined usefully.
+static ALL: [IconName; COUNT] = [
     IconName::AArrowDown,
     IconName::AArrowUp,
     IconName::ALargeSmall,

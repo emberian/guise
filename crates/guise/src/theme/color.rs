@@ -1,6 +1,6 @@
 //! 24-bit RGB color with hex parsing and conversion into gpui's `Hsla`.
 //!
-//! Colors are stored as plain RGB triples (the Mantine/open-color palette is
+//! Colors are stored as plain RGB triples (the open-color palette is
 //! authored as hex). `hsla`/`alpha` bridge into the gpui rendering types at the
 //! point of use.
 

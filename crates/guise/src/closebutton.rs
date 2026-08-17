@@ -8,7 +8,7 @@ use crate::input::ClickHandler;
 use crate::style::icon_size;
 use crate::theme::{theme, Size};
 
-/// A dismiss button. The Mantine `CloseButton`.
+/// A dismiss button.
 #[derive(IntoElement)]
 pub struct CloseButton {
     id: ElementId,

@@ -1,6 +1,6 @@
 //! Layout primitives: vertical [`Stack`], horizontal [`Group`], [`Center`],
 //! plus app-structure helpers ([`AppShell`], [`Container`], [`Space`]).
-//! These map Mantine's flex helpers onto gpui's flex container.
+//! These map token-based flex helpers onto gpui's flex container.
 
 mod appshell;
 mod breakpoint;

@@ -7,7 +7,7 @@ use crate::icon::Glyph;
 use crate::input::ClickHandler;
 use crate::theme::{theme, ColorName, Size};
 
-/// A navigation link. The Mantine `NavLink`.
+/// A navigation link.
 #[derive(IntoElement)]
 pub struct NavLink {
     id: ElementId,

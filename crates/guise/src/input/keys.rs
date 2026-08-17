@@ -25,7 +25,37 @@ pub enum KeyOutcome {
 
 /// Apply `ks` to `edit`, returning what the host should do. `platform` is Cmd
 /// on macOS; `alt` is Option.
+///
+/// This is the whole keyboard, including typing the printable character. The
+/// components use [`apply_nav`] instead and leave text entry to the platform's
+/// input handler, which is what makes IME and dead keys work; this entry point
+/// stays for hosts that drive a [`TextEdit`] themselves and only get raw key
+/// events.
 pub fn apply_key(edit: &mut TextEdit, ks: &Keystroke) -> KeyOutcome {
+    let outcome = apply_nav(edit, ks);
+    if outcome != KeyOutcome::Pass {
+        return outcome;
+    }
+    // Printable input: never on Cmd/Ctrl chords (those are shortcuts);
+    // Option+key is allowed so composed glyphs land. Control characters are
+    // filtered out — the platform reports a `\t` for Tab and a `\n` for
+    // Enter, and a text field must not type either.
+    if !ks.modifiers.platform && !ks.modifiers.control {
+        if let Some(text) = ks.key_char.as_deref() {
+            let text: String = text.chars().filter(|c| !c.is_control()).collect();
+            if !text.is_empty() {
+                edit.insert(&text);
+                return KeyOutcome::Edited;
+            }
+        }
+    }
+    KeyOutcome::Pass
+}
+
+/// Navigation, selection, and deletion only — everything a text field does
+/// with a key that isn't typing a character. Returns [`KeyOutcome::Pass`] for
+/// anything it doesn't recognise, including every printable key.
+pub fn apply_nav(edit: &mut TextEdit, ks: &Keystroke) -> KeyOutcome {
     let m = &ks.modifiers;
     match ks.key.as_str() {
         "enter" => return KeyOutcome::Submit,
@@ -107,14 +137,6 @@ pub fn apply_key(edit: &mut TextEdit, ks: &Keystroke) -> KeyOutcome {
             return KeyOutcome::Edited;
         }
         _ => {}
-    }
-    // Printable input: never on Cmd/Ctrl chords (those are shortcuts);
-    // Option+key is allowed so composed glyphs land.
-    if !m.platform && !m.control {
-        if let Some(t) = ks.key_char.as_deref().filter(|t| !t.is_empty()) {
-            edit.insert(t);
-            return KeyOutcome::Edited;
-        }
     }
     KeyOutcome::Pass
 }

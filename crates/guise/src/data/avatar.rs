@@ -6,7 +6,7 @@ use gpui::{div, px, App, FontWeight, IntoElement, SharedString, Window};
 use crate::style::{surface, Variant};
 use crate::theme::{theme, ColorName, Size};
 
-/// A user avatar showing initials. The Mantine `Avatar` (image variants aside).
+/// A user avatar showing initials.
 #[derive(IntoElement)]
 pub struct Avatar {
     initials: SharedString,

@@ -1,5 +1,4 @@
-//! `Container` — a max-width centered column, matching Mantine's container
-//! size scale.
+//! `Container` — a max-width centered column on the `xs..xl` size scale.
 //!
 //! Not to be confused with [`crate::flex::Container`], the Flutter-style
 //! pixel box (which is why `flex` is not glob-exported).
@@ -19,7 +18,7 @@ use gpui::{div, px, AnyElement, App, IntoElement, Window};
 
 use crate::theme::{theme, Size};
 
-/// Max content width (px) for each [`Size`] — Mantine's container scale.
+/// Max content width (px) for each [`Size`].
 fn max_width(size: Size) -> f32 {
     match size {
         Size::Xs => 540.0,
@@ -30,7 +29,7 @@ fn max_width(size: Size) -> f32 {
     }
 }
 
-/// A centered column with a capped width. The Mantine `Container`.
+/// A centered column with a capped width.
 #[derive(IntoElement)]
 pub struct Container {
     size: Size,
@@ -92,7 +91,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn widths_match_mantine_scale() {
+    fn widths_follow_the_size_scale() {
         assert_eq!(max_width(Size::Xs), 540.0);
         assert_eq!(max_width(Size::Sm), 720.0);
         assert_eq!(max_width(Size::Md), 960.0);

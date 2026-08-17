@@ -8,7 +8,7 @@ use crate::input::ClickHandler;
 use crate::style::{surface, ColorValue, Variant};
 use crate::theme::{theme, Size};
 
-/// A colored message callout. The Mantine `Alert`.
+/// A colored message callout.
 #[derive(IntoElement)]
 pub struct Alert {
     title: Option<SharedString>,

@@ -17,10 +17,11 @@
 use gpui::prelude::*;
 use gpui::{
     deferred, div, px, App, Context, Entity, EventEmitter, FocusHandle, Hsla, IntoElement,
-    KeyDownEvent, MouseButton, SharedString, Window,
+    KeyDownEvent, SharedString, Window,
 };
 
-use super::{apply_key, control_metrics, edit::TextEdit, Field, KeyOutcome};
+use super::line::{self, Line, LineEditor, LineState};
+use super::{control_metrics, edit::TextEdit, Field, KeyOutcome};
 use crate::reactive::Signal;
 use crate::theme::{css, theme, Color, ColorName, Size};
 
@@ -32,6 +33,7 @@ pub struct ColorInputEvent(pub Hsla);
 /// `cx.new(|cx| ColorInput::new(cx))`.
 pub struct ColorInput {
     edit: TextEdit,
+    state: LineState,
     value: Hsla,
     open: bool,
     focus: FocusHandle,
@@ -62,9 +64,10 @@ impl ColorInput {
         let value = gpui::black();
         ColorInput {
             edit: TextEdit::new(&to_hex(value)),
+            state: LineState::new(),
             value,
             open: false,
-            focus: cx.focus_handle(),
+            focus: cx.focus_handle().tab_stop(true),
             label: None,
             description: None,
             error: None,
@@ -78,7 +81,7 @@ impl ColorInput {
     pub fn value(mut self, color: impl Into<Hsla>) -> Self {
         let color = opaque(color.into());
         self.value = color;
-        self.edit = TextEdit::new(&to_hex(color));
+        self.edit.set_text(&to_hex(color));
         self
     }
 
@@ -138,7 +141,7 @@ impl ColorInput {
         let color = opaque(color);
         if self.value != color {
             self.value = color;
-            self.edit = TextEdit::new(&to_hex(color));
+            self.edit.set_text(&to_hex(color));
             cx.notify();
         }
     }
@@ -146,7 +149,7 @@ impl ColorInput {
     /// A palette pick: set, normalize the buffer to hex, close, emit.
     fn choose(&mut self, color: Hsla, cx: &mut Context<Self>) {
         self.open = false;
-        self.edit = TextEdit::new(&to_hex(color));
+        self.edit.set_text(&to_hex(color));
         if self.value != color {
             self.value = color;
             cx.emit(ColorInputEvent(color));
@@ -164,22 +167,21 @@ impl ColorInput {
         }
     }
 
-    fn on_key(&mut self, event: &KeyDownEvent, _window: &mut Window, cx: &mut Context<Self>) {
+    fn on_key(&mut self, event: &KeyDownEvent, window: &mut Window, cx: &mut Context<Self>) {
         if self.disabled {
             return;
         }
-        match apply_key(&mut self.edit, &event.keystroke) {
+        match line::keys(self, event, window, cx) {
             KeyOutcome::Submit => {
                 self.adopt_buffer(cx);
                 // Normalize whatever parsed (or the last valid color) to hex.
-                self.edit = TextEdit::new(&to_hex(self.value));
+                self.edit.set_text(&to_hex(self.value));
                 self.open = false;
                 cx.notify();
                 cx.stop_propagation();
             }
             KeyOutcome::Edited => {
-                self.adopt_buffer(cx);
-                cx.notify();
+                self.line_changed(cx);
                 cx.stop_propagation();
             }
             KeyOutcome::Cancel => {
@@ -195,8 +197,49 @@ impl ColorInput {
     }
 }
 
+impl LineEditor for ColorInput {
+    fn edit(&self) -> &TextEdit {
+        &self.edit
+    }
+
+    fn edit_mut(&mut self) -> &mut TextEdit {
+        &mut self.edit
+    }
+
+    fn line(&self) -> &LineState {
+        &self.state
+    }
+
+    fn line_mut(&mut self) -> &mut LineState {
+        &mut self.state
+    }
+
+    fn line_focus(&self) -> &FocusHandle {
+        &self.focus
+    }
+
+    fn line_read_only(&self) -> bool {
+        self.disabled
+    }
+
+    fn line_changed(&mut self, cx: &mut Context<Self>) {
+        self.adopt_buffer(cx);
+        cx.notify();
+    }
+}
+
+line::line_input_handler!(ColorInput);
+line::line_focus_builders!(ColorInput);
+
 impl Render for ColorInput {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // Wired before the theme is read: `theme(cx)` borrows `cx` immutably
+        // and `wire` needs it mutably, and this render keeps `t` alive all the
+        // way down into the palette grid.
+        let wired = line::wire(div().id("guise-colorinput"), &self.focus, cx)
+            .on_key_down(cx.listener(Self::on_key));
+        let interior = Line::new(cx.entity());
+
         let t = theme(cx);
         let (height, pad_x, font) = control_metrics(self.size);
         let radius = t.radius(t.default_radius);
@@ -211,9 +254,7 @@ impl Render for ColorInput {
         }
         .hsla();
         let plain_border = t.border().hsla();
-        let text_color = t.text().hsla();
         let surface = t.surface().hsla();
-        let caret = t.primary().hsla();
         let swatch_px = height - 16.0;
 
         let swatch = div()
@@ -234,32 +275,7 @@ impl Render for ColorInput {
                 }
             }));
 
-        let interior = if focused {
-            let (before, after) = self.edit.split();
-            div()
-                .flex()
-                .items_center()
-                .text_color(text_color)
-                .child(SharedString::from(before))
-                .child(div().w(px(1.0)).h(px(font * 1.15)).bg(caret))
-                .child(SharedString::from(after))
-        } else {
-            div()
-                .text_color(text_color)
-                .child(SharedString::from(self.edit.text()))
-        };
-
-        let field = div()
-            .id("guise-colorinput")
-            .track_focus(&self.focus)
-            .on_key_down(cx.listener(Self::on_key))
-            .on_mouse_down(
-                MouseButton::Left,
-                cx.listener(|this, _ev, window, cx| {
-                    window.focus(&this.focus);
-                    cx.notify();
-                }),
-            )
+        let field = wired
             .flex()
             .items_center()
             .gap(px(8.0))
@@ -270,8 +286,9 @@ impl Render for ColorInput {
             .border_color(border)
             .bg(surface)
             .text_size(px(font))
+            .line_height(px(font * 1.3))
             .child(swatch)
-            .child(interior);
+            .child(div().flex_1().min_w(px(0.0)).child(interior));
 
         let mut wrap = div().relative().child(field);
 

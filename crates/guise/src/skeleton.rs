@@ -7,7 +7,7 @@ use gpui::{div, pulsating_between, px, Animation, AnimationExt, App, IntoElement
 
 use crate::theme::{theme, ColorName, Size};
 
-/// A pulsing placeholder block. The Mantine `Skeleton`.
+/// A pulsing placeholder block.
 #[derive(IntoElement)]
 pub struct Skeleton {
     width: Option<f32>,

@@ -16,8 +16,8 @@ Button::new("save", "Save")
     .size(Size::Md)
 ```
 
-This is the same pattern zed's own `ui` crate uses, and the closest match to
-Mantine's prop API. Builders are cheap values — create them fresh each render.
+This is the same pattern zed's own `ui` crate uses. Builders are cheap values
+— create them fresh each render.
 
 ### Event handlers compose with `cx.listener`
 

@@ -6,7 +6,7 @@ use gpui::{div, px, AnyElement, App, IntoElement, Window};
 use super::{apply_align, apply_justify, Align, Justify};
 use crate::theme::{theme, Size};
 
-/// A vertical flex container. The Mantine `Stack`.
+/// A vertical flex container.
 #[derive(IntoElement)]
 pub struct Stack {
     children: Vec<AnyElement>,

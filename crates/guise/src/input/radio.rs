@@ -6,7 +6,7 @@ use gpui::{div, px, App, ClickEvent, ElementId, IntoElement, SharedString, Windo
 use super::{control_box_size, ClickHandler};
 use crate::theme::{theme, ColorName, Size};
 
-/// A controlled radio button. The Mantine `Radio`. Grouping/exclusivity is the
+/// A controlled radio button. Grouping/exclusivity is the
 /// parent view's responsibility — give each a `checked` and a change handler.
 #[derive(IntoElement)]
 pub struct Radio {

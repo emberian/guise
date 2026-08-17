@@ -14,7 +14,7 @@ function exhibit(): string {
   const app = `<div class="g-app">
   <div class="g-stack">
     <div class="g-row"><span class="g-title">Create project</span><span class="g-badge is-violet">v0.1</span></div>
-    <span class="g-dimmed">A Mantine-inspired component layer for gpui.</span>
+    <span class="g-dimmed">A component layer for gpui.</span>
     <div class="g-field"><span class="g-label">Name</span><div class="g-input"><span>guise-app</span><i class="g-caret"></i></div></div>
     <div class="g-group">
       <button class="g-btn g-btn--filled">Filled</button>
@@ -67,13 +67,14 @@ cx.subscribe(&name, |this, _input, e: &<span class="t-t">TextInputEvent</span>, 
 
 type Feature = { icon: string; title: string; body: string };
 const features: Feature[] = [
-  { icon: "&#9632;", title: "Mantine palette, themed", body: "A 14-hue open-color palette, sizing tokens, and semantic colors. Read every value from the theme — light / dark switching is free." },
-  { icon: "&#8943;", title: "Builder API", body: "Chainable builders that read like Mantine: <code>.variant()</code>, <code>.color()</code>, <code>.size()</code>, <code>.radius()</code>." },
+  { icon: "&#9632;", title: "Themed palette", body: "A 14-hue open-color palette, sizing tokens, and semantic colors. Read every value from the theme — light / dark switching is free." },
+  { icon: "&#8943;", title: "Builder API", body: "Chainable builders that read the same on every component: <code>.variant()</code>, <code>.color()</code>, <code>.size()</code>, <code>.radius()</code>." },
   { icon: "&#9651;", title: "Stateful entities", body: "Inputs, overlays and data views are gpui entities that own their state and emit events you take with <code>cx.subscribe</code>." },
   { icon: "&#9707;", title: "Flex + macros", body: "A Flutter-style flexbox layer plus terse <code>row!</code> / <code>col!</code> / <code>zstack!</code> macros for dense layout." },
   { icon: "&#10022;", title: "Reactive state", body: "A lightweight React-style layer: <code>Signal</code>, <code>use_state</code>, <code>provide</code> / <code>use_context</code>, and <code>use_form</code> validation." },
   { icon: "&#9673;", title: "Native WebView", body: "Embed a real OS web view (WKWebView / WebView2 / WebKitGTK) via <code>wry</code>, positioned inside normal guise layout." },
   { icon: "&#10038;", title: "Lucide icons built in", body: "Every <a href=\"https://lucide.dev\">Lucide</a> icon as an <code>IconName</code> variant, drawn from an embedded icon font — no asset pipeline, tinted and sized like text." },
+  { icon: "&#8635;", title: "Self-update included", body: "<a href=\"update.html\">Check a release feed</a>, install the new version in place — rsync onto the <code>.app</code>, rename over the AppImage — verify its signature, and restart. Prompt included." },
 ];
 
 function bandHead(h: string, p: string, learnHref?: string, learnLabel?: string): string {
@@ -123,7 +124,7 @@ export function renderLanding(): string {
     <span class="eyebrow">Native UI · built on Zed's gpui</span>
     <h1 class="display">Native UI components<br />for <span class="grad">Rust</span>.</h1>
     <p class="lead">
-      guise brings <a href="https://mantine.dev" rel="noreferrer">Mantine's</a> ergonomics to
+      A batteries-included component layer for
       <a href="https://github.com/zed-industries/zed" rel="noreferrer">gpui</a> — a themed palette,
       sizing tokens, and over a hundred and twenty composable components, GPU-rendered at native speed.
     </p>
@@ -151,7 +152,7 @@ export function renderLanding(): string {
 
 <section class="band band-blue">
   <div class="container">
-    ${bandHead(`If you know Mantine, you already know <span class="gw">guise</span>.`, "Controlled widgets take a value and a handler. Stateful ones are entities you create with cx.new and subscribe to. Same mental model — native rendering underneath.", "components.html", "Read the component model")}
+    ${bandHead(`Two patterns, and you know the whole <span class="gw">library</span>.`, "Controlled widgets take a value and a handler. Stateful ones are entities you create with cx.new and subscribe to. Same mental model — native rendering underneath.", "components.html", "Read the component model")}
     <div class="split">
       <div class="split-copy">
         <ul class="ticks">
@@ -196,7 +197,7 @@ export function renderLanding(): string {
   return shell({
     title: "guise — native UI components for Rust, on gpui",
     description:
-      "A Mantine-inspired component library for gpui (Zed's GPU UI framework): themed palette, sizing tokens, and ~60 composable, GPU-rendered components for native Rust desktop apps.",
+      "A component library for gpui (Zed's GPU UI framework): themed palette, sizing tokens, and 130+ composable, GPU-rendered components for native Rust desktop apps.",
     body,
     active: "home",
   });

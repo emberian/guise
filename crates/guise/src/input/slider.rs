@@ -123,7 +123,9 @@ impl Slider {
         snap(raw, self.min, self.max, self.step)
     }
 
-    fn set_value(&mut self, raw: f64, cx: &mut Context<Self>) {
+    /// Move the handle programmatically. The value is clamped to the track
+    /// and snapped to the step, so a caller can pass a raw number.
+    pub fn set_value(&mut self, raw: f64, cx: &mut Context<Self>) {
         if self.disabled {
             return;
         }

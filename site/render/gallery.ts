@@ -199,6 +199,19 @@ const bands: Band[] = [
           <button class="g-btn g-btn--light">Share</button>
         </div>`,
       },
+      {
+        name: "UpdatePrompt",
+        note: "self-update: check, install in place, restart",
+        href: "update.html",
+        wide: true,
+        preview: `<div class="g-updwin">
+          <span class="g-title">Acme 1.32.0 is available</span>
+          <span class="g-dimmed">You have 1.31.0.</span>
+          <div class="g-progress"><span style="width:36%"></span></div>
+          <div class="g-updrow"><span class="g-dimmed">Downloading update…</span><span class="g-dimmed">7.3 MB of 20.3 MB</span></div>
+          <div class="g-group"><button class="g-btn g-btn--subtle">Release Notes</button><button class="g-btn g-btn--default">Later</button><button class="g-btn g-btn--filled">Update &amp; Restart</button></div>
+        </div>`,
+      },
     ],
   },
   {
@@ -281,7 +294,7 @@ export function renderGallery(): string {
   const body = `
 <section class="hero">
   <div class="container">
-    <span class="eyebrow">Gallery · ~60 components · one palette</span>
+    <span class="eyebrow">Gallery · 130+ components · one palette</span>
     <h1 class="display">The component <span class="grad">gallery</span>.</h1>
     <p class="lead">Every guise component family, grouped and labelled. The styling here is mocked for the web; the real thing renders natively through gpui. Follow any plate to its documentation.</p>
     ${ribbon(false)}
@@ -292,7 +305,7 @@ ${sections}`;
   return shell({
     title: "Gallery — guise components",
     description:
-      "A specimen wall of guise components: buttons, inputs, feedback, data display, overlays, navigation, layout, and a native WebView — every family on one Mantine palette.",
+      "A specimen wall of guise components: buttons, inputs, feedback, data display, overlays, navigation, layout, and a native WebView — every family on one themed palette.",
     body,
     active: "gallery",
   });

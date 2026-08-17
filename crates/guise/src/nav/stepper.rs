@@ -10,7 +10,7 @@ struct StepDef {
     description: Option<SharedString>,
 }
 
-/// A horizontal stepper. The Mantine `Stepper`. `active` is the current step
+/// A horizontal stepper. `active` is the current step
 /// index; earlier steps render as completed.
 #[derive(IntoElement)]
 pub struct Stepper {

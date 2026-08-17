@@ -33,15 +33,17 @@ crates.io — with `[lib] name = "guise"`. Cargo commands address the package as
 | `style.rs` | the `Variant` system and `surface()` resolver |
 | `layout/` | themed `Stack`, `Group`, `Center`, `SimpleGrid`, `AppShell`, `Container`, `Space`, plus `Breakpoint`/`Responsive` |
 | `flex/` | Flutter-style `Row`, `Column`, `Container`, `Expanded`, … |
-| `input/` | `TextInput`, `TextArea`, `NumberInput`, `PasswordInput`, `PinInput`, `Select`, `Combobox`, `Checkbox`, `Switch`, `Radio`, `RadioGroup`, `CheckboxGroup`, `SegmentedControl`, `Slider`, `RangeSlider`, `Rating`, `ColorInput`, `TagsInput`, `Field`, `Autocomplete`, `Calendar`, `DatePicker`, `TimePicker`, `FileInput`, `Dropzone`, `Transfer`, the `Date`/`Time` models, the `TextEdit` model, the shared single-line key map (`keys.rs`) |
+| `input/` | `TextInput`, `TextArea`, `NumberInput`, `PasswordInput`, `PinInput`, `Select`, `Combobox`, `Checkbox`, `Switch`, `Radio`, `RadioGroup`, `CheckboxGroup`, `SegmentedControl`, `Slider`, `RangeSlider`, `Rating`, `ColorInput`, `TagsInput`, `Field`, `Autocomplete`, `Calendar`, `DatePicker`, `TimePicker`, `FileInput`, `Dropzone`, `Transfer`, the `Date`/`Time` models, the `TextEdit` model, the shared single-line key map (`keys.rs`), and `line.rs` — the shared field element (glyph-accurate caret, hit-testing, scrolling, IME) every single-line input is built on |
 | `editor/` | `Editor` entity, the `EditorModel` buffer, `Language` highlighters (Rust, SQL, JSON, TOML, Python, JS/TS, Go, C, Markdown), `Diagnostic`/`Severity` |
-| `markdown/` | `MarkdownEditor` entity (live-preview markdown) over pure `block` / `inline` / `layout` passes |
+| `markdown/` | `MarkdownEditor` entity (live-preview markdown) and the read-only `Markdown` renderer, over pure `block` / `inline` / `layout` passes |
+| `ai/` | `AIChatView`, `AIMessage`, `AIComposer`, `AIStreamingText`, `AIThinking`, `AIReasoning`, `AIToolCall`, `AICitation`, `AISources`, `AIModelPicker`, `AITokenMeter`, `AICost`, `AISettings` — transport-agnostic; the host owns the request |
 | `data/` | `Avatar`, `AvatarGroup`, `List`, `VirtualList`, `Table`, `TableView`, `DataView`, `TreeView`, `TabBar`, `Timeline`, `Tabs`, `Accordion` |
 | `chart/` | `Sparkline`, `LineChart`, `AreaChart`, `BarChart`, `ScatterChart`, `PieChart` — canvas-painted builders with optional axes/legends/hover |
 | `feedback/` | `Alert`, `Loader`, `Progress`, `RingProgress`, `Notification`, `ToastStack` |
 | `overlay/` | `Modal`, `ConfirmModal`, `Drawer`, `Menu`, `MenuBar`, `ContextMenu`, `Popover`, `HoverCard`, `LoadingOverlay`, `Spotlight`, `Tooltip`, `Tour`, `OverlayHost` (window-level modal stack + toasts) |
 | `nav/` | `Breadcrumbs`, `NavLink`, `NavigationMenu`, `Stepper`, `Pagination`, `StatusBar` |
 | `reactive/` | `Signal`, `Binding`, Context/Provider, hooks (`use_state`/`watch`/`use_memo`/`use_effect`), `Form` (per-field signals) + `FormState` |
+| `update/` | self-update: `Updater`/`UpdateConfig` (release check + in-place install, gpui-free), SHA-256 verification of the download (`checksum.rs`), and the `UpdatePrompt`/`UpdateNotice` entities that drive it |
 | `macros.rs` | the `row!`/`col!`/… layout macros |
 | `anim/` | `Easing` curves, `Spring` physics, `Presence` (exit animations) |
 | `dnd/` | `Draggable`, `DropTarget`, `SortableList` — typed drag payloads |

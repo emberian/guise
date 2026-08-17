@@ -75,7 +75,7 @@ Image::new("https://example.com/cat.png")   // or a PathBuf, or an asset path
 | --- | --- | --- |
 | `new(source)` | — | anything `Into<gpui::ImageSource>`: `&str`/`String` (an `http(s)://` URI, else an embedded-asset path), `Path`/`PathBuf` (local file), or raw/decoded image data |
 | `width(f32)` / `height(f32)` | none | px — give it a size, an unsized image lays out at zero |
-| `radius(Size)` | none | square corners by default, like Mantine |
+| `radius(Size)` | none | square corners by default |
 | `circle()` | off | clip to a circle (an avatar); pair with equal width/height |
 | `fit(ObjectFit)` | `Cover` | `Fill` / `Contain` / `Cover` / `ScaleDown` / `None` — re-exported from gpui |
 | `fallback(closure)` | none | `Fn() -> impl IntoElement`, shown while loading or failed |

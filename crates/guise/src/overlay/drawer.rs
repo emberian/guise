@@ -25,7 +25,7 @@ pub enum Side {
     Bottom,
 }
 
-/// A slide-in panel. The Mantine `Drawer`.
+/// A slide-in panel.
 #[derive(IntoElement)]
 pub struct Drawer {
     title: Option<SharedString>,

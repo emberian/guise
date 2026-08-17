@@ -5,12 +5,12 @@
 [![CI](https://github.com/wess/guise/actions/workflows/ci.yml/badge.svg)](https://github.com/wess/guise/actions/workflows/ci.yml)
 [![license](https://img.shields.io/crates/l/guise-ui.svg)](https://github.com/wess/guise/blob/main/LICENSE)
 
-A [Mantine](https://mantine.dev)-inspired component library for
-[gpui](https://github.com/zed-industries/zed) — the GPU-accelerated Rust UI
-framework that powers Zed.
+A component library for [gpui](https://github.com/zed-industries/zed) — the
+GPU-accelerated Rust UI framework that powers Zed.
 
-`guise` brings Mantine's ergonomics to gpui: a themed palette, sizing tokens,
-and composable components built on gpui's `RenderOnce` builder pattern.
+`guise` gives gpui a batteries-included component layer: a themed palette,
+sizing tokens, and composable components built on gpui's `RenderOnce` builder
+pattern.
 
 ```rust
 use guise::prelude::*;
@@ -31,14 +31,15 @@ Stack::new()
 Full docs live in [`docs/`](docs/readme.md):
 
 - [Getting started](docs/gettingstarted.md) · [Theming](docs/theming.md) · [Component model](docs/components.md)
-- Components: [Buttons](docs/buttons.md) · [Icons](docs/icons.md) · [Inputs](docs/inputs.md) · [Typography](docs/typography.md) · [Layout](docs/layout.md) · [Feedback](docs/feedback.md) · [Data](docs/data.md) · [Overlays](docs/overlays.md) · [Navigation](docs/navigation.md)
+- Components: [Buttons](docs/buttons.md) · [Icons](docs/icons.md) · [Inputs](docs/inputs.md) · [Typography](docs/typography.md) · [Layout](docs/layout.md) · [Feedback](docs/feedback.md) · [Data](docs/data.md) · [AI](docs/ai.md) · [Overlays](docs/overlays.md) · [Navigation](docs/navigation.md)
+- [Changelog](https://github.com/wess/guise/blob/main/CHANGELOG.md)
 - Systems: [Flex layout](docs/flex.md) · [Macros](docs/macros.md) · [Transitions](docs/transitions.md) · [Reactive state](docs/reactive.md) · [Window menu](docs/windowmenu.md) · [Architecture](docs/architecture.md)
 
 ## Workspace
 
 - **`crates/guise`** — the component library.
-- **`crates/gallery`** — a live showcase of every component (the Mantine-docs
-  equivalent). Run it with `cargo run -p gallery`.
+- **`crates/gallery`** — a live showcase of every component. Run it with
+  `cargo run -p gallery`.
 
 ## Theme
 
@@ -48,8 +49,8 @@ Install a theme once at startup; every component reads it from the gpui global:
 guise::Theme::dark().init(cx);   // or Theme::light()
 ```
 
-The theme carries the full Mantine / open-color palette (14 colors × 10 shades),
-`xs..xl` scales for spacing, radius and font size, and scheme-aware semantic
+The theme carries the full [open-color](https://yeun.github.io/open-color/)
+palette (14 colors × 10 shades), `xs..xl` scales for spacing, radius and font size, and scheme-aware semantic
 colors (`body`, `surface`, `text`, `dimmed`, `border`).
 
 ### CSS-style colors
@@ -201,7 +202,7 @@ Collapse::new("details").open(self.expanded).child(detail)
 
 ## Variants
 
-Colored components share Mantine's variant system: `Filled`, `Light`,
+Colored components share one variant system: `Filled`, `Light`,
 `Outline`, `Subtle`, `Default`, `Transparent`, `White`.
 
 ## Installation

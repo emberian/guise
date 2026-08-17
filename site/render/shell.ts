@@ -56,7 +56,7 @@ function footer(): string {
   <div class="container foot-grid">
     <div class="foot-brand">
       <span class="foot-word">guise</span>
-      <p>A Mantine-inspired component library for gpui — native UI for Rust.</p>
+      <p>A component library for gpui — native UI for Rust.</p>
       <span class="foot-meta">MIT &middot; built on gpui</span>
     </div>
     <div class="foot-col">
@@ -79,7 +79,6 @@ function footer(): string {
       <a href="${REPO}" rel="noreferrer">GitHub</a>
       <a href="https://github.com/sponsors/wess" rel="noreferrer">&hearts; Sponsor</a>
       <a href="https://github.com/zed-industries/zed" rel="noreferrer">gpui</a>
-      <a href="https://mantine.dev" rel="noreferrer">Mantine</a>
       <a href="https://crates.io/crates/wry" rel="noreferrer">wry</a>
     </div>
   </div>

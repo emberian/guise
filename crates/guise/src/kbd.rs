@@ -5,7 +5,7 @@ use gpui::{div, px, App, FontWeight, IntoElement, SharedString, Window};
 
 use crate::theme::{theme, ColorName, Size};
 
-/// A keyboard key. The Mantine `Kbd`.
+/// A keyboard key.
 #[derive(IntoElement)]
 pub struct Kbd {
     key: SharedString,

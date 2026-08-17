@@ -7,7 +7,7 @@ use super::ClickHandler;
 use crate::reactive::Binding;
 use crate::theme::{theme, ColorName, Size};
 
-/// A controlled switch. The Mantine `Switch`.
+/// A controlled switch.
 #[derive(IntoElement)]
 pub struct Switch {
     id: ElementId,

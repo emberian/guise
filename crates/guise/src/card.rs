@@ -6,7 +6,7 @@ use gpui::{div, px, AnyElement, App, IntoElement, Window};
 use crate::paper::apply_shadow;
 use crate::theme::{theme, Size};
 
-/// A content card. The Mantine `Card` — a `Paper` with sensible defaults.
+/// A content card — a `Paper` with sensible defaults.
 #[derive(IntoElement)]
 pub struct Card {
     children: Vec<AnyElement>,

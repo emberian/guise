@@ -5,7 +5,7 @@ use gpui::{div, px, App, IntoElement, SharedString, Window};
 
 use crate::theme::{theme, ColorName, Size};
 
-/// Inline code. The Mantine `Code`. (Uses the window font; gpui has no generic
+/// Inline code. (Uses the window font; gpui has no generic
 /// monospace fallback, so style a real mono family at the app level if needed.)
 #[derive(IntoElement)]
 pub struct Code {

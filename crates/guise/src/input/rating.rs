@@ -26,7 +26,7 @@ use crate::theme::{theme, ColorName, Size};
 
 type ChangeHandler = Rc<dyn Fn(&f32, &mut Window, &mut App) + 'static>;
 
-/// A star rating. The Mantine `Rating`. Controlled: pass `value` and an
+/// A star rating. Controlled: pass `value` and an
 /// `on_change`, or two-way bind with [`Rating::bind`].
 #[derive(IntoElement)]
 pub struct Rating {

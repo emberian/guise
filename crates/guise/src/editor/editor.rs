@@ -40,7 +40,7 @@ use crate::reactive::Signal;
 use crate::theme::theme;
 
 /// The monospace family used for the buffer, gutter, and placeholder.
-const MONO_FAMILY: &str = "Menlo";
+use crate::style::MONO_FAMILY;
 /// Horizontal padding around the text content, in px.
 const PAD_X: f32 = 10.0;
 /// Vertical padding above and below the lines, in px.

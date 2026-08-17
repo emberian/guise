@@ -77,16 +77,22 @@ const COUNT: usize = ${icons.length};
 
 /// A named [Lucide](https://lucide.dev) icon, rendered from the icon font
 /// embedded in guise. Every icon in the set is available as a variant.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum IconName {
 ${icons.map((i) => `    ${i.variant},`).join("\n")}
 }
 
-const GLYPHS: [&str; COUNT] = [
+// `static`, not `const`: a `const` array is materialised at each use site, so
+// a 1991-element table of fat pointers can be duplicated into the binary once
+// per reference. These are read through indexes, never inlined usefully.
+static GLYPHS: [&str; COUNT] = [
 ${table(icons.map((i) => `"\\u{${i.code.toString(16)}}",`), 8)}
 ];
 
-const NAMES: [&str; COUNT] = [
+// `static`, not `const`: a `const` array is materialised at each use site, so
+// a 1991-element table of fat pointers can be duplicated into the binary once
+// per reference. These are read through indexes, never inlined usefully.
+static NAMES: [&str; COUNT] = [
 ${table(icons.map((i) => `"${i.name}",`), 4)}
 ];
 
@@ -107,7 +113,21 @@ impl IconName {
     }
 }
 
-const ALL: [IconName; COUNT] = [
+// Written out rather than derived: `derive(Debug)` on a fieldless enum emits a
+// match with one arm per variant, and at ${icons.length} variants that is tens of
+// kilobytes of code in every binary that links guise — to print a string the
+// `NAMES` table already holds. Debug therefore shows the kebab-case name
+// (`arrow-up`), which is what lucide.dev lists it under.
+impl core::fmt::Debug for IconName {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(self.name())
+    }
+}
+
+// `static`, not `const`: a `const` array is materialised at each use site, so
+// a 1991-element table of fat pointers can be duplicated into the binary once
+// per reference. These are read through indexes, never inlined usefully.
+static ALL: [IconName; COUNT] = [
 ${table(icons.map((i) => `IconName::${i.variant},`), 4)}
 ];
 
@@ -120,6 +140,14 @@ ${aliases.map(([from, to]) => `    pub const ${from}: IconName = IconName::${to}
 
 const root = new URL("..", import.meta.url).pathname
 await Bun.write(`${root}crates/guise/assets/lucide/lucide.ttf`, font)
+// Upstream ships GSUB (ligature substitution) and a version 2.0 post table
+// (glyph names), neither of which is read when glyphs are addressed by
+// codepoint the way `GLYPHS` does. That is ~78 KB in every consumer's binary,
+// so it comes back off here — see scripts/stripfont.py.
+Bun.spawnSync(["python3", `${root}scripts/stripfont.py`, `${root}crates/guise/assets/lucide/lucide.ttf`], {
+  stdout: "inherit",
+  stderr: "inherit",
+})
 await Bun.write(`${root}crates/guise/assets/lucide/license.txt`, license)
 await Bun.write(`${root}crates/guise/src/icon/lucide.rs`, rust)
 

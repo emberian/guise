@@ -7,10 +7,11 @@
 use gpui::prelude::*;
 use gpui::{
     div, px, App, Context, Entity, EventEmitter, FocusHandle, IntoElement, KeyDownEvent,
-    MouseButton, SharedString, Window,
+    SharedString, Window,
 };
 
-use super::{control_metrics, Field, TextEdit};
+use super::line::{self, Line, LineEditor, LineState};
+use super::{control_metrics, Field, KeyOutcome, TextEdit};
 use crate::icon::{Icon, IconName};
 use crate::reactive::Signal;
 use crate::theme::{theme, Size};
@@ -22,6 +23,7 @@ pub struct NumberInputEvent(pub f64);
 /// A numeric input. Create with `cx.new(|cx| NumberInput::new(cx))`.
 pub struct NumberInput {
     edit: TextEdit,
+    state: LineState,
     focus: FocusHandle,
     min: Option<f64>,
     max: Option<f64>,
@@ -62,7 +64,8 @@ impl NumberInput {
     pub fn new(cx: &mut Context<Self>) -> Self {
         NumberInput {
             edit: TextEdit::new(""),
-            focus: cx.focus_handle(),
+            state: LineState::new(),
+            focus: cx.focus_handle().tab_stop(true),
             min: None,
             max: None,
             step: 1.0,
@@ -146,11 +149,44 @@ impl NumberInput {
         .detach();
     }
 
+    /// Set the value programmatically, clamped to min/max. Does not emit —
+    /// a host that changed the value already knows.
+    pub fn set_value(&mut self, value: f64, cx: &mut Context<Self>) {
+        self.sync_value(value, cx);
+    }
+
+    /// Raise or lower the ceiling after construction. A value above the new
+    /// maximum is pulled down to it, so the field can never show one the
+    /// bounds forbid.
+    pub fn set_max(&mut self, max: f64, cx: &mut Context<Self>) {
+        self.max = Some(max);
+        if let Some(current) = self.value_f64() {
+            if current > max {
+                self.sync_value(max, cx);
+                return;
+            }
+        }
+        cx.notify();
+    }
+
+    /// Raise or lower the floor after construction, pulling a value below it
+    /// up to match.
+    pub fn set_min(&mut self, min: f64, cx: &mut Context<Self>) {
+        self.min = Some(min);
+        if let Some(current) = self.value_f64() {
+            if current < min {
+                self.sync_value(min, cx);
+                return;
+            }
+        }
+        cx.notify();
+    }
+
     /// Programmatic set: clamp and repaint without emitting an event.
     fn sync_value(&mut self, raw: f64, cx: &mut Context<Self>) {
         let next = clamp(raw, self.min, self.max);
         if self.value_f64() != Some(next) {
-            self.edit = TextEdit::new(&format_number(next));
+            self.edit.set_text(&format_number(next));
             cx.notify();
         }
     }
@@ -161,50 +197,85 @@ impl NumberInput {
         }
         let current = parse_number(&self.edit.text()).unwrap_or(0.0);
         let next = clamp(current + dir * self.step, self.min, self.max);
-        self.edit = TextEdit::new(&format_number(next));
+        self.edit.set_text(&format_number(next));
         cx.emit(NumberInputEvent(next));
         cx.notify();
     }
 
-    fn on_key(&mut self, event: &KeyDownEvent, _window: &mut Window, cx: &mut Context<Self>) {
+    fn on_key(&mut self, event: &KeyDownEvent, window: &mut Window, cx: &mut Context<Self>) {
         if self.disabled {
             return;
         }
+        // The arrows step the value rather than moving a caret up and down a
+        // line that doesn't exist, the way a spinner does.
         let ks = &event.keystroke;
-        if ks.modifiers.platform || ks.modifiers.control {
-            return;
-        }
-        match ks.key.as_str() {
-            "up" => return self.nudge(1.0, cx),
-            "down" => return self.nudge(-1.0, cx),
-            "backspace" => {
-                self.edit.backspace();
-            }
-            "delete" => {
-                self.edit.delete();
-            }
-            "left" => self.edit.left(),
-            "right" => self.edit.right(),
-            "home" => self.edit.home(),
-            "end" => self.edit.end(),
-            _ => {
-                if let Some(text) = ks.key_char.as_deref().filter(|t| {
-                    !t.is_empty()
-                        && !ks.modifiers.alt
-                        && t.chars()
-                            .all(|c| c.is_ascii_digit() || c == '.' || c == '-')
-                }) {
-                    self.edit.insert(text);
+        if !ks.modifiers.platform && !ks.modifiers.control && !ks.modifiers.shift {
+            match ks.key.as_str() {
+                "up" => {
+                    self.nudge(1.0, cx);
+                    cx.stop_propagation();
+                    return;
                 }
+                "down" => {
+                    self.nudge(-1.0, cx);
+                    cx.stop_propagation();
+                    return;
+                }
+                _ => {}
             }
         }
+        match line::keys(self, event, window, cx) {
+            KeyOutcome::Edited | KeyOutcome::Submit => {
+                self.line_changed(cx);
+                cx.stop_propagation();
+            }
+            KeyOutcome::Cancel | KeyOutcome::Pass => {}
+        }
+    }
+}
+
+impl LineEditor for NumberInput {
+    fn edit(&self) -> &TextEdit {
+        &self.edit
+    }
+
+    fn edit_mut(&mut self) -> &mut TextEdit {
+        &mut self.edit
+    }
+
+    fn line(&self) -> &LineState {
+        &self.state
+    }
+
+    fn line_mut(&mut self) -> &mut LineState {
+        &mut self.state
+    }
+
+    fn line_focus(&self) -> &FocusHandle {
+        &self.focus
+    }
+
+    fn line_read_only(&self) -> bool {
+        self.disabled
+    }
+
+    /// Only what can spell a number gets in — by typing, by IME, or by paste.
+    fn line_filter(&self, text: String) -> String {
+        text.chars()
+            .filter(|c| c.is_ascii_digit() || *c == '.' || *c == '-' || *c == 'e' || *c == 'E')
+            .collect()
+    }
+
+    fn line_changed(&mut self, cx: &mut Context<Self>) {
         if let Some(value) = parse_number(&self.edit.text()) {
             cx.emit(NumberInputEvent(value));
         }
         cx.notify();
-        cx.stop_propagation();
     }
 }
+
+line::line_input_handler!(NumberInput);
+line::line_focus_builders!(NumberInput);
 
 impl Render for NumberInput {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
@@ -223,26 +294,8 @@ impl Render for NumberInput {
         let text_color = t.text().hsla();
         let dimmed = t.dimmed().hsla();
         let surface = t.surface().hsla();
-        let caret = t.primary().hsla();
 
-        let interior = if focused {
-            let (before, after) = self.edit.split();
-            div()
-                .flex()
-                .items_center()
-                .text_color(text_color)
-                .child(SharedString::from(before))
-                .child(div().w(px(1.0)).h(px(font * 1.15)).bg(caret))
-                .child(SharedString::from(after))
-        } else if self.edit.is_empty() {
-            div()
-                .text_color(dimmed)
-                .child(SharedString::new_static("0"))
-        } else {
-            div()
-                .text_color(text_color)
-                .child(SharedString::from(self.edit.text()))
-        };
+        let interior = Line::new(cx.entity()).placeholder(SharedString::new_static("0"), dimmed);
 
         let stepper = |id: &'static str, icon: IconName| {
             div()
@@ -271,17 +324,8 @@ impl Render for NumberInput {
                     .on_click(cx.listener(|this, _ev, _window, cx| this.nudge(-1.0, cx))),
             );
 
-        let field = div()
-            .id("guise-numberinput")
-            .track_focus(&self.focus)
+        let field = line::wire(div().id("guise-numberinput"), &self.focus, cx)
             .on_key_down(cx.listener(Self::on_key))
-            .on_mouse_down(
-                MouseButton::Left,
-                cx.listener(|this, _ev, window, cx| {
-                    window.focus(&this.focus);
-                    cx.notify();
-                }),
-            )
             .flex()
             .items_center()
             .justify_between()
@@ -292,7 +336,8 @@ impl Render for NumberInput {
             .border_color(border)
             .bg(surface)
             .text_size(px(font))
-            .child(interior)
+            .line_height(px(font * 1.3))
+            .child(div().flex_1().min_w(px(0.0)).child(interior))
             .child(steppers);
 
         let mut chrome = Field::new().child(if self.disabled {

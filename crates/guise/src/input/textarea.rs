@@ -18,6 +18,13 @@ use crate::theme::{theme, ColorName, Size};
 #[derive(Debug, Clone)]
 pub struct TextAreaEvent(pub String);
 
+/// Emitted when Enter commits the field, which only happens under
+/// [`TextArea::submit_on_enter`]. Carries the value. It is a separate event
+/// type rather than a variant so that subscribers to [`TextAreaEvent`] keep
+/// working unchanged.
+#[derive(Debug, Clone)]
+pub struct TextAreaSubmit(pub String);
+
 /// A multiline text field. Create with `cx.new(|cx| TextArea::new(cx))`.
 pub struct TextArea {
     edit: TextEdit,
@@ -27,11 +34,14 @@ pub struct TextArea {
     description: Option<SharedString>,
     error: Option<SharedString>,
     rows: usize,
+    max_rows: Option<usize>,
+    submit_on_enter: bool,
     size: Size,
     disabled: bool,
 }
 
 impl EventEmitter<TextAreaEvent> for TextArea {}
+impl EventEmitter<TextAreaSubmit> for TextArea {}
 
 /// A line that renders with height even when empty.
 fn line(text: &str) -> SharedString {
@@ -46,12 +56,14 @@ impl TextArea {
     pub fn new(cx: &mut Context<Self>) -> Self {
         TextArea {
             edit: TextEdit::new(""),
-            focus: cx.focus_handle(),
+            focus: cx.focus_handle().tab_stop(true),
             placeholder: SharedString::default(),
             label: None,
             description: None,
             error: None,
             rows: 3,
+            max_rows: None,
+            submit_on_enter: false,
             size: Size::Sm,
             disabled: false,
         }
@@ -67,6 +79,17 @@ impl TextArea {
         self
     }
 
+    /// Replace the placeholder after construction, for a field that is built
+    /// once and re-labelled later.
+    pub fn set_placeholder(
+        &mut self,
+        placeholder: impl Into<SharedString>,
+        cx: &mut Context<Self>,
+    ) {
+        self.placeholder = placeholder.into();
+        cx.notify();
+    }
+
     pub fn label(mut self, label: impl Into<SharedString>) -> Self {
         self.label = Some(label.into());
         self
@@ -79,6 +102,21 @@ impl TextArea {
 
     pub fn error(mut self, error: impl Into<SharedString>) -> Self {
         self.error = Some(error.into());
+        self
+    }
+
+    /// Stop growing past `rows` and scroll instead. Without this a field that
+    /// grows with its content has no ceiling, which is wrong for a composer
+    /// pinned to the bottom of a window.
+    pub fn max_rows(mut self, rows: usize) -> Self {
+        self.max_rows = Some(rows.max(1));
+        self
+    }
+
+    /// Make Enter commit the value (emitting [`TextAreaSubmit`]) and
+    /// Shift+Enter insert the newline — the convention a chat composer uses.
+    pub fn submit_on_enter(mut self, submit: bool) -> Self {
+        self.submit_on_enter = submit;
         self
     }
 
@@ -105,6 +143,13 @@ impl TextArea {
 
     pub fn text(&self) -> String {
         self.edit.text()
+    }
+
+    /// Whether the field holds nothing but whitespace. Cheaper than
+    /// `text().trim().is_empty()`, which builds and throws away a copy of the
+    /// whole value — and callers ask this every frame to enable a send button.
+    pub fn is_blank(&self) -> bool {
+        self.edit.chars().iter().all(|c| c.is_whitespace())
     }
 
     pub fn set_text(&mut self, value: &str, cx: &mut Context<Self>) {
@@ -168,7 +213,7 @@ impl TextArea {
         cx.stop_propagation();
     }
 
-    fn on_key(&mut self, event: &KeyDownEvent, _window: &mut Window, cx: &mut Context<Self>) {
+    fn on_key(&mut self, event: &KeyDownEvent, window: &mut Window, cx: &mut Context<Self>) {
         if self.disabled {
             return;
         }
@@ -185,15 +230,46 @@ impl TextArea {
                 "c" => return self.copy(cx),
                 "x" => return self.cut(cx),
                 "v" => return self.paste(cx),
+                "z" | "y" => {
+                    let undo = ks.key == "z" && !m.shift;
+                    let changed = if undo {
+                        self.edit.undo()
+                    } else {
+                        self.edit.redo()
+                    };
+                    if changed {
+                        cx.emit(TextAreaEvent(self.edit.text()));
+                    }
+                    cx.notify();
+                    cx.stop_propagation();
+                    return;
+                }
                 _ => {}
             }
         }
-        // Tab and unconsumed shortcuts bubble so the host can act; Escape too.
-        // (Enter inserts a newline here — this is a multi-line field.)
-        if matches!(ks.key.as_str(), "escape" | "tab") {
+        // Tab moves to the next field, as it does in a `<textarea>` — a text
+        // area is still a form control, not a code editor. Escape bubbles so
+        // the host can dismiss. (Enter inserts a newline: this is multi-line.)
+        if ks.key == "tab" && !m.platform && !m.control {
+            if m.shift {
+                window.focus_prev();
+            } else {
+                window.focus_next();
+            }
+            cx.notify();
+            cx.stop_propagation();
+            return;
+        }
+        if ks.key == "escape" {
             return;
         }
         let edited = match ks.key.as_str() {
+            "enter" if self.submit_on_enter && !m.shift => {
+                cx.emit(TextAreaSubmit(self.edit.text()));
+                cx.notify();
+                cx.stop_propagation();
+                return;
+            }
             "enter" => {
                 self.edit.insert("\n");
                 true
@@ -318,6 +394,10 @@ impl Render for TextArea {
         let line_h = font * 1.5;
         let pad_y = 8.0;
         let min_h = self.rows as f32 * line_h + pad_y * 2.0;
+        let max_h = self
+            .max_rows
+            .map(|rows| rows as f32 * line_h + pad_y * 2.0)
+            .filter(|max| *max >= min_h);
 
         let border = if self.error.is_some() {
             t.color(ColorName::Red, 6)
@@ -331,11 +411,23 @@ impl Render for TextArea {
         let dimmed = t.dimmed().hsla();
         let surface = t.surface().hsla();
         let caret = t.primary().hsla();
-        let mut selection_bg = t.primary().hsla();
-        selection_bg.a = 0.30;
+        let selection_bg = t.selection();
 
         let mut body = div().flex().flex_col().text_color(text_color);
-        if focused {
+        // A focused-but-empty field still shows its placeholder, the way a
+        // `<textarea>` does — hiding it the moment the caret lands takes the
+        // label away exactly when the user is deciding what to write. The
+        // caret is drawn beside it.
+        if focused && self.edit.is_empty() && !self.placeholder.is_empty() {
+            body = body.child(
+                div()
+                    .flex()
+                    .items_center()
+                    .h(px(line_h))
+                    .child(div().w(px(1.0)).h(px(font * 1.15)).bg(caret))
+                    .child(div().text_color(dimmed).child(self.placeholder.clone())),
+            );
+        } else if focused {
             if let Some((before, selected, after)) = self.edit.split_selection() {
                 let before_lines: Vec<&str> = before.split('\n').collect();
                 let selected_lines: Vec<&str> = selected.split('\n').collect();
@@ -419,6 +511,7 @@ impl Render for TextArea {
             .items_start()
             .overflow_hidden()
             .min_h(px(min_h))
+            .when_some(max_h, |field, max| field.max_h(px(max)))
             .w_full()
             .px(px(pad_x))
             .py(px(pad_y))

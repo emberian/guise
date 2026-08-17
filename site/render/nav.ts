@@ -31,6 +31,7 @@ export const groups: DocGroup[] = [
       { slug: "dates", title: "Dates & times" },
       { slug: "files", title: "File handling" },
       { slug: "editor", title: "Editor" },
+      { slug: "ai", title: "AI" },
       { slug: "markdowneditor", title: "Markdown editor" },
       { slug: "typography", title: "Typography" },
       { slug: "layout", title: "Layout" },
@@ -51,12 +52,16 @@ export const groups: DocGroup[] = [
       { slug: "transitions", title: "Transitions" },
       { slug: "dnd", title: "Drag & drop" },
       { slug: "reactive", title: "Reactive state" },
+      { slug: "update", title: "Software update" },
       { slug: "windowmenu", title: "Window menu" },
     ],
   },
   {
     title: "Reference",
-    items: [{ slug: "architecture", title: "Architecture" }],
+    items: [
+      { slug: "architecture", title: "Architecture" },
+      { slug: "performance", title: "Size & performance" },
+    ],
   },
 ];
 

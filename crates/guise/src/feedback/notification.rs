@@ -7,7 +7,7 @@ use crate::icon::Glyph;
 use crate::input::ClickHandler;
 use crate::theme::{theme, ColorName, Size};
 
-/// A toast-style notification card. The Mantine `Notification`. Positioning and
+/// A toast-style notification card. Positioning and
 /// stacking are the host's responsibility; this is the visual card.
 #[derive(IntoElement)]
 pub struct Notification {

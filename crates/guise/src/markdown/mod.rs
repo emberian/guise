@@ -32,5 +32,7 @@ pub mod layout;
 // like every other module; the path doubling never leaks since the type is
 // re-exported here.
 mod editor;
+mod view;
 
 pub use editor::{MarkdownEditor, MarkdownEditorEvent, MarkdownStyle};
+pub use view::Markdown;

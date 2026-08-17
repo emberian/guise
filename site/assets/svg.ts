@@ -51,7 +51,7 @@ export function ogImage(): string {
     <text x="80" y="380" font-size="92" font-weight="800" letter-spacing="-3">
       <tspan fill="#ededf1">for </tspan><tspan fill="url(#word)">Rust.</tspan>
     </text>
-    <text x="80" y="438" font-size="30" fill="#a7a7b4">A Mantine-inspired component library for gpui · ~60 components</text>
+    <text x="80" y="438" font-size="30" fill="#a7a7b4">A component library for gpui · 130+ components</text>
   </g>
   ${ribbon}
 </svg>`;

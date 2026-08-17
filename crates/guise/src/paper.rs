@@ -6,7 +6,7 @@ use gpui::{div, px, AnyElement, App, Div, IntoElement, Window};
 
 use crate::theme::{theme, Size};
 
-/// A surface container. The Mantine `Paper`.
+/// A surface container.
 #[derive(IntoElement)]
 pub struct Paper {
     children: Vec<AnyElement>,

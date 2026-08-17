@@ -5,6 +5,7 @@ use std::time::Duration;
 use gpui::prelude::*;
 use gpui::{div, pulsating_between, px, Animation, AnimationExt, App, IntoElement, Window};
 
+use crate::style::ColorValue;
 use crate::theme::{theme, ColorName, Size};
 
 /// The loader's visual style.
@@ -16,12 +17,12 @@ pub enum LoaderVariant {
     Bars,
 }
 
-/// An animated loading indicator. The Mantine `Loader`.
+/// An animated loading indicator.
 #[derive(IntoElement)]
 pub struct Loader {
     variant: LoaderVariant,
     size: Size,
-    color: ColorName,
+    color: ColorValue,
 }
 
 impl Loader {
@@ -29,7 +30,7 @@ impl Loader {
         Loader {
             variant: LoaderVariant::Dots,
             size: Size::Md,
-            color: ColorName::Blue,
+            color: ColorValue::Named(ColorName::Blue),
         }
     }
 
@@ -43,8 +44,8 @@ impl Loader {
         self
     }
 
-    pub fn color(mut self, color: ColorName) -> Self {
-        self.color = color;
+    pub fn color(mut self, color: impl Into<ColorValue>) -> Self {
+        self.color = color.into();
         self
     }
 
@@ -68,7 +69,7 @@ impl Default for Loader {
 impl RenderOnce for Loader {
     fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
         let t = theme(cx);
-        let color = t.color(self.color, t.primary_shade()).hsla();
+        let color = crate::style::solid(t, self.color);
         let unit = self.unit();
         let bars = self.variant == LoaderVariant::Bars;
 

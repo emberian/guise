@@ -96,8 +96,8 @@ Methods: `new(cols)`, `spacing(Size)` (default `Md`).
 
 ## Container
 
-A centered column with a capped width — Mantine's `Container`, for readable
-line lengths on any window width. Implements `ParentElement`.
+A centered column with a capped width, for readable line lengths on any
+window width. Implements `ParentElement`.
 
 ```rust
 Container::new()

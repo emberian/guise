@@ -1,6 +1,6 @@
 # guise
 
-A Mantine-inspired component library for [gpui](https://github.com/zed-industries/zed)
+A component library for [gpui](https://github.com/zed-industries/zed)
 (Zed's GPU-accelerated Rust UI framework). Workspace: `crates/guise` (library) +
 `crates/gallery` (live showcase). Full human docs live in [`docs/`](docs/readme.md);
 [`docs/architecture.md`](docs/architecture.md) is the map,
@@ -17,10 +17,10 @@ cargo build -p gallery    # full binary build
 
 ## Build constraints
 
-- The manifests request `gpui = "0.2.2"` from crates.io, but the root
-  `[patch.crates-io]` block redirects it onto a **pinned zed rev** — consumers
-  pinning guise via git must mirror that patch section. `thirdparty/block/` is
-  a leftover vendored crate referenced by no manifest.
+- Everything builds against **plain crates.io `gpui = "0.2.2"`** — no git pins,
+  no `[patch.crates-io]`. Don't use gpui APIs newer than that snapshot; the few
+  style/scroll gaps it has are shimmed in `style.rs` (`FlexExt`).
+  `thirdparty/block/` is a leftover vendored crate referenced by no manifest.
 - The library package is **`guise-ui`** (crates.io name) with `[lib] name = "guise"`,
   so cargo commands use `-p guise-ui` while code imports `use guise::...`.
 
@@ -36,7 +36,7 @@ cargo build -p gallery    # full binary build
    `PinInput`, `Select`, `Combobox`, `SegmentedControl`, `Slider`, `RangeSlider`,
    `ColorInput`, `TagsInput`, `Menu`, `ContextMenu`, `HoverCard`, `Tabs`,
    `Accordion`, `Pagination`, `Editor`, `MarkdownEditor`, `TableView`, `DataView`, `TreeView`,
-   `TabBar`, `SplitPanel`.
+   `TabBar`, `SplitPanel`, `PaneGroup`, `UpdatePrompt`, `UpdateNotice`.
 
 Both patterns can two-way bind to the reactive layer (`guise::reactive`):
 `Signal<T>` is the store, `Binding<T>` the connection — controlled builders take
@@ -70,8 +70,12 @@ Both patterns can two-way bind to the reactive layer (`guise::reactive`):
 - **One component per file**, lowercase, no `-`/`_`/spaces. Group with directories
   (`input/select.rs`), never concatenated names (`input-select.rs`).
 - `flex/` is **not** glob-exported (names overlap with `layout/`); import via
-  `use guise::flex::*`. `layout/` is token/`Size`-based (Mantine); `flex/` is
+  `use guise::flex::*`. `layout/` is token/`Size`-based; `flex/` is
   pixel-based Flutter-style (`Row`/`Column`/`Expanded`/`EdgeInsets`).
+- `update/` (self-update: release check, in-place install, `UpdatePrompt`) is the
+  one module that **shells out** — `curl`, and `hdiutil`/`rsync`/`codesign` on
+  macOS — and the one that parses nested JSON, with its own reader
+  (`theme/json.rs` is flat-only on purpose). Keep both confined there.
 
 ## Adding a component
 
@@ -80,5 +84,9 @@ Both patterns can two-way bind to the reactive layer (`guise::reactive`):
    Resolve visuals from `theme(cx)`.
 3. Re-export: module `mod.rs` → `lib.rs` → `prelude`.
 4. Add a showcase to `crates/gallery/`.
-5. Unit-test pure logic only (parsing, range math, editing models) with
-   `#[cfg(test)]` next to the code — there is no gpui render-test harness.
+5. Document it on the right `docs/*.md` page; a **new** page must also be
+   registered in `site/render/nav.ts` or the site won't build it.
+6. Unit-test pure logic (parsing, range math, editing models) with `#[cfg(test)]`
+   next to the code. For wiring that needs a live app — signals, bindings, entity
+   events, the theme global — use the gpui test harness:
+   `#[gpui::test] fn x(cx: &mut TestAppContext)` in `src/apptests.rs`.

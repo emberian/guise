@@ -1,8 +1,8 @@
 # guise documentation
 
-A Mantine-inspired component library for [gpui](https://github.com/zed-industries/zed).
+A component library for [gpui](https://github.com/zed-industries/zed).
 
-`guise` gives you a themed palette, sizing tokens, 120+ ready-made components,
+`guise` gives you a themed palette, sizing tokens, 130+ ready-made components,
 a Flutter-style flexbox layer, terse layout macros, an animation toolkit
 (easings, springs, exit transitions), typed drag & drop, and a lightweight
 React-style state layer (signals, two-way bindings, and a reactive form) —
@@ -42,6 +42,7 @@ all on top of gpui's retained-mode renderer.
 - [Transitions & animation](transitions.md) — `Easing` curves, `Spring` physics, `Transition`, `Collapse` (true height), `Presence` (exit animations)
 - [Drag & drop](dnd.md) — `Draggable`, `DropTarget`, `SortableList` with typed payloads
 - [Reactive state](reactive.md) — `Signal`, `Binding` (two-way `.bind`), `provide`/`use_context`, `use_state`/`watch`/`use_memo`/`use_effect`, and the reactive `Form`
+- [Software update](update.md) — `Updater`, `UpdatePrompt`, `UpdateNotice`: release check, in-place install, and the prompt that runs it
 - [Window menu](windowmenu.md) — wiring the native application menu
 - [Architecture](architecture.md) — workspace layout, the gpui dependency, and how to add a component
 

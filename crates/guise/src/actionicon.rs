@@ -8,7 +8,7 @@ use crate::input::ClickHandler;
 use crate::style::{icon_size, surface, ColorValue, Variant};
 use crate::theme::{theme, ColorName, Size};
 
-/// A compact, square icon button. The Mantine `ActionIcon`.
+/// A compact, square icon button.
 #[derive(IntoElement)]
 pub struct ActionIcon {
     id: ElementId,

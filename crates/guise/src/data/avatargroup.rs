@@ -14,7 +14,7 @@ const PALETTE: [ColorName; 6] = [
     ColorName::Lime,
 ];
 
-/// A stack of overlapping avatars. The Mantine `Avatar.Group`.
+/// A stack of overlapping avatars.
 #[derive(IntoElement)]
 pub struct AvatarGroup {
     items: Vec<SharedString>,

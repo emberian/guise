@@ -1,5 +1,5 @@
 //! Sizing tokens: the `xs..xl` scale used for spacing, radius, and font size,
-//! matching Mantine's defaults (authored in px).
+//! authored in px.
 
 /// A named size on the `xs..xl` scale. The library default is `Md`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

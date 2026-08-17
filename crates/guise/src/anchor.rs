@@ -6,7 +6,7 @@ use gpui::{div, px, App, ClickEvent, ElementId, IntoElement, SharedString, Windo
 use crate::input::ClickHandler;
 use crate::theme::{theme, ColorName, Size};
 
-/// A text link. The Mantine `Anchor`.
+/// A text link.
 #[derive(IntoElement)]
 pub struct Anchor {
     id: ElementId,

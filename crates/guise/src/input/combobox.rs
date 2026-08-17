@@ -7,11 +7,12 @@
 
 use gpui::prelude::*;
 use gpui::{
-    deferred, div, px, Context, EventEmitter, FocusHandle, IntoElement, KeyDownEvent, SharedString,
-    Window,
+    deferred, div, px, Context, EventEmitter, FocusHandle, IntoElement, KeyDownEvent, MouseButton,
+    SharedString, Window,
 };
 
-use super::{control_metrics, Field, TextEdit};
+use super::line::{self, Line, LineEditor, LineState};
+use super::{control_metrics, Field, KeyOutcome, TextEdit};
 use crate::icon::{Icon, IconName};
 use crate::theme::{theme, Size};
 
@@ -24,6 +25,7 @@ pub struct Combobox {
     options: Vec<SharedString>,
     selected: Vec<usize>,
     query: TextEdit,
+    state: LineState,
     open: bool,
     multiple: bool,
     focus: FocusHandle,
@@ -41,9 +43,10 @@ impl Combobox {
             options: Vec::new(),
             selected: Vec::new(),
             query: TextEdit::new(""),
+            state: LineState::new(),
             open: false,
             multiple: false,
-            focus: cx.focus_handle(),
+            focus: cx.focus_handle().tab_stop(true),
             placeholder: SharedString::new_static("Search…"),
             label: None,
             size: Size::Sm,
@@ -116,48 +119,51 @@ impl Combobox {
         } else {
             self.selected = vec![index];
             self.open = false;
-            self.query = TextEdit::new("");
+            self.query.set_text("");
         }
         cx.emit(ComboboxEvent(index));
         cx.notify();
     }
 
-    fn on_key(&mut self, event: &KeyDownEvent, _window: &mut Window, cx: &mut Context<Self>) {
+    fn on_key(&mut self, event: &KeyDownEvent, window: &mut Window, cx: &mut Context<Self>) {
         if self.disabled {
             return;
         }
         let ks = &event.keystroke;
-        if ks.modifiers.platform || ks.modifiers.control {
-            return;
-        }
-        match ks.key.as_str() {
-            "escape" => {
-                self.open = false;
-            }
-            "enter" => {
-                if let Some(&first) = self.filtered().first() {
-                    self.choose(first, cx);
+        // The list owns Escape and Enter; the rest of the trigger is an
+        // ordinary text field over the query.
+        if !ks.modifiers.platform && !ks.modifiers.control {
+            match ks.key.as_str() {
+                "escape" if self.open => {
+                    self.open = false;
+                    cx.notify();
+                    cx.stop_propagation();
+                    return;
                 }
-            }
-            "backspace" => {
-                self.query.backspace();
-                self.open = true;
-            }
-            "left" => self.query.left(),
-            "right" => self.query.right(),
-            _ => {
-                if let Some(text) = ks
-                    .key_char
-                    .as_deref()
-                    .filter(|t| !t.is_empty() && !ks.modifiers.alt)
-                {
-                    self.query.insert(text);
+                "enter" => {
+                    if let Some(&first) = self.filtered().first() {
+                        self.choose(first, cx);
+                    }
+                    cx.notify();
+                    cx.stop_propagation();
+                    return;
+                }
+                "down" if !self.open => {
                     self.open = true;
+                    cx.notify();
+                    cx.stop_propagation();
+                    return;
                 }
+                _ => {}
             }
         }
-        cx.notify();
-        cx.stop_propagation();
+        match line::keys(self, event, window, cx) {
+            KeyOutcome::Edited => {
+                self.line_changed(cx);
+                cx.stop_propagation();
+            }
+            KeyOutcome::Submit | KeyOutcome::Cancel | KeyOutcome::Pass => {}
+        }
     }
 
     fn value_text(&self) -> SharedString {
@@ -174,6 +180,41 @@ impl Combobox {
     }
 }
 
+impl LineEditor for Combobox {
+    fn edit(&self) -> &TextEdit {
+        &self.query
+    }
+
+    fn edit_mut(&mut self) -> &mut TextEdit {
+        &mut self.query
+    }
+
+    fn line(&self) -> &LineState {
+        &self.state
+    }
+
+    fn line_mut(&mut self) -> &mut LineState {
+        &mut self.state
+    }
+
+    fn line_focus(&self) -> &FocusHandle {
+        &self.focus
+    }
+
+    fn line_read_only(&self) -> bool {
+        self.disabled
+    }
+
+    /// Typing into the trigger is what opens the list, so any edit does.
+    fn line_changed(&mut self, cx: &mut Context<Self>) {
+        self.open = true;
+        cx.notify();
+    }
+}
+
+line::line_input_handler!(Combobox);
+line::line_focus_builders!(Combobox);
+
 impl Render for Combobox {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let t = theme(cx);
@@ -185,36 +226,30 @@ impl Render for Combobox {
         let border = if focused { t.primary() } else { t.border() }.hsla();
         let text_color = t.text().hsla();
         let dimmed = t.dimmed().hsla();
-        let caret = t.primary().hsla();
         let selected_bg = t.primary().alpha(0.12);
 
         let has_value = !self.selected.is_empty();
-        let interior = if self.open && focused {
-            let (before, after) = self.query.split();
-            div()
-                .flex()
-                .items_center()
-                .text_color(text_color)
-                .child(SharedString::from(before))
-                .child(div().w(px(1.0)).h(px(font * 1.15)).bg(caret))
-                .child(SharedString::from(after))
-        } else {
-            div()
-                .text_color(if has_value { text_color } else { dimmed })
-                .child(self.value_text())
-        };
+        // With no query typed the field reads as the current selection; start
+        // typing and it becomes the search box. Keeping the same element in
+        // both states is what lets the platform deliver text to it at all.
+        let interior = Line::new(cx.entity()).placeholder(
+            self.value_text(),
+            if has_value { text_color } else { dimmed },
+        );
 
-        let trigger = div()
-            .id("guise-combobox-trigger")
-            .track_focus(&self.focus)
+        let trigger = line::wire(div().id("guise-combobox-trigger"), &self.focus, cx)
             .on_key_down(cx.listener(Self::on_key))
-            .on_click(cx.listener(|this, _ev, window, cx| {
-                if !this.disabled {
-                    this.open = !this.open;
-                    window.focus(&this.focus);
-                    cx.notify();
-                }
-            }))
+            // Layered on top of the shared handlers rather than replacing
+            // them: clicking the field places a caret *and* opens the list.
+            .on_mouse_down(
+                MouseButton::Left,
+                cx.listener(|this, _event, _window, cx| {
+                    if !this.disabled {
+                        this.open = true;
+                        cx.notify();
+                    }
+                }),
+            )
             .flex()
             .items_center()
             .justify_between()
@@ -226,11 +261,27 @@ impl Render for Combobox {
             .border_color(border)
             .bg(surface)
             .text_size(px(font))
-            .child(interior)
+            .line_height(px(font * 1.3))
+            .child(div().flex_1().min_w(px(0.0)).child(interior))
+            // Clicking the field places a caret, so the chevron keeps the
+            // open/close toggle the trigger used to be.
             .child(
-                Icon::new(IconName::ChevronDown)
-                    .size(Size::Xs)
-                    .color(crate::theme::ColorName::Gray),
+                div()
+                    .id("guise-combobox-chevron")
+                    .flex_none()
+                    .cursor_pointer()
+                    .child(
+                        Icon::new(IconName::ChevronDown)
+                            .size(Size::Xs)
+                            .color(crate::theme::ColorName::Gray),
+                    )
+                    .on_click(cx.listener(|this, _ev, window, cx| {
+                        if !this.disabled {
+                            this.open = !this.open;
+                            window.focus(&this.focus);
+                            cx.notify();
+                        }
+                    })),
             );
 
         let mut wrap = div().relative().child(trigger);

@@ -11,7 +11,7 @@ struct Crumb {
     on_click: Option<ClickHandler>,
 }
 
-/// A breadcrumb trail. The Mantine `Breadcrumbs`. The last item is rendered as
+/// A breadcrumb trail. The last item is rendered as
 /// the current location and is never clickable, even when built with [`link`].
 ///
 /// [`link`]: Breadcrumbs::link

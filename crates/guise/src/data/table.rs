@@ -18,7 +18,7 @@ fn cell(value: SharedString, color: Hsla, weight: FontWeight, font: f32) -> Div 
         .child(value)
 }
 
-/// A data table. The Mantine `Table`. Cells are plain strings; columns size
+/// A data table. Cells are plain strings; columns size
 /// equally.
 #[derive(IntoElement)]
 pub struct Table {

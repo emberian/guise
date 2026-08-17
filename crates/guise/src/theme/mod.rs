@@ -1,9 +1,9 @@
 //! The theme: palette + sizing tokens + color scheme, exposed as a gpui
 //! `Global` so any component can resolve themed values during render.
 //!
-//! Mirrors Mantine's `MantineProvider` model — a single source of truth for
-//! colors, spacing, radius and typography, with semantic colors derived from
-//! the active light/dark [`ColorScheme`].
+//! One global as the single source of truth for colors, spacing, radius and
+//! typography, with semantic colors derived from the active light/dark
+//! [`ColorScheme`].
 
 mod color;
 mod css;
@@ -15,7 +15,7 @@ mod tokens;
 pub use color::Color;
 pub use css::{css, hsl, hsla, rgb, rgba, CssColorError};
 pub use json::ThemeJsonError;
-pub use palette::{mantine, ColorName, Palette, Shades};
+pub use palette::{open_color, ColorName, Palette, Shades};
 pub use presets::PRESET_NAMES;
 pub use tokens::{Scale, Size};
 
@@ -96,7 +96,7 @@ impl Theme {
     pub fn light() -> Self {
         Theme {
             scheme: ColorScheme::Light,
-            palette: mantine(),
+            palette: open_color(),
             primary_color: ColorName::Blue,
             primary_shade_light: 6,
             primary_shade_dark: 8,
@@ -283,6 +283,14 @@ impl Theme {
             ColorScheme::Light => self.color(ColorName::Gray, 3),
             ColorScheme::Dark => self.color(ColorName::Dark, 4),
         })
+    }
+
+    /// The wash behind selected text. Every field and editor paints the same
+    /// one, so it lives here rather than as a `primary().alpha(..)` open-coded
+    /// per component — which is how the two that existed had already drifted
+    /// apart.
+    pub fn selection(&self) -> gpui::Hsla {
+        self.primary().alpha(0.30)
     }
 
     // --- Feedback accents (scheme-aware) ------------------------------------

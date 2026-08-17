@@ -81,6 +81,11 @@ const stages: Record<string, string> = {
     <div class="g-webbody"><strong>Native WebView</strong><span>Embedded via wry, positioned in guise layout.</span></div>
   </div>`,
 
+  update: `<div class="pv-wrap">
+    <div class="g-updwin"><span class="g-title">Acme 1.32.0 is available</span><span class="g-dimmed">You have 1.31.0.</span><div class="g-progress"><span style="width:36%"></span></div><div class="g-updrow"><span class="g-dimmed">Downloading update&hellip;</span><span class="g-dimmed">7.3 MB of 20.3 MB</span></div><div class="g-group"><button class="g-btn g-btn--subtle">Release Notes</button><button class="g-btn g-btn--default">Later</button><button class="g-btn g-btn--filled">Update &amp; Restart</button></div></div>
+    <div class="g-updwin g-updwin--short"><span class="g-title">Acme 1.32.0 is on the way</span><span class="g-dimmed">It is still building for this platform. Check again shortly.</span><div class="g-group"><button class="g-btn g-btn--filled">OK</button></div></div>
+  </div>`,
+
   theming: `<div class="pv-wrap">
     <div class="ribbon ribbon--labelled" aria-hidden="true">
       ${["#2e2e2e","#868e96","#fa5252","#e64980","#be4bdb","#7950f2","#4c6ef5","#228be6","#15aabf","#12b886","#40c057","#82c91e","#fab005","#fd7e14"].map((c) => `<span class="swatch" style="--c:${c}"></span>`).join("")}

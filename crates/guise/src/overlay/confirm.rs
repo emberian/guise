@@ -33,8 +33,7 @@ use crate::theme::{theme, ColorName, Size};
 
 type Handler = Rc<dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static>;
 
-/// A confirm/cancel dialog. The Mantine `modals.openConfirmModal`, as a
-/// controlled component.
+/// A confirm/cancel dialog, as a controlled component.
 #[derive(IntoElement)]
 pub struct ConfirmModal {
     title: Option<SharedString>,

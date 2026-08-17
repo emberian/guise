@@ -13,7 +13,7 @@ use gpui::{div, px, App, IntoElement, SharedString, Window};
 
 use crate::theme::{theme, ColorName, Size};
 
-/// A highlighter-pen span. The Mantine `Mark`.
+/// A highlighter-pen span.
 ///
 /// Inherits the surrounding font size unless [`Mark::size`] is set, so it
 /// drops into a `Group` next to `Text` runs.
@@ -49,8 +49,8 @@ impl Mark {
 impl RenderOnce for Mark {
     fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
         let t = theme(cx);
-        // Mantine's mark: a light shade-2 wash in light mode, a translucent
-        // shade-5 tint in dark mode; text stays the theme text color.
+        // A light shade-2 wash in light mode, a translucent shade-5 tint in
+        // dark mode; text stays the theme text color.
         let bg = if t.scheme.is_dark() {
             t.color(self.color, 5).alpha(0.35)
         } else {

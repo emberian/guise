@@ -1,5 +1,5 @@
 //! Gallery — a live showcase of `guise` components, in the spirit of the
-//! Mantine docs. Run with `cargo run -p gallery`.
+//! component docs. Run with `cargo run -p gallery`.
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
@@ -158,12 +158,24 @@ struct Gallery {
     queue: Vec<SharedString>,
     // Motion
     collapse_open: bool,
+    // Software update: the prompt and the "nothing to install" notice, rendered
+    // inline rather than in their own windows so both are visible at once.
+    update_prompt: Entity<UpdatePrompt>,
+    update_notice: Entity<UpdateNotice>,
+    update_status: SharedString,
     // Misc components
     carousel: Entity<Carousel>,
     navmenu: Entity<NavigationMenu>,
     autocomplete: Entity<Autocomplete>,
     transfer: Entity<Transfer>,
     tour: Entity<Tour>,
+    // AI: a transcript with a canned conversation, the prompt box, and the
+    // controls around a request. No transport — the demo replies to itself.
+    chat: Entity<AIChatView>,
+    composer: Entity<AIComposer>,
+    model: Entity<AIModelPicker>,
+    ai_settings: Entity<AISettings>,
+    ai_usage: AIUsage,
     /// Section keys whose "view source" panel is currently expanded.
     code_open: HashSet<&'static str>,
     /// One copy button per section, keyed by section key.
@@ -193,7 +205,9 @@ const SECTION_SOURCES: &[(&str, code::Snippet)] = &[
     ("dnd", code::DND),
     ("motion", code::MOTION),
     ("misc", code::MISC),
+    ("update", code::UPDATE),
     ("editor", code::EDITOR),
+    ("ai", code::AI),
     ("navigation", code::NAVIGATION),
     ("shell", code::SHELL),
     ("panels", code::PANELS),
@@ -259,7 +273,7 @@ impl Gallery {
             Select::new(cx)
                 .label("Framework")
                 .placeholder("Choose one…")
-                .data(["gpui", "Mantine", "SwiftUI", "Flutter", "Jetpack Compose"])
+                .data(["gpui", "SwiftUI", "Flutter", "Jetpack Compose", "AppKit"])
         });
         let menu = cx.new(|cx| {
             Menu::new(cx, "Actions")
@@ -314,10 +328,10 @@ impl Gallery {
         let accordion = cx.new(|cx| {
             Accordion::new(cx)
                 .item("What is guise?", |_, _| {
-                    Text::new("A Mantine-inspired component library for gpui.").size(Size::Sm)
+                    Text::new("A component library for gpui.").size(Size::Sm)
                 })
                 .item("Is it themeable?", |_, _| {
-                    Text::new("Yes — light/dark plus the full Mantine palette.").size(Size::Sm)
+                    Text::new("Yes — light/dark plus the full open-color palette.").size(Size::Sm)
                 })
                 .default_open(0)
         });
@@ -462,7 +476,7 @@ impl Gallery {
         let dataview_items = use_state(
             cx,
             vec![
-                "Mantine".to_string(),
+                "SwiftUI".to_string(),
                 "gpui".to_string(),
                 "SwiftUI".to_string(),
                 "Flutter".to_string(),
@@ -755,6 +769,115 @@ impl Gallery {
                 .step("Theming", "Toggle light/dark from the header button.")
         });
 
+        // The gallery runs from `target/`, which is neither an installed .app nor
+        // an AppImage — so `detect()` reports `Unknown` and the prompt honestly
+        // offers the download page instead of an install it can't perform. The
+        // stages below are driven by hand; nothing here touches the network.
+        let updater = Updater::github("Gallery", env!("CARGO_PKG_VERSION"), "wess/guise");
+        let offered = Release {
+            version: "9.9.9".to_string(),
+            url: "https://github.com/wess/guise/releases".to_string(),
+            assets: Vec::new(),
+        };
+        let update_prompt = cx.new(|cx| UpdatePrompt::new(updater.clone(), offered, cx));
+        cx.subscribe(
+            &update_prompt,
+            |this, _prompt, event: &UpdatePromptEvent, cx| {
+                this.update_status = SharedString::from(match event {
+                    UpdatePromptEvent::Started => "install started".to_string(),
+                    UpdatePromptEvent::Stage(stage) => stage.label().to_string(),
+                    UpdatePromptEvent::Installed(_) => "installed — restarting".to_string(),
+                    UpdatePromptEvent::Failed(why) => format!("failed: {why}"),
+                    UpdatePromptEvent::Dismissed => "dismissed".to_string(),
+                });
+                cx.notify();
+            },
+        )
+        .detach();
+        let update_notice =
+            cx.new(|cx| UpdateNotice::new(updater, UpdateOutcome::Pending("9.9.9".into()), cx));
+
+        // --- AI ---------------------------------------------------------
+        // A canned exchange, so the section shows what a real transcript looks
+        // like: a reply with reasoning, a tool call, and cited sources.
+        let chat = cx.new(|cx| {
+            AIChatView::new(cx)
+                .max_width(680.0)
+                .empty_message("Ask something to start.")
+                .turns([
+                    AITurn::user("What changed in the update module?"),
+                    AITurn::assistant(
+                        "Two things:\n\n                         1. Downloads are now checked against a **published SHA-256** \
+                         when the release ships one.\n                         2. `require_checksum(true)` makes a *missing* digest a refusal \
+                         rather than a silent pass — which is what you want on Linux, \
+                         where there is no `codesign` to fall back on.",
+                    )
+                    .name("claude-opus-5")
+                    .meta("1.8s · 412 tokens")
+                    .reasoning(
+                        "The macOS path already gates on a pinned codesign requirement. \
+                         The AppImage path had nothing equivalent, so a byte count was \
+                         the only check standing between a swapped asset and code that \
+                         runs on the next launch.",
+                    )
+                    .tools([AITurnTool::new("read_file")
+                        .status(AIToolStatus::Ok)
+                        .arguments("{\"path\": \"crates/guise/src/update/appimage.rs\"}")
+                        .result("166 lines")])
+                    .sources([
+                        AISource::new("update.md", "docs/update.md")
+                            .excerpt("A byte count is not an integrity check."),
+                        AISource::new("checksum.rs", "crates/guise/src/update/checksum.rs"),
+                    ]),
+                ])
+        });
+        let composer = cx.new(|cx| {
+            AIComposer::new(cx)
+                .attachments(true)
+                .hint("Enter sends · Shift+Enter for a new line")
+        });
+        // The gallery has no transport, so the demo answers itself — enough to
+        // show the streaming caret, the stop button, and stick-to-bottom.
+        cx.subscribe(&composer, |this, _composer, event: &AIComposerEvent, cx| {
+            if let AIComposerEvent::Submit(text) = event {
+                let echo = format!(
+                    "The gallery has no model behind it, so this is a canned reply to \
+                     _{}_ — but the streaming caret, the stop button, and stick-to-bottom \
+                     scrolling are the real ones.",
+                    text.trim()
+                );
+                this.chat.update(cx, |chat, cx| {
+                    chat.push(AITurn::user(text.clone()), cx);
+                    chat.begin_reply(cx);
+                    chat.push_delta(&echo, cx);
+                    chat.end_reply(cx);
+                });
+                this.ai_usage = this.ai_usage + AIUsage::new(text.len() as u64, echo.len() as u64);
+                cx.notify();
+            }
+        })
+        .detach();
+        let model = cx.new(|cx| {
+            AIModelPicker::new(cx)
+                .label("Model")
+                .models([
+                    AIModel::new("claude-opus-5", "Opus 5")
+                        .description("Deepest reasoning")
+                        .context(200_000)
+                        .pricing(AIPricing::new(15.0, 75.0)),
+                    AIModel::new("claude-sonnet-5", "Sonnet 5")
+                        .description("Balanced speed and depth")
+                        .context(200_000)
+                        .pricing(AIPricing::new(3.0, 15.0)),
+                    AIModel::new("claude-haiku-4-5", "Haiku 4.5")
+                        .description("Fastest, cheapest")
+                        .context(200_000)
+                        .pricing(AIPricing::new(1.0, 5.0)),
+                ])
+                .selected_id("claude-sonnet-5")
+        });
+        let ai_settings = cx.new(AISettings::new);
+
         Gallery {
             agree: false,
             notifications: true,
@@ -812,16 +935,101 @@ impl Gallery {
                 SharedString::new_static("Write changelog"),
             ],
             collapse_open: true,
+            update_prompt,
+            update_notice,
+            update_status: SharedString::new_static("idle"),
             carousel,
             navmenu,
             autocomplete,
             transfer,
             tour,
+            chat,
+            composer,
+            model,
+            ai_settings,
+            ai_usage: AIUsage::new(18_400, 2_100).cache_read(96_000),
             code_open: HashSet::new(),
             copy_buttons,
             code_style,
             use_macros: false,
         }
+    }
+
+    /// Software update: the prompt in each of its states, beside the notice a
+    /// manual check answers with when there's nothing to install. The buttons
+    /// drive the states by hand — the prompt's own action button runs the real
+    /// installer, which here means opening the release page (see `Gallery::new`).
+    fn update_demo(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let controls = Group::new()
+            .align(Align::Center)
+            .child(
+                Button::new("upd-idle", "Idle")
+                    .variant(Variant::Subtle)
+                    .on_click(cx.listener(|this, _, _, cx| {
+                        this.update_prompt.update(cx, |prompt, cx| prompt.reset(cx));
+                    })),
+            )
+            .child(
+                Button::new("upd-dl", "Downloading")
+                    .variant(Variant::Light)
+                    .on_click(cx.listener(|this, _, _, cx| {
+                        this.update_prompt.update(cx, |prompt, cx| {
+                            prompt.set_stage(
+                                UpdateStage::Downloading {
+                                    done: 8_400_000,
+                                    total: 20_314_688,
+                                },
+                                cx,
+                            )
+                        });
+                    })),
+            )
+            .child(
+                Button::new("upd-verify", "Verifying")
+                    .variant(Variant::Light)
+                    .on_click(cx.listener(|this, _, _, cx| {
+                        this.update_prompt.update(cx, |prompt, cx| {
+                            prompt.set_stage(UpdateStage::Verifying, cx)
+                        });
+                    })),
+            )
+            .child(
+                Button::new("upd-fail", "Failed")
+                    .variant(Variant::Light)
+                    .color(ColorName::Red)
+                    .on_click(cx.listener(|this, _, _, cx| {
+                        this.update_prompt.update(cx, |prompt, cx| {
+                            prompt.set_failed("the update isn't signed by Gallery", cx)
+                        });
+                    })),
+            )
+            .child(
+                Text::new(self.update_status.clone())
+                    .size(Size::Sm)
+                    .dimmed(),
+            );
+
+        let panel = |width: f32, height: f32, body: gpui::AnyElement| {
+            Paper::new()
+                .with_border(true)
+                .padding(Size::Xs)
+                .child(div().w(px(width)).h(px(height)).child(body))
+        };
+
+        Stack::new().gap(Size::Sm).child(controls).child(
+            Group::new()
+                .gap(Size::Md)
+                .child(panel(
+                    400.0,
+                    220.0,
+                    self.update_prompt.clone().into_any_element(),
+                ))
+                .child(panel(
+                    320.0,
+                    140.0,
+                    self.update_notice.clone().into_any_element(),
+                )),
+        )
     }
 
     /// Wrap a section body with its title and a "view source" toggle (`</>`).
@@ -1138,6 +1346,65 @@ impl Gallery {
         )
     }
 
+    /// The AI section: a transcript with a live composer on the left, and the
+    /// controls and meters that surround a request on the right.
+    fn ai_demo(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let border = cx.global::<Theme>().border().hsla();
+        let pricing = self
+            .model
+            .read(cx)
+            .selection()
+            .and_then(|model| model.pricing)
+            .unwrap_or(AIPricing::new(3.0, 15.0));
+        let context = self
+            .model
+            .read(cx)
+            .selection()
+            .map(|model| model.context)
+            .unwrap_or(200_000);
+
+        let conversation = Stack::new()
+            .gap(Size::Sm)
+            .child(
+                div()
+                    .h(px(360.0))
+                    .rounded(px(8.0))
+                    .border_1()
+                    .border_color(border)
+                    .child(self.chat.clone()),
+            )
+            .child(self.composer.clone());
+
+        let controls = Stack::new()
+            .gap(Size::Md)
+            .child(self.model.clone())
+            .child(AITokenMeter::new(self.ai_usage.total(), context).label("Context"))
+            .child(
+                AICost::new(self.ai_usage, pricing)
+                    .label("Session")
+                    .breakdown(true),
+            )
+            .child(Divider::new())
+            .child(self.ai_settings.clone())
+            .child(Divider::new())
+            .child(AIThinking::new().label("Searching the web"))
+            .child(
+                AIToolCall::new("gallery-tool", "run_tests")
+                    .status(AIToolStatus::Error)
+                    .meta("2.4s")
+                    .result("3 failed, 415 passed")
+                    .open(true),
+            );
+
+        div()
+            .flex()
+            .flex_row()
+            .gap(px(24.0))
+            .w_full()
+            .child(div().flex_1().min_w(px(0.0)).child(conversation))
+            .child(div().w(px(300.0)).flex_none().child(controls))
+    }
+
     fn panels_demo(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let ratio = self.split.read(cx).current_ratio();
         let border = cx.global::<Theme>().border().hsla();
@@ -1352,7 +1619,7 @@ impl Gallery {
     }
 
     fn typeextras(&self, cx: &mut Context<Self>) -> impl IntoElement {
-        let spoiler_text = "guise is a Mantine-inspired component library for gpui. It ships \
+        let spoiler_text = "guise is a component library for gpui. It ships \
             themed buttons, inputs, overlays, data views, and a reactive binding layer. Every \
             visual value resolves from the active theme, so light and dark schemes come free. \
             This paragraph exists purely to be tall enough to clip.";
@@ -1729,8 +1996,12 @@ impl Render for Gallery {
         let motion = self.section(cx, "motion", "Motion", motion_body);
         let misc_body = self.misc(cx);
         let misc = self.section(cx, "misc", "Carousel & more", misc_body);
+        let update_body = self.update_demo(cx);
+        let update = self.section(cx, "update", "Software update", update_body);
         let editor_body = self.editor_demo();
         let editor = self.section(cx, "editor", "Editor", editor_body);
+        let ai_body = self.ai_demo(cx);
+        let ai = self.section(cx, "ai", "AI", ai_body);
         let nav_body = self.navigation(cx);
         let navigation = self.section(cx, "navigation", "Navigation", nav_body);
         let shell_body = self.shell_demo(cx);
@@ -1797,8 +2068,10 @@ impl Render for Gallery {
                     .child(dnd)
                     .child(motion)
                     .child(editor)
+                    .child(ai)
                     .child(navigation)
                     .child(misc)
+                    .child(update)
                     .child(shell)
                     .child(panels)
                     .child(polish)

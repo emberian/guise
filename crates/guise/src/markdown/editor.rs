@@ -30,14 +30,16 @@ use gpui::{
 };
 
 use super::block::{classify, Block, DocState};
-use super::layout::{byte_for_col, col_for_byte, plan, src_for_vis, vis_for_src, RowKind, RowPlan};
+use super::layout::{
+    byte_for_col, col_for_byte, metrics, plan, src_for_vis, vis_for_src, RowKind, RowPlan,
+};
 use crate::editor::{token_color, EditorModel, Highlighter, Language, LineState, Pos, TokenKind};
 use crate::reactive::Signal;
 use crate::theme::theme;
 use crate::{Glyph, IconName};
 
 /// The monospace family for code spans and code blocks.
-const MONO_FAMILY: &str = "Menlo";
+use crate::style::MONO_FAMILY;
 /// Horizontal padding around the document, in px.
 const PAD_X: f32 = 16.0;
 /// Vertical padding above and below the document, in px.
@@ -1006,7 +1008,8 @@ impl Render for MarkdownEditor {
             let reveal = reveal_range.is_some_and(|(s, e)| i >= s && i <= e);
             let plan = plan(line, &block, lang.as_deref(), reveal);
 
-            let (scale, lh, pt, pb) = metrics(&plan.kind);
+            let m = metrics(&plan.kind);
+            let (scale, lh, pt, pb) = (m.scale, m.line_height, m.pad_top, m.pad_bottom);
             let size = (base * scale).round();
             let line_h = (size * lh).round();
             let pad_top = (base * pt).round();
@@ -1408,23 +1411,6 @@ impl Render for MarkdownEditor {
 
 // ---- pure helpers (unit-tested) ---------------------------------------------
 
-/// Per-kind sizing: (font scale, line-height factor, pad-top ems,
-/// pad-bottom ems), all relative to the base font size.
-fn metrics(kind: &RowKind) -> (f32, f32, f32, f32) {
-    match kind {
-        RowKind::Heading(1) => (1.6, 1.3, 0.7, 0.3),
-        RowKind::Heading(2) => (1.45, 1.3, 0.6, 0.25),
-        RowKind::Heading(3) => (1.28, 1.3, 0.5, 0.2),
-        RowKind::Heading(4) => (1.15, 1.3, 0.4, 0.15),
-        RowKind::Heading(5) => (1.05, 1.3, 0.35, 0.1),
-        RowKind::Heading(_) => (0.95, 1.3, 0.35, 0.1),
-        RowKind::Code { .. } | RowKind::Fence { .. } | RowKind::FrontMatter | RowKind::Table => {
-            (0.88, 1.55, 0.0, 0.0)
-        }
-        _ => (1.0, 1.6, 0.0, 0.0),
-    }
-}
-
 /// Map a fence info string onto a highlighter language.
 fn fence_language(lang: Option<&str>) -> Language {
     match lang {
@@ -1605,16 +1591,6 @@ mod tests {
         assert_eq!(total, 10);
         assert_eq!(s[1], (3, Some(TokenKind::Keyword)));
         assert_eq!(cover(4, &[]), vec![(4, None)]);
-    }
-
-    #[test]
-    fn heading_metrics_scale_down() {
-        let (h1, ..) = metrics(&RowKind::Heading(1));
-        let (h3, ..) = metrics(&RowKind::Heading(3));
-        let (p, ..) = metrics(&RowKind::Paragraph);
-        assert!(h1 > h3 && h3 > p);
-        let (code, ..) = metrics(&RowKind::Code { lang: None });
-        assert!(code < p);
     }
 
     #[test]

@@ -7,7 +7,7 @@ use super::{control_box_size, ClickHandler};
 use crate::reactive::Binding;
 use crate::theme::{theme, ColorName, Size};
 
-/// A controlled checkbox. The Mantine `Checkbox`. Pass `checked` and a change
+/// A controlled checkbox. Pass `checked` and a change
 /// handler (via `cx.listener`); the parent view owns the value. Or hand it a
 /// [`Binding`] via [`Checkbox::bind`] and skip the handler.
 #[derive(IntoElement)]

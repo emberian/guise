@@ -89,6 +89,43 @@ impl RowPlan {
     }
 }
 
+/// How a row is sized. Both markdown renderers — the editor and the read-only
+/// [`Markdown`](super::Markdown) view — read this, because a document that
+/// changes size when you start editing it is a bug. They had two copies of
+/// these numbers and had already drifted apart on three of them.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct RowMetrics {
+    /// Font size, as a multiple of the document's base size.
+    pub scale: f32,
+    /// Line height, as a multiple of this row's own font size.
+    pub line_height: f32,
+    /// Space above and below the row, as multiples of the base size.
+    pub pad_top: f32,
+    pub pad_bottom: f32,
+}
+
+/// The metrics for a row kind.
+pub fn metrics(kind: &RowKind) -> RowMetrics {
+    let m = |scale, line_height, pad_top, pad_bottom| RowMetrics {
+        scale,
+        line_height,
+        pad_top,
+        pad_bottom,
+    };
+    match kind {
+        RowKind::Heading(1) => m(1.6, 1.3, 0.7, 0.3),
+        RowKind::Heading(2) => m(1.45, 1.3, 0.6, 0.25),
+        RowKind::Heading(3) => m(1.28, 1.3, 0.5, 0.2),
+        RowKind::Heading(4) => m(1.15, 1.3, 0.4, 0.15),
+        RowKind::Heading(5) => m(1.05, 1.3, 0.35, 0.1),
+        RowKind::Heading(_) => m(0.95, 1.3, 0.35, 0.1),
+        RowKind::Code { .. } | RowKind::Fence { .. } | RowKind::FrontMatter | RowKind::Table => {
+            m(0.88, 1.55, 0.0, 0.0)
+        }
+        _ => m(1.0, 1.6, 0.0, 0.0),
+    }
+}
+
 /// Plan one line. `code_lang` is the enclosing fence's info string when
 /// `block` is [`Block::CodeLine`]; `reveal` shows syntax instead of hiding it
 /// (the cursor/selection lines of a focused editor).
@@ -506,5 +543,20 @@ mod tests {
         assert_eq!(byte_for_col("abc", 9), 3);
         assert_eq!(col_for_byte("日本語", 3), 1);
         assert_eq!(col_for_byte("abc", 9), 3);
+    }
+
+    /// Both renderers read one table, so a document can't change size when you
+    /// start editing it.
+    #[test]
+    fn headings_scale_down_to_body_and_code() {
+        let h1 = metrics(&RowKind::Heading(1));
+        let h3 = metrics(&RowKind::Heading(3));
+        let body = metrics(&RowKind::Paragraph);
+        let code = metrics(&RowKind::Code { lang: None });
+        assert!(h1.scale > h3.scale && h3.scale > body.scale);
+        assert!(code.scale < body.scale);
+        // Headings carry the space above them; body copy doesn't.
+        assert!(h1.pad_top > body.pad_top);
+        assert_eq!(body.pad_top, 0.0);
     }
 }

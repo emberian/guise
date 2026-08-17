@@ -107,7 +107,7 @@ impl LayoutSnapshot {
     pub fn decode(source: &str) -> Result<LayoutSnapshot, SnapshotError> {
         let bytes = source.trim().as_bytes();
         let mut pos = 0;
-        let node = parse_node(bytes, &mut pos)?;
+        let node = parse_node(bytes, &mut pos, 0)?;
         if pos != bytes.len() {
             return Err(SnapshotError {
                 at: pos,
@@ -117,6 +117,14 @@ impl LayoutSnapshot {
         Ok(node)
     }
 }
+
+/// Nesting cap for [`parse_node`]. A snapshot is persisted state — a settings
+/// file, a synced workspace — so a corrupted or hostile one reaches the parser
+/// with no other check in front of it. `"h0.5(" * 100_000` would recurse until
+/// the stack ran out, and a stack overflow aborts the process rather than
+/// unwinding, so there is no way to recover from it after the fact. Nothing
+/// anyone splits by hand comes close to this depth.
+const MAX_DEPTH: usize = 64;
 
 fn parse_number(bytes: &[u8], pos: &mut usize, reason: &'static str) -> Result<u64, SnapshotError> {
     let start = *pos;
@@ -147,7 +155,17 @@ fn parse_ratio(bytes: &[u8], pos: &mut usize) -> Result<f32, SnapshotError> {
         })
 }
 
-fn parse_node(bytes: &[u8], pos: &mut usize) -> Result<LayoutSnapshot, SnapshotError> {
+fn parse_node(
+    bytes: &[u8],
+    pos: &mut usize,
+    depth: usize,
+) -> Result<LayoutSnapshot, SnapshotError> {
+    if depth > MAX_DEPTH {
+        return Err(SnapshotError {
+            at: *pos,
+            reason: "nested deeper than the layout limit",
+        });
+    }
     match bytes.get(*pos) {
         Some(b'p') => {
             *pos += 1;
@@ -187,7 +205,7 @@ fn parse_node(bytes: &[u8], pos: &mut usize) -> Result<LayoutSnapshot, SnapshotE
                 });
             }
             *pos += 1;
-            let first = parse_node(bytes, pos)?;
+            let first = parse_node(bytes, pos, depth + 1)?;
             if bytes.get(*pos) != Some(&b'|') {
                 return Err(SnapshotError {
                     at: *pos,
@@ -195,7 +213,7 @@ fn parse_node(bytes: &[u8], pos: &mut usize) -> Result<LayoutSnapshot, SnapshotE
                 });
             }
             *pos += 1;
-            let second = parse_node(bytes, pos)?;
+            let second = parse_node(bytes, pos, depth + 1)?;
             if bytes.get(*pos) != Some(&b')') {
                 return Err(SnapshotError {
                     at: *pos,
@@ -226,6 +244,27 @@ mod tests {
             items: items.to_vec(),
             active,
         }
+    }
+
+    /// A corrupted snapshot must not be able to recurse the parser into a
+    /// stack overflow, which would abort the process rather than unwind.
+    #[test]
+    fn decode_refuses_pathological_nesting() {
+        let deep = "h0.5(".repeat(MAX_DEPTH + 8);
+        let error = LayoutSnapshot::decode(&deep).expect_err("should refuse");
+        assert_eq!(error.reason, "nested deeper than the layout limit");
+
+        // A layout nested to a depth a person could plausibly build still
+        // decodes: the cap is a backstop, not a feature limit.
+        let mut deep = String::new();
+        for _ in 0..MAX_DEPTH - 1 {
+            deep.push_str("h0.5(p0@1|");
+        }
+        deep.push_str("p0@2");
+        for _ in 0..MAX_DEPTH - 1 {
+            deep.push(')');
+        }
+        assert!(LayoutSnapshot::decode(&deep).is_ok());
     }
 
     #[test]

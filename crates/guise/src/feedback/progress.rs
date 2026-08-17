@@ -3,14 +3,15 @@
 use gpui::prelude::*;
 use gpui::{div, px, relative, App, IntoElement, Window};
 
+use crate::style::ColorValue;
 use crate::theme::{theme, ColorName, Size};
 
-/// A determinate progress bar. The Mantine `Progress`. `value` is a percentage
+/// A determinate progress bar. `value` is a percentage
 /// in `0.0..=100.0`.
 #[derive(IntoElement)]
 pub struct Progress {
     value: f32,
-    color: ColorName,
+    color: ColorValue,
     size: Size,
     radius: Option<Size>,
 }
@@ -19,14 +20,14 @@ impl Progress {
     pub fn new(value: f32) -> Self {
         Progress {
             value: value.clamp(0.0, 100.0),
-            color: ColorName::Blue,
+            color: ColorValue::Named(ColorName::Blue),
             size: Size::Md,
             radius: None,
         }
     }
 
-    pub fn color(mut self, color: ColorName) -> Self {
-        self.color = color;
+    pub fn color(mut self, color: impl Into<ColorValue>) -> Self {
+        self.color = color.into();
         self
     }
 
@@ -59,7 +60,7 @@ impl RenderOnce for Progress {
         let track = t
             .color(ColorName::Gray, if t.scheme.is_dark() { 7 } else { 2 })
             .hsla();
-        let fill = t.color(self.color, t.primary_shade()).hsla();
+        let fill = crate::style::solid(t, self.color);
         let fraction = (self.value / 100.0).clamp(0.0, 1.0);
 
         div()

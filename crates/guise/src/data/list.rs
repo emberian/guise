@@ -6,7 +6,7 @@ use gpui::{div, px, App, IntoElement, SharedString, Window};
 use crate::icon::Glyph;
 use crate::theme::{theme, Size};
 
-/// A bulleted or numbered list. The Mantine `List`.
+/// A bulleted or numbered list.
 #[derive(IntoElement)]
 pub struct List {
     items: Vec<SharedString>,

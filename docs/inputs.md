@@ -165,7 +165,10 @@ let name = cx.new(|cx| {
 | `size(Size)` | default `Sm` |
 | `radius(Size)` | |
 | `disabled(bool)` | |
-| `password(bool)` | masks characters |
+| `read_only(bool)` | selectable and copyable, still focusable — an `<input readonly>` |
+| `password(bool)` | masks characters, and blocks copy/cut |
+| `max_length(usize)` | cap in characters, enforced on typing **and** paste |
+| `tab_index(isize)` / `tab_stop(bool)` | position in the window's Tab order |
 
 Runtime: `input.read(cx).text()` reads the value; `input.update(cx, |ti, cx| ti.set_text("…", cx))` sets it. It emits:
 
@@ -181,17 +184,43 @@ cx.subscribe(&name, |_this, _input, event, cx| {
 }).detach();
 ```
 
-Editing follows the macOS/Linux conventions: Option+←/→ moves by word,
-Cmd+←/→ to line start/end, Option+Backspace deletes a word, Cmd+Backspace /
-Cmd+Delete clears to the line edge, plus Ctrl+A / Ctrl+E / Ctrl+K. It is
-unicode-correct (the underlying `TextEdit` model is unit-tested). Escape and
-Tab are left to bubble so a host (a dialog, a form) can cancel or move focus.
+### What a field does
+
+Every single-line field — `TextInput`, `PasswordInput`, `NumberInput`,
+`ColorInput`, `Combobox`, `Autocomplete`, and the query box in `TagsInput` —
+shares one editing core, so they all behave the way an `<input>` does:
+
+| | |
+| --- | --- |
+| **Mouse** | click to place the caret, drag to select, double-click a word, triple-click the value, Shift+click to extend |
+| **Tab** | moves to the next field, Shift+Tab to the previous — never types a tab character |
+| **Clipboard** | Cmd/Ctrl+C, X, V; a multi-line paste is flattened to one line, the way `<input>` flattens it |
+| **Undo** | Cmd/Ctrl+Z and Shift+Z, coalesced by word rather than by keystroke |
+| **Navigation** | Option+←/→ by word, Cmd+←/→ to the line edges, Option+Backspace, Cmd+Backspace / Cmd+Delete, and Ctrl+A / Ctrl+E / Ctrl+K |
+| **Long values** | scroll horizontally to keep the caret in view instead of clipping |
+| **IME** | dead keys, press-and-hold accents, CJK composition, and the macOS character palette |
+
+The last one is why text entry does not run through key handling: the field
+registers a platform input handler, and the OS delivers composed text to it
+directly. A key handler that typed the character itself would never see a dead
+key resolve.
+
+Tab order defaults to render order, the way `tabindex="0"` does; set
+`tab_index` only to override it, or `tab_stop(false)` to skip a field without
+disabling it. Escape still bubbles, so a dialog can close on it.
+
+Everything is unicode-correct — the underlying `TextEdit` model is
+unit-tested, and the caret is placed by shaping the real glyphs.
 
 ### Driving a field yourself
 
 The single-line model and its key map are public, for hosts that render their
 own chrome (a search bar, a command palette) instead of embedding the full
 `TextInput`:
+
+`apply_key` handles the whole keyboard including typing the character;
+`apply_nav` is the same map with text entry left out, for a host that also
+registers a platform input handler.
 
 ```rust
 use guise::{apply_key, KeyOutcome, TextEdit};
@@ -218,7 +247,7 @@ let framework = cx.new(|cx| {
     Select::new(cx)
         .label("Framework")
         .placeholder("Choose one…")
-        .data(["gpui", "Mantine", "SwiftUI", "Flutter"])
+        .data(["gpui", "SwiftUI", "Flutter", "AppKit"])
         .selected(0)
 });
 ```
@@ -315,8 +344,21 @@ let bio = cx.new(|cx| {
 ```
 
 Methods: `new(cx)`, `value(&str)`, `placeholder`, `label`, `description`,
-`error`, `rows(usize)`, `size`, `disabled`. Read with `text()`; set with
-`set_text(value, cx)`. Emits `TextAreaEvent(String)`.
+`error`, `rows(usize)`, `max_rows(usize)`, `submit_on_enter(bool)`, `size`,
+`disabled`. Read with `text()`; set with `set_text(value, cx)`. Emits
+`TextAreaEvent(String)`.
+
+`is_blank()` answers "is there anything but whitespace in here" without
+building a copy of the value, which is what a send button wants every frame.
+
+Tab moves focus here too — a text area is a form control, not a code editor —
+and Cmd/Ctrl+Z undoes. `rows` is the minimum height and the field grows with
+its content; `max_rows` caps that growth and scrolls instead.
+
+`submit_on_enter(true)` makes Enter commit the value (emitting a separate
+`TextAreaSubmit(String)`) and Shift+Enter insert the newline, which is the
+convention a chat composer uses — see [`AIComposer`](ai.md#aicomposer), which
+is built on it.
 
 ## Combobox (entity)
 

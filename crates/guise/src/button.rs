@@ -1,4 +1,4 @@
-//! `Button` — the flagship interactive control, with Mantine's variants,
+//! `Button` — the flagship interactive control, with the library's variants,
 //! colors, and sizes.
 
 use gpui::prelude::*;
@@ -8,7 +8,7 @@ use crate::input::ClickHandler;
 use crate::style::{surface, ColorValue, Variant};
 use crate::theme::{theme, Size};
 
-/// A clickable button. The Mantine `Button`.
+/// A clickable button.
 #[derive(IntoElement)]
 pub struct Button {
     id: ElementId,

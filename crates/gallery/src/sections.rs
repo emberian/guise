@@ -21,7 +21,7 @@ pub fn header() -> impl IntoElement {
                 ),
         )
         .child(
-            Text::new("A Mantine-inspired component library for gpui.")
+            Text::new("A component library for gpui.")
                 .size(Size::Lg)
                 .dimmed(),
         )

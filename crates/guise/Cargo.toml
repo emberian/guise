@@ -9,7 +9,7 @@ homepage.workspace = true
 documentation.workspace = true
 keywords.workspace = true
 categories.workspace = true
-description = "A Mantine-inspired component library for gpui, Zed's GPU-accelerated UI framework."
+description = "A component library for gpui, Zed's GPU-accelerated UI framework: a themed palette, sizing tokens, and ~60 composable components."
 readme = "README.md"
 
 # Published to crates.io as `guise-ui` (the `guise` name was taken), but the

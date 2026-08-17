@@ -11,7 +11,8 @@ use gpui::{
     SharedString, Window,
 };
 
-use super::{control_metrics, Field, TextEdit};
+use super::line::{self, Line, LineEditor, LineState};
+use super::{control_metrics, Field, KeyOutcome, TextEdit};
 use crate::reactive::Signal;
 use crate::theme::{theme, Size};
 
@@ -44,6 +45,7 @@ fn matches(suggestions: &[SharedString], query: &str) -> Vec<usize> {
 pub struct Autocomplete {
     suggestions: Vec<SharedString>,
     edit: TextEdit,
+    state: LineState,
     open: bool,
     highlight: usize,
     max_shown: usize,
@@ -61,10 +63,11 @@ impl Autocomplete {
         Autocomplete {
             suggestions: Vec::new(),
             edit: TextEdit::new(""),
+            state: LineState::new(),
             open: false,
             highlight: 0,
             max_shown: 8,
-            focus: cx.focus_handle(),
+            focus: cx.focus_handle().tab_stop(true),
             placeholder: SharedString::new_static("Type…"),
             label: None,
             size: Size::Sm,
@@ -138,14 +141,14 @@ impl Autocomplete {
 
     fn sync_text(&mut self, text: String, cx: &mut Context<Self>) {
         if self.edit.text() != text {
-            self.edit = TextEdit::new(&text);
+            self.edit.set_text(&text);
             cx.notify();
         }
     }
 
     fn adopt(&mut self, index: usize, cx: &mut Context<Self>) {
         if let Some(text) = self.suggestions.get(index).cloned() {
-            self.edit = TextEdit::new(text.as_ref());
+            self.edit.set_text(text.as_ref());
             self.open = false;
             cx.emit(AutocompleteEvent::Change(text.to_string()));
             cx.emit(AutocompleteEvent::Commit(text.to_string()));
@@ -153,59 +156,98 @@ impl Autocomplete {
         }
     }
 
-    fn on_key(&mut self, event: &KeyDownEvent, _window: &mut Window, cx: &mut Context<Self>) {
+    fn on_key(&mut self, event: &KeyDownEvent, window: &mut Window, cx: &mut Context<Self>) {
         if self.disabled {
             return;
         }
         let ks = &event.keystroke;
-        if ks.modifiers.platform || ks.modifiers.control {
-            return;
-        }
         let shown = matches(&self.suggestions, &self.edit.text())
             .len()
             .min(self.max_shown);
-        match ks.key.as_str() {
-            "escape" => self.open = false,
-            "down" if self.open && shown > 0 => {
-                self.highlight = (self.highlight + 1) % shown;
-            }
-            "up" if self.open && shown > 0 => {
-                self.highlight = (self.highlight + shown - 1) % shown;
-            }
-            "enter" => {
-                if self.open && shown > 0 {
-                    let target = matches(&self.suggestions, &self.edit.text())[self.highlight];
-                    self.adopt(target, cx);
-                } else {
+        // The list owns the vertical arrows and Enter; everything else is an
+        // ordinary text field.
+        if !ks.modifiers.platform && !ks.modifiers.control {
+            match ks.key.as_str() {
+                "escape" if self.open => {
                     self.open = false;
-                    cx.emit(AutocompleteEvent::Commit(self.text()));
+                    cx.notify();
+                    cx.stop_propagation();
+                    return;
                 }
-            }
-            "backspace" => {
-                self.edit.backspace();
-                self.open = true;
-                self.highlight = 0;
-                cx.emit(AutocompleteEvent::Change(self.text()));
-            }
-            "left" => self.edit.left(),
-            "right" => self.edit.right(),
-            _ => {
-                if let Some(text) = ks
-                    .key_char
-                    .as_deref()
-                    .filter(|t| !t.is_empty() && !ks.modifiers.alt)
-                {
-                    self.edit.insert(text);
-                    self.open = true;
-                    self.highlight = 0;
-                    cx.emit(AutocompleteEvent::Change(self.text()));
+                "down" if self.open && shown > 0 => {
+                    self.highlight = (self.highlight + 1) % shown;
+                    cx.notify();
+                    cx.stop_propagation();
+                    return;
                 }
+                "up" if self.open && shown > 0 => {
+                    self.highlight = (self.highlight + shown - 1) % shown;
+                    cx.notify();
+                    cx.stop_propagation();
+                    return;
+                }
+                "enter" => {
+                    if self.open && shown > 0 {
+                        let target = matches(&self.suggestions, &self.edit.text())[self.highlight];
+                        self.adopt(target, cx);
+                    } else {
+                        self.open = false;
+                        cx.emit(AutocompleteEvent::Commit(self.text()));
+                    }
+                    cx.notify();
+                    cx.stop_propagation();
+                    return;
+                }
+                _ => {}
             }
         }
-        cx.notify();
-        cx.stop_propagation();
+        match line::keys(self, event, window, cx) {
+            KeyOutcome::Edited => {
+                self.line_changed(cx);
+                cx.stop_propagation();
+            }
+            KeyOutcome::Submit | KeyOutcome::Cancel | KeyOutcome::Pass => {}
+        }
     }
 }
+
+impl LineEditor for Autocomplete {
+    fn edit(&self) -> &TextEdit {
+        &self.edit
+    }
+
+    fn edit_mut(&mut self) -> &mut TextEdit {
+        &mut self.edit
+    }
+
+    fn line(&self) -> &LineState {
+        &self.state
+    }
+
+    fn line_mut(&mut self) -> &mut LineState {
+        &mut self.state
+    }
+
+    fn line_focus(&self) -> &FocusHandle {
+        &self.focus
+    }
+
+    fn line_read_only(&self) -> bool {
+        self.disabled
+    }
+
+    /// Any edit reopens the list and starts the highlight over, since the
+    /// matches it was pointing at have changed.
+    fn line_changed(&mut self, cx: &mut Context<Self>) {
+        self.open = true;
+        self.highlight = 0;
+        cx.emit(AutocompleteEvent::Change(self.text()));
+        cx.notify();
+    }
+}
+
+line::line_input_handler!(Autocomplete);
+line::line_focus_builders!(Autocomplete);
 
 impl Render for Autocomplete {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
@@ -218,37 +260,12 @@ impl Render for Autocomplete {
         let border = if focused { t.primary() } else { t.border() }.hsla();
         let text_color = t.text().hsla();
         let dimmed = t.dimmed().hsla();
-        let caret = t.primary().hsla();
         let highlight_bg = t.primary().alpha(0.12);
 
-        let empty = self.edit.text().is_empty();
-        let interior = if focused {
-            let (before, after) = self.edit.split();
-            div()
-                .flex()
-                .items_center()
-                .text_color(text_color)
-                .child(SharedString::from(before))
-                .child(div().w(px(1.0)).h(px(font * 1.15)).bg(caret))
-                .child(SharedString::from(after))
-        } else if empty {
-            div().text_color(dimmed).child(self.placeholder.clone())
-        } else {
-            div()
-                .text_color(text_color)
-                .child(SharedString::from(self.text()))
-        };
+        let interior = Line::new(cx.entity()).placeholder(self.placeholder.clone(), dimmed);
 
-        let trigger = div()
-            .id("guise-autocomplete-trigger")
-            .track_focus(&self.focus)
+        let trigger = line::wire(div().id("guise-autocomplete-trigger"), &self.focus, cx)
             .on_key_down(cx.listener(Self::on_key))
-            .on_click(cx.listener(|this, _ev, window, cx| {
-                if !this.disabled {
-                    window.focus(&this.focus);
-                    cx.notify();
-                }
-            }))
             .flex()
             .items_center()
             .h(px(height))
@@ -258,7 +275,8 @@ impl Render for Autocomplete {
             .border_color(border)
             .bg(surface)
             .text_size(px(font))
-            .child(interior);
+            .line_height(px(font * 1.3))
+            .child(div().flex_1().min_w(px(0.0)).child(interior));
 
         let mut wrap = div().relative().child(trigger);
 

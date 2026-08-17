@@ -16,7 +16,7 @@ use crate::theme::{theme, Size};
 
 type CloseHandler = Rc<dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static>;
 
-/// A modal dialog. The Mantine `Modal`.
+/// A modal dialog.
 #[derive(IntoElement)]
 pub struct Modal {
     title: Option<SharedString>,

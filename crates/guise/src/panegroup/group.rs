@@ -917,7 +917,9 @@ impl PaneGroup {
                         .w(px(leading))
                         .h_full()
                         .window_control_area(WindowControlArea::Drag)
-                        .on_mouse_down(MouseButton::Left, |_, window, _| window.start_window_move()),
+                        .on_mouse_down(MouseButton::Left, |_, window, _| {
+                            window.start_window_move()
+                        }),
                 )
             })
             .children(tabs)

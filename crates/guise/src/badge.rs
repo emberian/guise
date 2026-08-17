@@ -6,7 +6,7 @@ use gpui::{div, px, App, FontWeight, IntoElement, SharedString, Window};
 use crate::style::{surface, ColorValue, Variant};
 use crate::theme::{theme, Size};
 
-/// A compact status pill. The Mantine `Badge`.
+/// A compact status pill.
 #[derive(IntoElement)]
 pub struct Badge {
     label: SharedString,

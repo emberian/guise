@@ -302,8 +302,8 @@ any `IntoElement`. Main-area content comes via `ParentElement`
 > `Signal`s — and clone them locally inside the closure before moving them into
 > handlers. Chapters 5 and 11 use exactly this.
 
-`Container` here is the themed, Mantine-style one — a centered column capped at
-a `Size`-indexed max width. It shares a name with the Flutter-style
+`Container` here is the themed one — a centered column capped at a
+`Size`-indexed max width. It shares a name with the Flutter-style
 `flex::Container`; since we never glob-import `guise::flex`, the prelude's is
 unambiguous. `Space::y(Size::Md)` inserts a fixed theme-scale gap where a
 parent `gap` doesn't reach ([layout reference](layout.md)).

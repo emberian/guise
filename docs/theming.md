@@ -91,7 +91,7 @@ components still take a `ColorName`.
 ### The palette
 
 14 named colors, each a 10-step ramp from lightest (`0`) to darkest (`9`) —
-the Mantine / open-color values.
+the [open-color](https://yeun.github.io/open-color/) values.
 
 ```rust
 t.color(ColorName::Teal, 6);    // a specific shade
@@ -137,6 +137,7 @@ These resolve differently in light vs. dark mode — use them instead of hard-co
 | `t.warning()` | caution accents |
 | `t.danger()` | errors, destructive actions |
 | `t.info()` | notices and hints |
+| `t.selection()` | the wash behind selected text (returns an `Hsla`, already tinted) |
 
 ```rust
 div().bg(t.surface().hsla()).text_color(t.text().hsla())

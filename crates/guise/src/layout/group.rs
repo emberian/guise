@@ -6,7 +6,7 @@ use gpui::{div, px, AnyElement, App, IntoElement, Window};
 use super::{apply_align, apply_justify, Align, Justify};
 use crate::theme::{theme, Size};
 
-/// A horizontal flex container. The Mantine `Group`.
+/// A horizontal flex container.
 #[derive(IntoElement)]
 pub struct Group {
     children: Vec<AnyElement>,

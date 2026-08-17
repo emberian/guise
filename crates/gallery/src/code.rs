@@ -320,7 +320,7 @@ let table = cx.new(|cx| {
 // Signal plumbing is identical in both styles.
 pub const DATAVIEW: Snippet = Snippet {
     plain: r#"// One Signal<Vec<T>> is the source of truth; everything binds to it.
-let items = use_state(cx, vec!["Mantine".to_string(), "gpui".to_string()]);
+let items = use_state(cx, vec!["gpui".to_string(), "SwiftUI".to_string()]);
 
 // A TextInput two-way bound to a query Signal drives the filter. The
 // `.filter(..)` closure gets no `cx`, so it reads the query from a shared
@@ -355,7 +355,7 @@ cx.observe(query.entity(), move |_this, query, cx| {
 // Any write repaints every bound view — no manual wiring:
 items.update(cx, |list| list.push("SwiftUI".into()));"#,
     macros: r#"// One Signal<Vec<T>> is the source of truth; everything binds to it.
-let items = use_state(cx, vec!["Mantine".to_string(), "gpui".to_string()]);
+let items = use_state(cx, vec!["gpui".to_string(), "SwiftUI".to_string()]);
 
 // A TextInput two-way bound to a query Signal drives the filter. The
 // `.filter(..)` closure gets no `cx`, so it reads the query from a shared
@@ -853,4 +853,68 @@ let tour = cx.new(|cx| Tour::new(cx)
 tour.update(cx, |t, cx| t.start(cx));"#,
     macros: r#"// Entities are created with cx.new either way; macros wrap layout:
 vstack![ /* nav, deck, field … */ ];"#,
+};
+
+pub const UPDATE: Snippet = Snippet {
+    plain: r#"// One updater, built at startup: where releases live, what verifies
+// them, and what to do just before the app restarts into the new one.
+let updater = Updater::github("Acme", env!("CARGO_PKG_VERSION"), "acme/acme")
+    .codesign_requirement("anchor apple generic and certificate leaf[subject.OU] = TEAMID")
+    .on_notify(|title, body| post_os_notification(title, body))
+    .before_restart(|cx| save_session(cx));
+
+guise::update::start(updater.clone(), cx);      // at launch, then hourly
+guise::update::check_now(updater.clone(), cx);  // "Check for Updates…"
+
+// Or drive the panel yourself, in a window you already own.
+let prompt = cx.new(|cx| UpdatePrompt::new(updater, release, cx));
+cx.subscribe(&prompt, |_this, _prompt, event: &UpdatePromptEvent, _cx| {
+    if let UpdatePromptEvent::Failed(why) = event { eprintln!("{why}"); }
+})
+.detach();"#,
+    macros: r#"// The update windows are opened, not laid out, so there is no macro
+// form. Embedded, the panel is just another child:
+vstack![prompt.clone()];"#,
+};
+
+pub const AI: Snippet = Snippet {
+    plain: r#"// The transcript owns the conversation; the host owns the request.
+let chat = cx.new(|cx| AIChatView::new(cx).max_width(680.0));
+let composer = cx.new(|cx| {
+    AIComposer::new(cx).hint("Enter sends · Shift+Enter for a new line")
+});
+
+cx.subscribe(&composer, |this, _composer, event: &AIComposerEvent, cx| {
+    if let AIComposerEvent::Submit(text) = event {
+        this.chat.update(cx, |chat, cx| {
+            chat.push(AITurn::user(text.clone()), cx);
+            chat.begin_reply(cx);
+        });
+        this.send(text.clone(), cx); // your transport
+    }
+})
+.detach();
+
+// …then, as tokens arrive:
+chat.update(cx, |chat, cx| chat.push_delta(&token, cx));
+chat.update(cx, |chat, cx| chat.end_reply(cx));
+
+// Controls and meters around the request.
+AITokenMeter::new(usage.total(), 200_000).label("Context");
+AICost::new(usage, AIPricing::new(3.0, 15.0)).breakdown(true);
+AIToolCall::new("t", "run_tests")
+    .status(AIToolStatus::Error)
+    .result("3 failed, 415 passed");"#,
+    macros: r#"// The transcript owns the conversation; the host owns the request.
+let chat = cx.new(|cx| AIChatView::new(cx).max_width(680.0));
+let composer = cx.new(|cx| AIComposer::new(cx).attachments(true));
+
+hstack![
+    vstack![chat.clone(), composer.clone()],
+    vstack![
+        model.clone(),
+        AITokenMeter::new(usage.total(), 200_000).label("Context"),
+        AICost::new(usage, AIPricing::new(3.0, 15.0)).breakdown(true),
+    ],
+];"#,
 };

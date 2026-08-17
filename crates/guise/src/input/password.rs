@@ -19,10 +19,11 @@
 use gpui::prelude::*;
 use gpui::{
     div, px, App, Context, Entity, EventEmitter, FocusHandle, IntoElement, KeyDownEvent,
-    MouseButton, SharedString, Window,
+    SharedString, Window,
 };
 
-use super::{apply_key, control_metrics, edit::TextEdit, Field, KeyOutcome};
+use super::line::{self, Line, LineEditor, LineState};
+use super::{control_metrics, edit::TextEdit, Field, KeyOutcome};
 use crate::icon::{Icon, IconName};
 use crate::reactive::Signal;
 use crate::theme::{theme, ColorName, Size};
@@ -40,6 +41,7 @@ pub enum PasswordInputEvent {
 /// `cx.new(|cx| PasswordInput::new(cx))`.
 pub struct PasswordInput {
     edit: TextEdit,
+    state: LineState,
     focus: FocusHandle,
     visible: bool,
     placeholder: SharedString,
@@ -48,6 +50,8 @@ pub struct PasswordInput {
     error: Option<SharedString>,
     size: Size,
     disabled: bool,
+    read_only: bool,
+    max_length: Option<usize>,
 }
 
 impl EventEmitter<PasswordInputEvent> for PasswordInput {}
@@ -56,7 +60,8 @@ impl PasswordInput {
     pub fn new(cx: &mut Context<Self>) -> Self {
         PasswordInput {
             edit: TextEdit::new(""),
-            focus: cx.focus_handle(),
+            state: LineState::new(),
+            focus: cx.focus_handle().tab_stop(true),
             visible: false,
             placeholder: SharedString::default(),
             label: None,
@@ -64,6 +69,8 @@ impl PasswordInput {
             error: None,
             size: Size::Sm,
             disabled: false,
+            read_only: false,
+            max_length: None,
         }
     }
 
@@ -108,9 +115,16 @@ impl PasswordInput {
         self
     }
 
-    /// The field's focus handle, so a host can focus it on open.
-    pub fn focus_handle(&self) -> FocusHandle {
-        self.focus.clone()
+    /// Selectable but not editable, like an `<input readonly>`.
+    pub fn read_only(mut self, read_only: bool) -> Self {
+        self.read_only = read_only;
+        self
+    }
+
+    /// Cap the value's length in characters, like `<input maxlength>`.
+    pub fn max_length(mut self, max: usize) -> Self {
+        self.max_length = Some(max);
+        self
     }
 
     /// The current text.
@@ -120,7 +134,7 @@ impl PasswordInput {
 
     /// Replace the text programmatically.
     pub fn set_text(&mut self, value: &str, cx: &mut Context<Self>) {
-        self.edit = TextEdit::new(value);
+        self.edit.set_text(value);
         cx.notify();
     }
 
@@ -156,34 +170,69 @@ impl PasswordInput {
         .detach();
     }
 
-    fn on_key(&mut self, event: &KeyDownEvent, _window: &mut Window, cx: &mut Context<Self>) {
+    fn on_key(&mut self, event: &KeyDownEvent, window: &mut Window, cx: &mut Context<Self>) {
         if self.disabled {
             return;
         }
-        match apply_key(&mut self.edit, &event.keystroke) {
+        match line::keys(self, event, window, cx) {
             KeyOutcome::Submit => {
                 cx.emit(PasswordInputEvent::Submit(self.edit.text()));
                 cx.notify();
                 cx.stop_propagation();
             }
             KeyOutcome::Edited => {
-                cx.emit(PasswordInputEvent::Change(self.edit.text()));
-                cx.notify();
+                self.line_changed(cx);
                 cx.stop_propagation();
             }
-            // Escape and unhandled keys (Tab, Cmd+W, …) bubble to the host.
+            // Escape and unhandled keys bubble to the host.
             KeyOutcome::Cancel | KeyOutcome::Pass => {}
         }
     }
+}
 
-    fn mask(&self, s: String) -> String {
-        if self.visible {
-            s
-        } else {
-            "\u{2022}".repeat(s.chars().count())
-        }
+impl LineEditor for PasswordInput {
+    fn edit(&self) -> &TextEdit {
+        &self.edit
+    }
+
+    fn edit_mut(&mut self) -> &mut TextEdit {
+        &mut self.edit
+    }
+
+    fn line(&self) -> &LineState {
+        &self.state
+    }
+
+    fn line_mut(&mut self) -> &mut LineState {
+        &mut self.state
+    }
+
+    fn line_focus(&self) -> &FocusHandle {
+        &self.focus
+    }
+
+    /// Revealing the field with the eye is a deliberate act, so it also lifts
+    /// the copy block — otherwise the toggle would be for looking only.
+    fn line_masked(&self) -> bool {
+        !self.visible
+    }
+
+    fn line_read_only(&self) -> bool {
+        self.read_only || self.disabled
+    }
+
+    fn line_max_length(&self) -> Option<usize> {
+        self.max_length
+    }
+
+    fn line_changed(&mut self, cx: &mut Context<Self>) {
+        cx.emit(PasswordInputEvent::Change(self.edit.text()));
+        cx.notify();
     }
 }
+
+line::line_input_handler!(PasswordInput);
+line::line_focus_builders!(PasswordInput);
 
 impl Render for PasswordInput {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
@@ -203,41 +252,7 @@ impl Render for PasswordInput {
         let text_color = t.text().hsla();
         let dimmed = t.dimmed().hsla();
         let surface = t.surface().hsla();
-        let caret = t.primary().hsla();
-        let mut selection_bg = t.primary().hsla();
-        selection_bg.a = 0.30;
-
-        let interior = if focused {
-            if let Some((before, selected, after)) = self.edit.split_selection() {
-                div()
-                    .flex()
-                    .items_center()
-                    .text_color(text_color)
-                    .child(SharedString::from(self.mask(before)))
-                    .child(
-                        div()
-                            .bg(selection_bg)
-                            .rounded(px(2.0))
-                            .child(SharedString::from(self.mask(selected))),
-                    )
-                    .child(SharedString::from(self.mask(after)))
-            } else {
-                let (before, after) = self.edit.split();
-                div()
-                    .flex()
-                    .items_center()
-                    .text_color(text_color)
-                    .child(SharedString::from(self.mask(before)))
-                    .child(div().w(px(1.0)).h(px(font * 1.15)).bg(caret))
-                    .child(SharedString::from(self.mask(after)))
-            }
-        } else if self.edit.is_empty() {
-            div().text_color(dimmed).child(self.placeholder.clone())
-        } else {
-            div()
-                .text_color(text_color)
-                .child(SharedString::from(self.mask(self.edit.text())))
-        };
+        let interior = Line::new(cx.entity()).placeholder(self.placeholder.clone(), dimmed);
 
         // While hidden the eye offers "reveal"; while revealed it offers "hide".
         let eye_icon = if self.visible {
@@ -264,17 +279,8 @@ impl Render for PasswordInput {
                 }
             }));
 
-        let field = div()
-            .id("guise-passwordinput")
-            .track_focus(&self.focus)
+        let field = line::wire(div().id("guise-passwordinput"), &self.focus, cx)
             .on_key_down(cx.listener(Self::on_key))
-            .on_mouse_down(
-                MouseButton::Left,
-                cx.listener(|this, _ev, window, cx| {
-                    window.focus(&this.focus);
-                    cx.notify();
-                }),
-            )
             .flex()
             .items_center()
             .justify_between()
@@ -288,13 +294,8 @@ impl Render for PasswordInput {
             .border_color(border)
             .bg(surface)
             .text_size(px(font))
-            .child(
-                div()
-                    .flex_1()
-                    .min_w(px(0.0))
-                    .overflow_hidden()
-                    .child(interior),
-            )
+            .line_height(px(font * 1.3))
+            .child(div().flex_1().min_w(px(0.0)).child(interior))
             .child(eye);
 
         let mut chrome = Field::new().child(if self.disabled {

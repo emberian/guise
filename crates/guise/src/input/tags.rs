@@ -21,10 +21,11 @@
 use gpui::prelude::*;
 use gpui::{
     div, px, App, Context, Entity, EventEmitter, FocusHandle, IntoElement, KeyDownEvent,
-    MouseButton, SharedString, Window,
+    SharedString, Window,
 };
 
-use super::{apply_key, control_metrics, edit::TextEdit, Field, KeyOutcome};
+use super::line::{self, Line, LineEditor, LineState};
+use super::{control_metrics, edit::TextEdit, Field, KeyOutcome};
 use crate::reactive::Signal;
 use crate::theme::{theme, ColorName, Size};
 
@@ -63,6 +64,7 @@ fn commit_tag(tags: &mut Vec<String>, raw: &str, max_tags: Option<usize>) -> Com
 pub struct TagsInput {
     tags: Vec<String>,
     query: TextEdit,
+    state: LineState,
     focus: FocusHandle,
     placeholder: SharedString,
     label: Option<SharedString>,
@@ -80,7 +82,8 @@ impl TagsInput {
         TagsInput {
             tags: Vec::new(),
             query: TextEdit::new(""),
-            focus: cx.focus_handle(),
+            state: LineState::new(),
+            focus: cx.focus_handle().tab_stop(true),
             placeholder: SharedString::default(),
             label: None,
             description: None,
@@ -183,20 +186,22 @@ impl TagsInput {
     fn commit(&mut self, cx: &mut Context<Self>) {
         match commit_tag(&mut self.tags, &self.query.text(), self.max_tags) {
             Commit::Added => {
-                self.query = TextEdit::new("");
+                self.query.set_text("");
                 cx.emit(TagsInputEvent(self.tags.clone()));
             }
-            Commit::Duplicate => self.query = TextEdit::new(""),
+            Commit::Duplicate => self.query.set_text(""),
             Commit::Rejected => {}
         }
     }
 
-    fn on_key(&mut self, event: &KeyDownEvent, _window: &mut Window, cx: &mut Context<Self>) {
+    fn on_key(&mut self, event: &KeyDownEvent, window: &mut Window, cx: &mut Context<Self>) {
         if self.disabled {
             return;
         }
         let ks = &event.keystroke;
-        // Enter and comma commit instead of editing the query.
+        // Enter and comma commit instead of editing the query. Catching the
+        // comma here, before the key is offered to the platform's input
+        // handler, is what keeps it from being typed as a character.
         if ks.key.as_str() == "enter" || ks.key_char.as_deref() == Some(",") {
             self.commit(cx);
             cx.notify();
@@ -212,7 +217,7 @@ impl TagsInput {
             cx.stop_propagation();
             return;
         }
-        match apply_key(&mut self.query, ks) {
+        match line::keys(self, event, window, cx) {
             KeyOutcome::Edited => {
                 cx.notify();
                 cx.stop_propagation();
@@ -222,6 +227,45 @@ impl TagsInput {
         }
     }
 }
+
+impl LineEditor for TagsInput {
+    fn edit(&self) -> &TextEdit {
+        &self.query
+    }
+
+    fn edit_mut(&mut self) -> &mut TextEdit {
+        &mut self.query
+    }
+
+    fn line(&self) -> &LineState {
+        &self.state
+    }
+
+    fn line_mut(&mut self) -> &mut LineState {
+        &mut self.state
+    }
+
+    fn line_focus(&self) -> &FocusHandle {
+        &self.focus
+    }
+
+    fn line_read_only(&self) -> bool {
+        self.disabled
+    }
+
+    /// A comma pasted mid-string is still a separator, so it commits rather
+    /// than landing in the query.
+    fn line_filter(&self, text: String) -> String {
+        text.replace(',', " ")
+    }
+
+    fn line_changed(&mut self, cx: &mut Context<Self>) {
+        cx.notify();
+    }
+}
+
+line::line_input_handler!(TagsInput);
+line::line_focus_builders!(TagsInput);
 
 impl Render for TagsInput {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
@@ -242,21 +286,11 @@ impl Render for TagsInput {
         let dimmed = t.dimmed().hsla();
         let surface = t.surface().hsla();
         let pill_bg = t.surface_hover().hsla();
-        let caret = t.primary().hsla();
         let pill_h = height - 14.0;
         let pill_font = (font - 2.0).max(10.0);
 
-        let mut field = div()
-            .id("guise-tagsinput")
-            .track_focus(&self.focus)
+        let mut field = line::wire(div().id("guise-tagsinput"), &self.focus, cx)
             .on_key_down(cx.listener(Self::on_key))
-            .on_mouse_down(
-                MouseButton::Left,
-                cx.listener(|this, _ev, window, cx| {
-                    window.focus(&this.focus);
-                    cx.notify();
-                }),
-            )
             .flex()
             .flex_row()
             .flex_wrap()
@@ -296,23 +330,19 @@ impl Render for TagsInput {
             );
         }
 
-        let interior = if focused {
-            let (before, after) = self.query.split();
+        let mut interior = Line::new(cx.entity());
+        // Only offer the placeholder while the field is genuinely empty; with
+        // pills present it would read as another tag.
+        if self.tags.is_empty() {
+            interior = interior.placeholder(self.placeholder.clone(), dimmed);
+        }
+        field = field.child(
             div()
-                .flex()
-                .items_center()
-                .text_color(text_color)
-                .child(SharedString::from(before))
-                .child(div().w(px(1.0)).h(px(font * 1.15)).bg(caret))
-                .child(SharedString::from(after))
-        } else if self.tags.is_empty() && self.query.is_empty() {
-            div().text_color(dimmed).child(self.placeholder.clone())
-        } else {
-            div()
-                .text_color(text_color)
-                .child(SharedString::from(self.query.text()))
-        };
-        field = field.child(interior);
+                .flex_1()
+                .min_w(px(80.0))
+                .line_height(px(font * 1.3))
+                .child(interior),
+        );
 
         let mut chrome = Field::new().child(if self.disabled {
             field.opacity(0.6)

@@ -165,7 +165,7 @@ export function renderDoc(opts: { md: string; out: string; title: string }): str
 
   return shell({
     title: `${opts.title} — guise`,
-    description: `${opts.title} — documentation for guise, a Mantine-inspired component library for gpui.`,
+    description: `${opts.title} — documentation for guise, a component library for gpui.`,
     body,
     active: opts.out === "tutorial.html" ? "tutorial" : "docs",
     tail: DOC_SCRIPT,

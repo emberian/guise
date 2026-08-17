@@ -5,7 +5,7 @@ use gpui::{div, px, AnyElement, App, FontWeight, IntoElement, SharedString, Wind
 
 use crate::theme::{theme, ColorName};
 
-/// A corner indicator over any child. The Mantine `Indicator`.
+/// A corner indicator over any child.
 #[derive(IntoElement)]
 pub struct Indicator {
     child: AnyElement,

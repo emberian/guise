@@ -5,8 +5,8 @@ use gpui::{div, px, AnyElement, App, IntoElement, Window};
 
 use crate::theme::{theme, Size};
 
-/// A bottom/top status bar with three slots. Not a Mantine component, but the
-/// shell most desktop apps need; styled to match the theme.
+/// A bottom/top status bar with three slots — the shell most desktop apps
+/// need; styled to match the theme.
 #[derive(IntoElement)]
 pub struct StatusBar {
     left: Vec<AnyElement>,

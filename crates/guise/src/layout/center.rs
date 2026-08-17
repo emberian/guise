@@ -3,7 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, AnyElement, App, IntoElement, Window};
 
-/// A flex container that centers its children. The Mantine `Center`.
+/// A flex container that centers its children.
 #[derive(IntoElement)]
 pub struct Center {
     children: Vec<AnyElement>,
