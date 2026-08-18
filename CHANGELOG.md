@@ -11,7 +11,7 @@ The API is stable. Everything below 1.0 moved breaking changes through minor
 versions; from here a break means a major release.
 
 That is the whole meaning of this number — it is not a rewrite. `guise` has
-been carrying real applications for months: ~60 components, a reactive layer, a
+been carrying real applications for months: 130+ components, a reactive layer, a
 pane system, an editor, a markdown editor, an AI component set, a self-updater,
 515 tests, and a documented page for every module. What changes today is the
 promise, not the code.
