@@ -21,6 +21,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, ClickEvent, ElementId, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::feedback::{Loader, LoaderVariant};
 use crate::icon::{Icon, IconName};
 use crate::input::ClickHandler;
@@ -289,5 +290,6 @@ impl RenderOnce for AIToolCall {
                     ))
                 })
             })
+            .probe("AIToolCall")
     }
 }

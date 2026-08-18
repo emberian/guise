@@ -21,6 +21,7 @@ use gpui::{
     SharedString, Window,
 };
 
+use crate::devtools::Probed;
 use crate::reactive::Signal;
 use crate::theme::{theme, ColorName, Size};
 
@@ -434,11 +435,13 @@ impl Render for RangeSlider {
             .child(slider)
             .child(value_label);
 
-        if self.disabled {
+        let element = if self.disabled {
             column.opacity(0.5)
         } else {
             column
-        }
+        };
+
+        element.probe("RangeSlider")
     }
 }
 

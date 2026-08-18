@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, ColorName, Size};
 
 /// Inline code. (Uses the window font; gpui has no generic
@@ -51,5 +52,6 @@ impl RenderOnce for Code {
             .text_color(fg)
             .text_size(px(t.font_size(Size::Sm)))
             .child(self.content)
+            .probe("Code")
     }
 }

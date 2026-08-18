@@ -13,6 +13,7 @@ use gpui::{
 
 use super::line::{self, Line, LineEditor, LineState};
 use super::{control_metrics, Field, KeyOutcome, TextEdit};
+use crate::devtools::ProbedAny;
 use crate::reactive::Signal;
 use crate::theme::{theme, Size};
 
@@ -328,7 +329,7 @@ impl Render for Autocomplete {
         if let Some(label) = self.label.clone() {
             chrome = chrome.label(label);
         }
-        chrome
+        chrome.probe_any("Autocomplete")
     }
 }
 

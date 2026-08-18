@@ -10,14 +10,14 @@ registry dependencies, no git pins or patch sections. See
 
 ```toml
 [dependencies]
-guise-ui = "0.10"
+guise-ui = "1.0"
 gpui = "0.2.2"
 ```
 
 Or pin via git:
 
 ```toml
-guise-ui = { git = "https://github.com/wess/guise", tag = "v0.10.0" }
+guise-ui = { git = "https://github.com/wess/guise", tag = "v1.0.0" }
 ```
 
 The app bootstrap is gpui's own: `gpui::Application::new().run(|cx| ...)`.

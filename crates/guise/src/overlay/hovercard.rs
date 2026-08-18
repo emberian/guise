@@ -24,6 +24,7 @@ use gpui::prelude::*;
 use gpui::{deferred, div, px, relative, AnyElement, App, Context, IntoElement, Task, Window};
 
 use super::Placement;
+use crate::devtools::Probed;
 use crate::theme::theme;
 
 type Builder = Box<dyn Fn(&mut Window, &mut App) -> AnyElement + 'static>;
@@ -206,6 +207,6 @@ impl Render for HoverCard {
             wrap = wrap.child(deferred(placed));
         }
 
-        wrap
+        wrap.probe("HoverCard")
     }
 }

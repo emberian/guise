@@ -4,6 +4,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, ClickEvent, ElementId, FontWeight, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::input::ClickHandler;
 use crate::style::{surface, ColorValue, Variant};
 use crate::theme::{theme, Size};
@@ -140,7 +141,7 @@ impl RenderOnce for Button {
             el = el.child(right);
         }
 
-        if self.disabled {
+        let element = if self.disabled {
             el.opacity(0.6)
         } else {
             let hover_bg = s.bg_hover;
@@ -149,6 +150,12 @@ impl RenderOnce for Button {
                 el = el.on_click(handler);
             }
             el
-        }
+        };
+
+        element
+            .probe("Button")
+            .attr("variant", self.variant.label())
+            .attr("size", self.size.label())
+            .attr_if("disabled", self.disabled)
     }
 }

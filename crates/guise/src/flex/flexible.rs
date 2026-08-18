@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, relative, App, IntoElement, Window};
 
+use crate::devtools::Probed;
 use crate::style::FlexExt;
 
 /// Fills the available main-axis space inside a Row/Column, by `flex` weight.
@@ -36,6 +37,7 @@ impl RenderOnce for Expanded {
             .shrink(1.0)
             .flex_basis(relative(0.0))
             .child(self.child)
+            .probe("Expanded")
     }
 }
 
@@ -63,7 +65,7 @@ impl Flexible {
 
 impl RenderOnce for Flexible {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
-        div().grow(self.flex).child(self.child)
+        div().grow(self.flex).child(self.child).probe("Flexible")
     }
 }
 
@@ -92,7 +94,10 @@ impl Default for Spacer {
 
 impl RenderOnce for Spacer {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
-        div().grow(self.flex).flex_basis(relative(0.0))
+        div()
+            .grow(self.flex)
+            .flex_basis(relative(0.0))
+            .probe("Spacer")
     }
 }
 
@@ -172,6 +177,6 @@ impl RenderOnce for SizedBox {
         if let Some(child) = self.child {
             el = el.child(child);
         }
-        el
+        el.probe("SizedBox")
     }
 }

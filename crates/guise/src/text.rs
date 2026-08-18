@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, FontWeight, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, Color, Size};
 
 /// Themed body text.
@@ -72,5 +73,8 @@ impl RenderOnce for Text {
             .font_weight(self.weight)
             .text_color(color.hsla())
             .child(self.content)
+            .probe("Text")
+            .attr("size", self.size.label())
+            .attr_if("dimmed", self.dimmed)
     }
 }

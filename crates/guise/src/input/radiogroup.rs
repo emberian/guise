@@ -10,6 +10,7 @@ use gpui::prelude::*;
 use gpui::{div, px, App, IntoElement, SharedString, Window};
 
 use super::Radio;
+use crate::devtools::Probed;
 use crate::reactive::Binding;
 use crate::theme::{theme, ColorName, Size};
 
@@ -126,6 +127,6 @@ impl RenderOnce for RadioGroup {
             }
             column = column.child(radio);
         }
-        column
+        column.probe("RadioGroup")
     }
 }

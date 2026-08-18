@@ -26,6 +26,7 @@ use gpui::{
 };
 
 use crate::actionicon::ActionIcon;
+use crate::devtools::ProbedAny;
 use crate::icon::IconName;
 use crate::paper::apply_shadow;
 use crate::theme::{theme, Size};
@@ -278,9 +279,11 @@ impl RenderOnce for Panel {
             }
         }
 
-        match self.id {
+        let element = match self.id {
             Some(id) => root.id(id).into_any_element(),
             None => root.into_any_element(),
-        }
+        };
+
+        element.probe_any("Panel")
     }
 }

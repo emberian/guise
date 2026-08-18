@@ -43,6 +43,7 @@ crates.io — with `[lib] name = "guise"`. Cargo commands address the package as
 | `overlay/` | `Modal`, `ConfirmModal`, `Drawer`, `Menu`, `MenuBar`, `ContextMenu`, `Popover`, `HoverCard`, `LoadingOverlay`, `Spotlight`, `Tooltip`, `Tour`, `OverlayHost` (window-level modal stack + toasts) |
 | `nav/` | `Breadcrumbs`, `NavLink`, `NavigationMenu`, `Stepper`, `Pagination`, `StatusBar` |
 | `reactive/` | `Signal`, `Binding`, Context/Provider, hooks (`use_state`/`watch`/`use_memo`/`use_effect`), `Form` (per-field signals) + `FormState` |
+| `devtools/` | `DevTools` — a Safari-shaped inspector for the app itself: an Elements tree recorded by `Probed::probe` (with real `StyleRefinement` snapshots), plus Logs / Network / Storage / Timelines fed by the host, Sources read off disk, and an Audit computed from the tree |
 | `update/` | self-update: `Updater`/`UpdateConfig` (release check + in-place install, gpui-free), SHA-256 verification of the download (`checksum.rs`), and the `UpdatePrompt`/`UpdateNotice` entities that drive it |
 | `macros.rs` | the `row!`/`col!`/… layout macros |
 | `anim/` | `Easing` curves, `Spring` physics, `Presence` (exit animations) |

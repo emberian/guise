@@ -20,6 +20,7 @@ use gpui::{
 };
 
 use super::control_metrics;
+use crate::devtools::Probed;
 use crate::reactive::Signal;
 use crate::theme::{theme, Size};
 
@@ -362,11 +363,9 @@ impl Render for PinInput {
             row = row.child(cell);
         }
 
-        if self.disabled {
-            row.opacity(0.6)
-        } else {
-            row
-        }
+        let element = if self.disabled { row.opacity(0.6) } else { row };
+
+        element.probe("PinInput")
     }
 }
 

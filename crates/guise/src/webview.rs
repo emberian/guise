@@ -16,6 +16,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, Context, EventEmitter, FocusHandle, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, Size};
 
 #[cfg(feature = "webview")]
@@ -353,6 +354,7 @@ impl Render for WebView {
         frame(self.bordered, radius, border, bg, self.width, self.height)
             .track_focus(&self.focus)
             .child(surface)
+            .probe("WebView")
     }
 
     #[cfg(not(feature = "webview"))]
@@ -374,6 +376,8 @@ impl Render for WebView {
             .justify_center()
             .text_color(dimmed)
             .child(SharedString::from(format!("WebView (disabled): {label}")))
+            .probe("WebView")
+            .attr("source", label)
     }
 }
 

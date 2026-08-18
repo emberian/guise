@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, FontWeight, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, ColorName, Size};
 
 /// A keyboard key.
@@ -38,5 +39,6 @@ impl RenderOnce for Kbd {
             .text_size(px(t.font_size(Size::Xs)))
             .font_weight(FontWeight::SEMIBOLD)
             .child(self.key)
+            .probe("Kbd")
     }
 }

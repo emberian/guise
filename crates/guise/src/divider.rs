@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::theme::theme;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -52,10 +53,10 @@ impl RenderOnce for Divider {
         let line_color = t.border().hsla();
 
         if self.orientation == Orientation::Vertical {
-            return div().w(px(1.0)).h_full().bg(line_color);
+            return div().w(px(1.0)).h_full().bg(line_color).into_any_element();
         }
 
-        match self.label {
+        let element = match self.label {
             None => div().w_full().h(px(1.0)).bg(line_color),
             Some(label) => div()
                 .flex()
@@ -70,6 +71,8 @@ impl RenderOnce for Divider {
                         .child(label),
                 )
                 .child(div().flex_1().h(px(1.0)).bg(line_color)),
-        }
+        };
+
+        element.probe("Divider").into_any_element()
     }
 }

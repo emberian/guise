@@ -7,6 +7,7 @@
 
 use std::rc::Rc;
 
+use crate::devtools::Probed;
 use gpui::prelude::*;
 use gpui::{px, uniform_list, AnyElement, App, ElementId, IntoElement, Window};
 
@@ -55,5 +56,6 @@ impl RenderOnce for VirtualList {
         })
         .h(px(self.height))
         .w_full()
+        .probe("VirtualList")
     }
 }

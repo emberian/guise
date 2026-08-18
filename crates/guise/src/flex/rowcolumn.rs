@@ -4,6 +4,7 @@ use gpui::prelude::*;
 use gpui::{div, px, AnyElement, App, IntoElement, Window};
 
 use super::{apply_cross, apply_main, CrossAxisAlignment, MainAxisAlignment, MainAxisSize};
+use crate::devtools::Probed;
 
 /// A horizontal flex container. Flutter's `Row`.
 #[derive(IntoElement)]
@@ -70,7 +71,7 @@ impl RenderOnce for Row {
             base = base.w_full();
         }
         let base = apply_cross(apply_main(base, self.main), self.cross);
-        base.children(self.children)
+        base.children(self.children).probe("Row")
     }
 }
 
@@ -140,6 +141,6 @@ impl RenderOnce for Column {
             base = base.h_full();
         }
         let base = apply_cross(apply_main(base, self.main), self.cross);
-        base.children(self.children)
+        base.children(self.children).probe("Column")
     }
 }

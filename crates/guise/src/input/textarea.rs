@@ -11,6 +11,7 @@ use gpui::{
 };
 
 use super::{control_metrics, Field, TextEdit};
+use crate::devtools::ProbedAny;
 use crate::reactive::Signal;
 use crate::theme::{theme, ColorName, Size};
 
@@ -535,6 +536,6 @@ impl Render for TextArea {
         } else if let Some(description) = self.description.clone() {
             chrome = chrome.description(description);
         }
-        chrome
+        chrome.probe_any("TextArea")
     }
 }

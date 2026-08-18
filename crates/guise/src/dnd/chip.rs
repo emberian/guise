@@ -5,6 +5,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, Context, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, Size};
 
 /// The typed drag value: the caller's payload plus the chip label.
@@ -36,5 +37,6 @@ impl<T: 'static> Render for DragChip<T> {
             .text_size(px(t.font_size(Size::Sm)))
             .text_color(t.text().hsla())
             .child(self.label.clone())
+            .probe("DragChip")
     }
 }

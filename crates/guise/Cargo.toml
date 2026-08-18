@@ -9,7 +9,7 @@ homepage.workspace = true
 documentation.workspace = true
 keywords.workspace = true
 categories.workspace = true
-description = "A component library for gpui, Zed's GPU-accelerated UI framework: a themed palette, sizing tokens, and ~60 composable components."
+description = "A component library for gpui, Zed's GPU-accelerated UI framework: a themed palette, sizing tokens, 130+ composable components, a reactive state layer, and an in-app Safari-style inspector."
 readme = "README.md"
 
 # Published to crates.io as `guise-ui` (the `guise` name was taken), but the

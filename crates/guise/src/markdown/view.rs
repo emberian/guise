@@ -22,6 +22,7 @@ use gpui::{
 
 use super::block::{classify, DocState};
 use super::layout::{metrics, plan, RowKind, RowPlan};
+use crate::devtools::Probed;
 use crate::style::MONO_FAMILY;
 use crate::theme::{theme, ColorName, Size};
 
@@ -172,7 +173,7 @@ impl RenderOnce for Markdown {
 
             column = column.child(row_element(row, runs, size, base, &colors));
         }
-        column
+        column.probe("Markdown")
     }
 }
 

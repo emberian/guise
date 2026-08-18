@@ -4,6 +4,7 @@ use gpui::prelude::*;
 use gpui::{div, px, AnyElement, App, IntoElement, Window};
 
 use super::{apply_alignment, apply_margin, apply_padding, Alignment, EdgeInsets};
+use crate::devtools::Probed;
 use crate::theme::Color;
 
 /// A configurable box: size, padding, margin, color, radius, border, and child
@@ -114,7 +115,7 @@ impl RenderOnce for Container {
         if let Some(child) = self.child {
             el = el.child(child);
         }
-        el
+        el.probe("Container")
     }
 }
 
@@ -159,7 +160,7 @@ impl RenderOnce for Padding {
         if let Some(child) = self.child {
             el = el.child(child);
         }
-        el
+        el.probe("Padding")
     }
 }
 
@@ -190,7 +191,7 @@ impl RenderOnce for Align {
         if let Some(child) = self.child {
             el = el.child(child);
         }
-        el
+        el.probe("Align")
     }
 }
 
@@ -223,6 +224,6 @@ impl RenderOnce for Center {
         if let Some(child) = self.child {
             el = el.child(child);
         }
-        el
+        el.probe("Center")
     }
 }

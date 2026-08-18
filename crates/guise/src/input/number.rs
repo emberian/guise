@@ -12,6 +12,7 @@ use gpui::{
 
 use super::line::{self, Line, LineEditor, LineState};
 use super::{control_metrics, Field, KeyOutcome, TextEdit};
+use crate::devtools::ProbedAny;
 use crate::icon::{Icon, IconName};
 use crate::reactive::Signal;
 use crate::theme::{theme, Size};
@@ -353,6 +354,6 @@ impl Render for NumberInput {
         } else if let Some(description) = self.description.clone() {
             chrome = chrome.description(description);
         }
-        chrome
+        chrome.probe_any("NumberInput")
     }
 }

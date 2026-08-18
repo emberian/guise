@@ -5,6 +5,7 @@ use std::time::Duration;
 use gpui::prelude::*;
 use gpui::{div, pulsating_between, px, Animation, AnimationExt, App, IntoElement, Window};
 
+use crate::devtools::Probed;
 use crate::style::ColorValue;
 use crate::theme::{theme, ColorName, Size};
 
@@ -100,5 +101,6 @@ impl RenderOnce for Loader {
             .items_center()
             .gap(px(unit * 0.6))
             .children(dots)
+            .probe("Loader")
     }
 }

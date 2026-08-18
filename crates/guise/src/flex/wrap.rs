@@ -1,5 +1,6 @@
 //! `Wrap` — a flex row that wraps onto multiple lines. Flutter's `Wrap`.
 
+use crate::devtools::Probed;
 use gpui::prelude::*;
 use gpui::{div, px, AnyElement, App, IntoElement, Window};
 
@@ -45,5 +46,6 @@ impl RenderOnce for Wrap {
             .flex_wrap()
             .gap(px(self.spacing))
             .children(self.children)
+            .probe("Wrap")
     }
 }

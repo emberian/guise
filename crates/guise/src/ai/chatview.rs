@@ -31,6 +31,7 @@ use gpui::{
 
 use super::{AICitation, AIMessage, AIReasoning, AIRole, AISource, AISources, AIThinking};
 use super::{AIToolCall, AIToolStatus};
+use crate::devtools::Probed;
 use crate::theme::{theme, Size};
 
 /// How close to the end counts as "at the bottom", in pixels. A couple of
@@ -600,6 +601,7 @@ impl Render for AIChatView {
                     .child(div().text_color(dimmed).children(self.empty.clone()))
             })
             .when(!empty, |view| view.children(rows))
+            .probe("AIChatView")
     }
 }
 

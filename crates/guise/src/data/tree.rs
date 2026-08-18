@@ -35,6 +35,7 @@ use gpui::{
     UniformListScrollHandle, Window,
 };
 
+use crate::devtools::Probed;
 use crate::icon::{Glyph, Icon, IconName};
 use crate::reactive::Signal;
 use crate::theme::{theme, Size};
@@ -538,7 +539,7 @@ impl Render for TreeView {
             .flex()
             .flex_col();
 
-        if let Some(height) = self.height {
+        let element = if let Some(height) = self.height {
             root.child(
                 uniform_list(
                     "guise-treeview-rows",
@@ -553,7 +554,9 @@ impl Render for TreeView {
             )
         } else {
             root.gap(px(2.0)).children(self.render_rows(0..count, cx))
-        }
+        };
+
+        element.probe("TreeView")
     }
 }
 

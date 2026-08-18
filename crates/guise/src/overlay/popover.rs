@@ -15,6 +15,7 @@ use gpui::{
     Window,
 };
 
+use crate::devtools::Probed;
 use crate::theme::theme;
 
 type Builder = Box<dyn Fn(&mut Window, &mut App) -> AnyElement + 'static>;
@@ -141,6 +142,6 @@ impl Render for Popover {
             wrap = wrap.child(deferred(placed));
         }
 
-        wrap
+        wrap.probe("Popover")
     }
 }

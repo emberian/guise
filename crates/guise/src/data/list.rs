@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::icon::Glyph;
 use crate::theme::{theme, Size};
 
@@ -96,6 +97,11 @@ impl RenderOnce for List {
                 .child(div().text_color(text).child(item))
         });
 
-        div().flex().flex_col().gap(px(gap)).children(rows)
+        div()
+            .flex()
+            .flex_col()
+            .gap(px(gap))
+            .children(rows)
+            .probe("List")
     }
 }

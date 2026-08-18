@@ -5,6 +5,7 @@
 //! scroll it. Each instance needs a unique id so gpui can track its scroll
 //! offset.
 
+use crate::devtools::Probed;
 use gpui::prelude::*;
 use gpui::{div, px, AnyElement, App, ElementId, IntoElement, Window};
 
@@ -57,6 +58,6 @@ impl RenderOnce for ScrollArea {
         if let Some(height) = self.max_height {
             el = el.max_h(px(height));
         }
-        el.children(self.children)
+        el.children(self.children).probe("ScrollArea")
     }
 }

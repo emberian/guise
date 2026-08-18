@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, IntoElement, Window};
 
+use crate::devtools::Probed;
 use crate::icon::Glyph;
 use crate::style::{surface, Variant};
 use crate::theme::{theme, ColorName, Size};
@@ -80,6 +81,6 @@ impl RenderOnce for ThemeIcon {
         if let Some(border) = s.border {
             el = el.border_1().border_color(border);
         }
-        el
+        el.probe("ThemeIcon")
     }
 }

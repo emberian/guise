@@ -10,6 +10,10 @@ use gpui::prelude::*;
 use gpui::{div, Context, Entity, Modifiers, MouseButton, TestAppContext, Window};
 
 use crate::ai::{AIChatView, AIComposer, AIComposerEvent, AITurn};
+use crate::devtools::{
+    DevTools, DevToolsEvent, DevToolsState, DevToolsTab, LogLevel, NetworkRecord, Probed,
+    RequestState, SourceRef, StorageDomain, StorageEntry,
+};
 use crate::input::{Date, DatePicker, LineEditor as _, Select, TextInput};
 use crate::reactive::{validators, Form, Signal};
 use crate::theme::{theme, Color, Theme};
@@ -305,6 +309,7 @@ impl Render for Pair {
             .size_full()
             .child(self.first.clone())
             .child(self.second.clone())
+            .probe("Pair")
     }
 }
 
@@ -706,4 +711,237 @@ fn composer_sends_on_enter_and_refuses_blank_drafts(cx: &mut TestAppContext) {
     composer.update(cx, |composer, cx| composer.set_busy(true, cx));
     cx.simulate_keystrokes("enter");
     assert_eq!(sent.borrow().len(), 1);
+}
+
+// --- devtools ---------------------------------------------------------------
+
+/// A window holding the inspector next to something worth inspecting. The
+/// recorder only runs while a `DevTools` is alive, so the two have to share a
+/// frame for any of this to be observable.
+struct Inspected {
+    devtools: Entity<DevTools>,
+}
+
+impl Render for Inspected {
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        div()
+            .flex()
+            .size_full()
+            .child(
+                crate::layout::Stack::new()
+                    .child(crate::Button::new("save", "Save"))
+                    .child(crate::Badge::new("new")),
+            )
+            .child(self.devtools.clone())
+            .probe("Inspected")
+    }
+}
+
+fn inspected(cx: &mut TestAppContext) -> (Entity<Inspected>, &mut gpui::VisualTestContext) {
+    cx.update(|cx| {
+        Theme::light().init(cx);
+        DevToolsState::new().init(cx);
+    });
+    cx.add_window_view(|_window, cx| Inspected {
+        devtools: cx.new(DevTools::new),
+    })
+}
+
+#[gpui::test]
+fn the_recorder_rebuilds_the_component_tree(cx: &mut TestAppContext) {
+    let (view, cx) = inspected(cx);
+    cx.run_until_parked();
+    // The tree the panel reads is the one the *previous* frame recorded, so a
+    // second frame has to land before anything is visible.
+    view.update(cx, |_this, cx| cx.notify());
+    cx.run_until_parked();
+
+    let names: Vec<String> = view.read_with(cx, |this, cx| {
+        this.devtools
+            .read(cx)
+            .tree()
+            .nodes
+            .iter()
+            .map(|node| node.name.to_string())
+            .collect()
+    });
+
+    assert!(names.contains(&"Inspected".to_string()), "{names:?}");
+    assert!(names.contains(&"Stack".to_string()), "{names:?}");
+    assert!(names.contains(&"Button".to_string()), "{names:?}");
+    assert!(names.contains(&"Badge".to_string()), "{names:?}");
+}
+
+#[gpui::test]
+fn a_recorded_node_carries_its_attributes_style_and_source(cx: &mut TestAppContext) {
+    let (view, cx) = inspected(cx);
+    cx.run_until_parked();
+    view.update(cx, |_this, cx| cx.notify());
+    cx.run_until_parked();
+
+    view.read_with(cx, |this, cx| {
+        let tree = this.devtools.read(cx).tree().clone();
+        let button = tree
+            .nodes
+            .iter()
+            .find(|node| node.name.as_ref() == "Button")
+            .expect("the button should have reported itself");
+
+        // Attributes come from the component's own props.
+        assert!(button
+            .attrs
+            .iter()
+            .any(|(name, value)| name.as_ref() == "variant" && value.as_ref() == "filled"));
+        assert!(button.attrs.iter().any(|(name, _)| name.as_ref() == "size"));
+
+        // The style snapshot is what fills the Styles sidebar.
+        let style = button
+            .style
+            .as_ref()
+            .expect("a styled root reports its style");
+        let declarations = crate::devtools::declarations(style);
+        assert!(declarations
+            .iter()
+            .any(|d| d.property.as_ref() == "background-color"));
+
+        // `#[track_caller]` has to resolve to the component, not to the probe.
+        let source = button.source.as_ref().expect("a probe records its caller");
+        assert_eq!(source.basename(), "button.rs");
+
+        // Bounds are captured during prepaint, so a laid-out button has some.
+        assert!(f32::from(button.bounds.size.width) > 0.0);
+    });
+}
+
+#[gpui::test]
+fn the_recorder_is_inert_until_an_inspector_exists(cx: &mut TestAppContext) {
+    assert!(!crate::devtools::is_recording());
+
+    let (view, cx) = inspected(cx);
+    cx.run_until_parked();
+    assert!(crate::devtools::is_recording());
+
+    // Dropping the inspector stops the recording, and with it the per-frame
+    // cost every probe in the app would otherwise keep paying.
+    view.update(cx, |this, cx| {
+        this.devtools = cx.new(DevTools::new);
+    });
+    cx.run_until_parked();
+    assert!(crate::devtools::is_recording());
+}
+
+#[gpui::test]
+fn reported_records_read_back_out_of_the_store(cx: &mut TestAppContext) {
+    cx.update(|cx| {
+        DevToolsState::new().init(cx);
+
+        crate::devtools::log(cx, LogLevel::Warning, "cache miss");
+        crate::devtools::log(cx, LogLevel::Warning, "cache miss");
+        crate::devtools::log(cx, LogLevel::Error, "boom");
+
+        let id = crate::devtools::network_begin(
+            cx,
+            NetworkRecord::new("GET", "https://api.example.com/v1/items"),
+        )
+        .expect("the store is installed");
+        crate::devtools::network_update(cx, id, |record| {
+            record.state = RequestState::Finished;
+            record.status = Some(200);
+        });
+
+        crate::devtools::storage_set(
+            cx,
+            StorageDomain::new("prefs", "app.preferences")
+                .entry(StorageEntry::new("theme", "dark")),
+        );
+    });
+
+    cx.update(|cx| {
+        let state = cx.global::<DevToolsState>();
+        // The two identical warnings coalesced into one row with a count of 2.
+        assert_eq!(state.logs().len(), 2);
+        assert_eq!(state.log_issues(), (2, 1));
+        // `log` is `#[track_caller]`, so the line knows where it came from.
+        assert_eq!(
+            state.logs()[0].source.as_ref().map(|s| s.basename()),
+            Some("apptests.rs")
+        );
+        assert_eq!(state.network()[0].status, Some(200));
+        assert_eq!(state.storage()[0].entries.len(), 1);
+    });
+}
+
+#[gpui::test]
+fn reporting_without_the_store_installed_is_a_no_op(cx: &mut TestAppContext) {
+    // No `DevToolsState::init`, which is the state a release build is in.
+    cx.update(|cx| {
+        crate::devtools::log(cx, LogLevel::Error, "nobody is listening");
+        assert!(crate::devtools::network_begin(cx, NetworkRecord::new("GET", "/a")).is_none());
+        crate::devtools::storage_set(cx, StorageDomain::new("prefs", "Preferences"));
+        crate::devtools::clear(cx);
+        assert!(!cx.has_global::<DevToolsState>());
+    });
+}
+
+#[gpui::test]
+fn clicking_a_source_link_switches_to_sources_and_tells_the_host(cx: &mut TestAppContext) {
+    let (view, cx) = inspected(cx);
+    let revealed = std::rc::Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+    let sink = revealed.clone();
+
+    view.update(cx, |this, cx| {
+        cx.subscribe(
+            &this.devtools,
+            move |_this, _devtools, event: &DevToolsEvent, _cx| {
+                if let DevToolsEvent::RevealSource(source) = event {
+                    sink.borrow_mut().push(source.short());
+                }
+            },
+        )
+        .detach();
+    });
+
+    view.update(cx, |this, cx| {
+        this.devtools.update(cx, |devtools, cx| {
+            devtools.reveal_source(SourceRef::new("crates/guise/src/button.rs", 42, 9), cx);
+        });
+    });
+    cx.run_until_parked();
+
+    assert_eq!(revealed.borrow().as_slice(), ["button.rs:42:9"]);
+    assert_eq!(
+        view.read_with(cx, |this, cx| this.devtools.read(cx).active_tab()),
+        DevToolsTab::Sources
+    );
+}
+
+#[gpui::test]
+fn picking_selects_the_deepest_node_under_the_point(cx: &mut TestAppContext) {
+    let (view, cx) = inspected(cx);
+    cx.run_until_parked();
+    view.update(cx, |_this, cx| cx.notify());
+    cx.run_until_parked();
+
+    let button_bounds = view.read_with(cx, |this, cx| {
+        this.devtools
+            .read(cx)
+            .tree()
+            .nodes
+            .iter()
+            .find(|node| node.name.as_ref() == "Button")
+            .map(|node| node.bounds)
+            .expect("the button should have reported itself")
+    });
+
+    view.update(cx, |this, cx| {
+        this.devtools.update(cx, |devtools, cx| {
+            devtools.set_picking(true, cx);
+            assert!(devtools.is_picking());
+            assert!(devtools.pick_at(button_bounds.center(), cx));
+            // A hit disarms the picker, the way Safari's does.
+            assert!(!devtools.is_picking());
+            assert_eq!(devtools.active_tab(), DevToolsTab::Elements);
+            assert_eq!(devtools.selected_bounds(), Some(button_bounds));
+        });
+    });
 }

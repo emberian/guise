@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, AnyElement, App, FontWeight, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, ColorName};
 
 /// A corner indicator over any child.
@@ -79,6 +80,6 @@ impl RenderOnce for Indicator {
             };
             root = root.child(dot);
         }
-        root
+        root.probe("Indicator")
     }
 }

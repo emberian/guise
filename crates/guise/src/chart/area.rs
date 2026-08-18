@@ -26,6 +26,7 @@ use super::frame::{legend_row, x_label_row, y_axis_column};
 use super::{
     min_max, normalize_between, paint_band, paint_polyline_ys, series_color, stack_layers,
 };
+use crate::devtools::Probed;
 
 /// A stacked (or overlaid) area chart over one or more series.
 #[derive(IntoElement)]
@@ -205,6 +206,6 @@ impl RenderOnce for AreaChart {
         if !legend.is_empty() {
             root = root.child(legend_row(t, &legend));
         }
-        root
+        root.probe("AreaChart")
     }
 }

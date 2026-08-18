@@ -33,6 +33,7 @@ use gpui::{
     Pixels, Point, SharedString, Window,
 };
 
+use crate::devtools::ProbedAny;
 use crate::icon::{Icon, IconName};
 use crate::input::control_metrics;
 use crate::theme::{theme, ColorName, Size};
@@ -220,7 +221,7 @@ impl Render for ContextMenu {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let mut root = div();
         if !self.open {
-            return root;
+            return root.into_any_element();
         }
 
         let t = theme(cx);
@@ -348,7 +349,7 @@ impl Render for ContextMenu {
         root = root.child(deferred(
             anchored().position(point(px(0.0), px(0.0))).child(backdrop),
         ));
-        root
+        root.probe_any("ContextMenu").into_any_element()
     }
 }
 

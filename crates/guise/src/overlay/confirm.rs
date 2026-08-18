@@ -27,6 +27,7 @@ use gpui::{div, px, AnyElement, App, ClickEvent, IntoElement, SharedString, Wind
 
 use super::Modal;
 use crate::button::Button;
+use crate::devtools::ProbedAny;
 use crate::style::Variant;
 use crate::text::Text;
 use crate::theme::{theme, ColorName, Size};
@@ -162,13 +163,15 @@ impl RenderOnce for ConfirmModal {
             confirm_button = confirm_button.on_click(move |ev, window, cx| handler(ev, window, cx));
         }
 
-        modal.child(
-            div()
-                .flex()
-                .justify_end()
-                .gap(px(gap))
-                .child(cancel_button)
-                .child(confirm_button),
-        )
+        modal
+            .child(
+                div()
+                    .flex()
+                    .justify_end()
+                    .gap(px(gap))
+                    .child(cancel_button)
+                    .child(confirm_button),
+            )
+            .probe_any("ConfirmModal")
     }
 }

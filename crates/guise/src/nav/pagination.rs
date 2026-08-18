@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, Context, EventEmitter, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, ColorName, Size};
 
 /// Emitted when the active page changes. Carries the 1-based page number.
@@ -201,6 +202,6 @@ impl Render for Pagination {
             }
         }
 
-        row.child(next)
+        row.child(next).probe("Pagination")
     }
 }

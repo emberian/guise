@@ -27,6 +27,7 @@ use gpui::{
 };
 
 use crate::actionicon::ActionIcon;
+use crate::devtools::Probed;
 use crate::icon::IconName;
 use crate::input::{TextArea, TextAreaEvent, TextAreaSubmit};
 use crate::style::Variant;
@@ -222,5 +223,6 @@ impl Render for AIComposer {
             .when_some(self.hint.clone(), |column, hint| {
                 column.child(div().text_size(px(font_xs)).text_color(dimmed).child(hint))
             })
+            .probe("AIComposer")
     }
 }

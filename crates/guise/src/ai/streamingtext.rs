@@ -19,6 +19,7 @@ use std::time::Duration;
 use gpui::prelude::*;
 use gpui::{div, px, Animation, AnimationExt, App, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::markdown::Markdown;
 use crate::theme::{theme, Size};
 
@@ -84,5 +85,6 @@ impl RenderOnce for AIStreamingText {
             .when(self.caret, |column| {
                 column.child(div().flex().items_center().h(px(font * 1.3)).child(caret))
             })
+            .probe("AIStreamingText")
     }
 }

@@ -9,6 +9,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, Context, Entity, EventEmitter, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::input::{NumberInput, NumberInputEvent, Slider, SliderEvent};
 use crate::theme::{theme, Size};
 
@@ -179,5 +180,6 @@ impl Render for AISettings {
                     )),
             )
             .child(self.max_tokens.clone())
+            .probe("AISettings")
     }
 }

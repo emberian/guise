@@ -43,6 +43,7 @@ all on top of gpui's retained-mode renderer.
 - [Drag & drop](dnd.md) — `Draggable`, `DropTarget`, `SortableList` with typed payloads
 - [Reactive state](reactive.md) — `Signal`, `Binding` (two-way `.bind`), `provide`/`use_context`, `use_state`/`watch`/`use_memo`/`use_effect`, and the reactive `Form`
 - [Software update](update.md) — `Updater`, `UpdatePrompt`, `UpdateNotice`: release check, in-place install, and the prompt that runs it
+- [DevTools](devtools.md) — `DevTools`: an in-app Safari-style inspector, with an Elements tree read back out of what actually rendered
 - [Window menu](windowmenu.md) — wiring the native application menu
 - [Architecture](architecture.md) — workspace layout, the gpui dependency, and how to add a component
 

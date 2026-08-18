@@ -83,6 +83,23 @@ Almost every component supports the same vocabulary:
 Everything visual is resolved from the theme at render time, so all components
 restyle automatically when you switch light/dark or change the palette.
 
+### Components report themselves
+
+Every component's `render` ends by tagging its root element:
+
+```rust
+element
+    .probe("Button")
+    .attr("variant", self.variant.label())
+    .attr("size", self.size.label())
+```
+
+That is what puts it in the [DevTools](devtools.md) Elements tree, with its
+real style, bounds and source location. Do the same in your own components and
+they appear beside the library's. It costs one boolean check per element per
+frame while the inspector is closed, and allocates nothing in that state — so
+there is no reason to leave it out.
+
 ## The `Variant` system
 
 `guise::surface(theme, color, variant)` returns a `Surface { bg, bg_hover, fg,

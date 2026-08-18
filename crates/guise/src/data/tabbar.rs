@@ -23,6 +23,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, Context, EventEmitter, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, Size};
 use crate::{ActionIcon, CloseButton};
 
@@ -244,7 +245,7 @@ impl Render for TabBar {
             );
         }
 
-        bar
+        bar.probe("TabBar")
     }
 }
 

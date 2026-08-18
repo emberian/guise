@@ -4,6 +4,7 @@ use gpui::prelude::*;
 use gpui::{div, px, AnyElement, App, IntoElement, Window};
 
 use super::{apply_align, apply_justify, Align, Justify};
+use crate::devtools::Probed;
 use crate::theme::{theme, Size};
 
 /// A vertical flex container.
@@ -60,6 +61,8 @@ impl RenderOnce for Stack {
     fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
         let gap = theme(cx).spacing(self.gap);
         let base = div().flex().flex_col().gap(px(gap));
-        apply_justify(apply_align(base, self.align), self.justify).children(self.children)
+        apply_justify(apply_align(base, self.align), self.justify)
+            .children(self.children)
+            .probe("Stack")
     }
 }

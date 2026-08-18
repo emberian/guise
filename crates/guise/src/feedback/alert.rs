@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, ClickEvent, FontWeight, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::icon::Glyph;
 use crate::input::ClickHandler;
 use crate::style::{surface, ColorValue, Variant};
@@ -116,6 +117,6 @@ impl RenderOnce for Alert {
                     .on_click(handler),
             );
         }
-        row
+        row.probe("Alert").attr("variant", self.variant.label())
     }
 }

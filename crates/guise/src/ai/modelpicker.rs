@@ -14,6 +14,7 @@ use gpui::{
 
 use super::cost::AIPricing;
 use super::tokenmeter::compact;
+use crate::devtools::ProbedAny;
 use crate::icon::{Icon, IconName};
 use crate::input::{control_metrics, Field};
 use crate::theme::{theme, ColorName, Size};
@@ -315,6 +316,6 @@ impl Render for AIModelPicker {
         if let Some(label) = self.label.clone() {
             chrome = chrome.label(label);
         }
-        chrome
+        chrome.probe_any("AIModelPicker")
     }
 }

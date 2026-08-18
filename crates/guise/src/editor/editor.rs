@@ -39,6 +39,7 @@ use super::model::{EditorModel, Pos};
 use crate::reactive::Signal;
 use crate::theme::theme;
 
+use crate::devtools::Probed;
 /// The monospace family used for the buffer, gutter, and placeholder.
 use crate::style::MONO_FAMILY;
 /// Horizontal padding around the text content, in px.
@@ -990,7 +991,7 @@ impl Render for Editor {
                     .child(diag.message.clone()),
             );
         }
-        frame
+        frame.probe("Editor")
     }
 }
 

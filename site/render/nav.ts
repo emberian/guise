@@ -53,6 +53,7 @@ export const groups: DocGroup[] = [
       { slug: "dnd", title: "Drag & drop" },
       { slug: "reactive", title: "Reactive state" },
       { slug: "update", title: "Software update" },
+      { slug: "devtools", title: "DevTools" },
       { slug: "windowmenu", title: "Window menu" },
     ],
   },

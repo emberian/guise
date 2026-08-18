@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, FontWeight, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, ColorName, Size};
 
 struct StepDef {
@@ -148,6 +149,6 @@ impl RenderOnce for Stepper {
                 );
             }
         }
-        row
+        row.probe("Stepper")
     }
 }

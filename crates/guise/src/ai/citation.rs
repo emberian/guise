@@ -8,6 +8,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, ClickEvent, ElementId, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::input::ClickHandler;
 use crate::theme::{theme, Size};
 
@@ -113,5 +114,6 @@ impl RenderOnce for AICitation {
             .when_some(self.on_click, |chip, handler| {
                 chip.on_click(move |event, window, cx| handler(event, window, cx))
             })
+            .probe("AICitation")
     }
 }

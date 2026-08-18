@@ -11,6 +11,7 @@ use gpui::prelude::*;
 use gpui::{div, px, AnimationExt, AnyElement, App, ElementId, IntoElement, Window};
 
 use crate::anim::Easing;
+use crate::devtools::ProbedAny;
 
 /// The kind of entrance motion [`Transition`] plays.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -88,6 +89,8 @@ impl RenderOnce for Transition {
                     TransitionKind::SlideRight => el.opacity(opacity).ml(px(-shift)),
                 }
             })
+            .probe_any("Transition")
+            .into_any_element()
     }
 }
 
@@ -188,6 +191,8 @@ impl RenderOnce for Collapse {
                 // opacity and the closing height stay in legal range.
                 el.h(px(height * d.max(0.0))).opacity(d.clamp(0.0, 1.0))
             })
+            .into_any_element()
+            .probe_any("Collapse")
             .into_any_element()
     }
 }

@@ -4,6 +4,7 @@ use gpui::prelude::*;
 use gpui::{div, px, AnyElement, App, IntoElement, Window};
 
 use super::{apply_align, apply_justify, Align, Justify};
+use crate::devtools::Probed;
 use crate::theme::{theme, Size};
 
 /// A horizontal flex container.
@@ -77,14 +78,14 @@ impl RenderOnce for Group {
             base = base.flex_wrap();
         }
         let grow = self.grow;
-        apply_justify(apply_align(base, self.align), self.justify).children(
-            self.children.into_iter().map(move |c| {
+        apply_justify(apply_align(base, self.align), self.justify)
+            .children(self.children.into_iter().map(move |c| {
                 if grow {
                     div().flex_1().child(c).into_any_element()
                 } else {
                     c
                 }
-            }),
-        )
+            }))
+            .probe("Group")
     }
 }

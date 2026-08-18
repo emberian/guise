@@ -4,6 +4,7 @@ use gpui::prelude::*;
 use gpui::{div, px, App, ClickEvent, ElementId, IntoElement, SharedString, Window};
 
 use super::{control_box_size, ClickHandler};
+use crate::devtools::Probed;
 use crate::theme::{theme, ColorName, Size};
 
 /// A controlled radio button. Grouping/exclusivity is the
@@ -109,13 +110,19 @@ impl RenderOnce for Radio {
             );
         }
 
-        if self.disabled {
+        let element = if self.disabled {
             row.opacity(0.5)
         } else {
             if let Some(handler) = self.on_change {
                 row = row.on_click(handler);
             }
             row
-        }
+        };
+
+        element
+            .probe("Radio")
+            .attr("size", self.size.label())
+            .attr_if("checked", self.checked)
+            .attr_if("disabled", self.disabled)
     }
 }

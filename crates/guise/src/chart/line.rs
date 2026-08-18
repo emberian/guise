@@ -27,6 +27,7 @@ use super::{
     min_max, normalize_between, paint_polyline, paint_polyline_ys, resolve_color, series_color,
     tick_label,
 };
+use crate::devtools::Probed;
 
 /// How many horizontal gridlines an axis-free `LineChart` paints.
 const GRIDLINES: usize = 4;
@@ -274,6 +275,6 @@ impl RenderOnce for LineChart {
         if !legend.is_empty() {
             root = root.child(legend_row(t, &legend));
         }
-        root
+        root.probe("LineChart")
     }
 }

@@ -92,6 +92,21 @@ pub enum Variant {
     White,
 }
 
+impl Variant {
+    /// The variant's name, as the docs and the inspector spell it.
+    pub fn label(self) -> &'static str {
+        match self {
+            Variant::Filled => "filled",
+            Variant::Light => "light",
+            Variant::Outline => "outline",
+            Variant::Subtle => "subtle",
+            Variant::Default => "default",
+            Variant::Transparent => "transparent",
+            Variant::White => "white",
+        }
+    }
+}
+
 /// Resolved colors for one `(color, variant)` pairing.
 #[derive(Debug, Clone, Copy)]
 pub struct Surface {

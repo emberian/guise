@@ -38,6 +38,7 @@ use crate::reactive::Signal;
 use crate::theme::theme;
 use crate::{Glyph, IconName};
 
+use crate::devtools::Probed;
 /// The monospace family for code spans and code blocks.
 use crate::style::MONO_FAMILY;
 /// Horizontal padding around the document, in px.
@@ -1406,6 +1407,7 @@ impl Render for MarkdownEditor {
             .line_height(px(base_line_h))
             .text_color(text_color)
             .child(body)
+            .probe("MarkdownEditor")
     }
 }
 

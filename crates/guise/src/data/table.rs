@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, Div, FontWeight, Hsla, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, ColorName, Size};
 
 /// One table cell. A free fn (not a closure) so it can be reused by both the
@@ -127,6 +128,6 @@ impl RenderOnce for Table {
         if self.with_border {
             table = table.border_1().border_color(line);
         }
-        table
+        table.probe("Table")
     }
 }

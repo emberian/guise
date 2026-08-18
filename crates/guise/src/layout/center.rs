@@ -1,5 +1,6 @@
 //! `Center` — centers its content on both axes.
 
+use crate::devtools::Probed;
 use gpui::prelude::*;
 use gpui::{div, AnyElement, App, IntoElement, Window};
 
@@ -43,6 +44,6 @@ impl RenderOnce for Center {
         if !self.inline {
             base = base.size_full();
         }
-        base.children(self.children)
+        base.children(self.children).probe("Center")
     }
 }

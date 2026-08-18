@@ -6,6 +6,7 @@ use gpui::prelude::*;
 use gpui::{div, AnyElement, App, ElementId, IntoElement, Window};
 
 use super::chip::DragChip;
+use crate::devtools::Probed;
 use crate::theme::theme;
 
 type DropHandler<T> = Rc<dyn Fn(&T, &mut Window, &mut App) + 'static>;
@@ -76,6 +77,6 @@ impl<T: Clone + 'static> RenderOnce for DropTarget<T> {
         if let Some(child) = self.child {
             root = root.child(child);
         }
-        root
+        root.probe("DropTarget")
     }
 }

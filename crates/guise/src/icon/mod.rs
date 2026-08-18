@@ -18,6 +18,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use gpui::prelude::*;
 use gpui::{div, px, App, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, ColorName, Size};
 
 /// The family name baked into the embedded Lucide font.
@@ -71,7 +72,7 @@ impl From<SharedString> for Glyph {
 
 impl RenderOnce for Glyph {
     fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
-        match self {
+        let element = match self {
             Glyph::Lucide(name) => {
                 ensure_font(cx);
                 div()
@@ -79,7 +80,9 @@ impl RenderOnce for Glyph {
                     .child(SharedString::new_static(name.glyph()))
             }
             Glyph::Text(text) => div().child(text),
-        }
+        };
+
+        element.probe("Glyph")
     }
 }
 
@@ -142,6 +145,8 @@ impl RenderOnce for Icon {
         if let Some(tint) = tint {
             el = el.text_color(tint);
         }
-        el
+        el.probe("Icon")
+            .attr("name", self.name.name())
+            .attr("size", self.size.label())
     }
 }

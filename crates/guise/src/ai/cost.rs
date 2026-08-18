@@ -9,6 +9,7 @@ use gpui::prelude::*;
 use gpui::{div, px, App, IntoElement, SharedString, Window};
 
 use super::tokenmeter::compact;
+use crate::devtools::Probed;
 use crate::icon::{Icon, IconName};
 use crate::theme::{theme, ColorName, Size};
 
@@ -207,6 +208,7 @@ impl RenderOnce for AICost {
                         }),
                 )
             })
+            .probe("AICost")
     }
 }
 

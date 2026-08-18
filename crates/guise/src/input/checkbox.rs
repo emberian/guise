@@ -4,6 +4,7 @@ use gpui::prelude::*;
 use gpui::{div, px, App, ClickEvent, ElementId, FontWeight, IntoElement, SharedString, Window};
 
 use super::{control_box_size, ClickHandler};
+use crate::devtools::Probed;
 use crate::reactive::Binding;
 use crate::theme::{theme, ColorName, Size};
 
@@ -132,7 +133,7 @@ impl RenderOnce for Checkbox {
             );
         }
 
-        if self.disabled {
+        let element = if self.disabled {
             row.opacity(0.5)
         } else {
             if self.binding.is_some() || self.on_change.is_some() {
@@ -149,6 +150,13 @@ impl RenderOnce for Checkbox {
                 });
             }
             row
-        }
+        };
+
+        element
+            .probe("Checkbox")
+            .attr("size", self.size.label())
+            .attr_if("checked", self.checked)
+            .attr_if("indeterminate", self.indeterminate)
+            .attr_if("disabled", self.disabled)
     }
 }

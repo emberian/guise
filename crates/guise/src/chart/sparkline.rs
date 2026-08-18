@@ -13,6 +13,7 @@ use crate::style::ColorValue;
 use crate::theme::theme;
 
 use super::{paint_polyline, resolve_color};
+use crate::devtools::Probed;
 
 /// A minimal, axis-free polyline over a value series. Values are min/max
 /// normalized to the chart height; fewer than two values paint nothing.
@@ -96,10 +97,12 @@ impl RenderOnce for Sparkline {
         )
         .h(px(self.height));
 
-        if self.full_width {
+        let element = if self.full_width {
             plot.w_full()
         } else {
             plot.w(px(self.width.unwrap_or(120.0)))
-        }
+        };
+
+        element.probe("Sparkline")
     }
 }

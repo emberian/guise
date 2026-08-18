@@ -4,6 +4,7 @@ use gpui::prelude::*;
 use gpui::{div, AnyElement, App, ElementId, IntoElement, SharedString, Window};
 
 use super::chip::DragChip;
+use crate::devtools::Probed;
 
 /// Wraps a child so dragging it carries `payload`; pair with a
 /// [`DropTarget`](super::DropTarget) of the same payload type.
@@ -58,6 +59,6 @@ impl<T: Clone + 'static> RenderOnce for Draggable<T> {
         if let Some(child) = self.child {
             root = root.child(child);
         }
-        root
+        root.probe("Draggable")
     }
 }

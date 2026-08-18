@@ -9,6 +9,7 @@ use gpui::prelude::*;
 use gpui::{div, px, AnyElement, App, ElementId, IntoElement, SharedString, Window};
 
 use super::chip::DragChip;
+use crate::devtools::Probed;
 use crate::theme::theme;
 
 type ItemBuilder = Rc<dyn Fn(usize, &mut Window, &mut App) -> AnyElement + 'static>;
@@ -140,6 +141,6 @@ impl RenderOnce for SortableList {
             }
             root = root.child(row);
         }
-        root
+        root.probe("SortableList")
     }
 }

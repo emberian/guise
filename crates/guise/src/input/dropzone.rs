@@ -13,6 +13,7 @@ use gpui::{
 };
 
 use super::accept::{filter_paths, normalize_ext};
+use crate::devtools::Probed;
 use crate::icon::{Icon, IconName};
 use crate::theme::{theme, Size};
 
@@ -194,6 +195,6 @@ impl RenderOnce for Dropzone {
             });
         }
 
-        zone
+        zone.probe("Dropzone")
     }
 }

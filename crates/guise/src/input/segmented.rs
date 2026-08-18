@@ -4,6 +4,7 @@ use gpui::prelude::*;
 use gpui::{div, px, App, Context, Entity, EventEmitter, IntoElement, SharedString, Window};
 
 use super::control_metrics;
+use crate::devtools::Probed;
 use crate::reactive::Signal;
 use crate::theme::{theme, ColorName, Size};
 
@@ -140,6 +141,6 @@ impl Render for SegmentedControl {
             }
             row = row.child(seg);
         }
-        row
+        row.probe("SegmentedControl")
     }
 }

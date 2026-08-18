@@ -21,6 +21,7 @@ use crate::theme::theme;
 use super::axis::nice_ticks;
 use super::frame::{legend_row, y_axis_column};
 use super::{min_max, series_color, tick_label};
+use crate::devtools::Probed;
 
 /// Side (px) of a painted point marker.
 const MARKER: f32 = 6.0;
@@ -246,6 +247,6 @@ impl RenderOnce for ScatterChart {
         if !legend.is_empty() {
             root = root.child(legend_row(t, &legend));
         }
-        root
+        root.probe("ScatterChart")
     }
 }

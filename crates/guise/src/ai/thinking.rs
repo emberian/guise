@@ -8,6 +8,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::feedback::{Loader, LoaderVariant};
 use crate::theme::{theme, ColorName, Size};
 
@@ -74,5 +75,6 @@ impl RenderOnce for AIThinking {
                     .color(dot_color),
             )
             .children(self.label)
+            .probe("AIThinking")
     }
 }

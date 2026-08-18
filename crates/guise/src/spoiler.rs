@@ -17,6 +17,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, AnyElement, App, ClickEvent, ElementId, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::input::ClickHandler;
 use crate::theme::{theme, ColorName, Size};
 
@@ -142,5 +143,6 @@ impl RenderOnce for Spoiler {
             .gap(px(gap))
             .child(content)
             .child(toggle)
+            .probe("Spoiler")
     }
 }

@@ -14,6 +14,7 @@ use gpui::{
 
 use super::accept::{filter_paths, normalize_ext};
 use super::control_metrics;
+use crate::devtools::Probed;
 use crate::icon::{Icon, IconName};
 use crate::theme::{theme, Size};
 
@@ -219,10 +220,12 @@ impl Render for FileInput {
         }
         column = column.child(trigger);
 
-        if self.disabled {
+        let element = if self.disabled {
             column.opacity(0.6)
         } else {
             column
-        }
+        };
+
+        element.probe("FileInput")
     }
 }

@@ -1,5 +1,6 @@
 //! `Stack` and `Positioned` — Flutter's overlap layout.
 
+use crate::devtools::Probed;
 use gpui::prelude::*;
 use gpui::{div, px, AnyElement, App, IntoElement, Window};
 
@@ -34,7 +35,7 @@ impl ParentElement for Stack {
 
 impl RenderOnce for Stack {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
-        div().relative().children(self.children)
+        div().relative().children(self.children).probe("Stack")
     }
 }
 
@@ -124,6 +125,6 @@ impl RenderOnce for Positioned {
         if let Some(v) = self.height {
             el = el.h(px(v));
         }
-        el.child(self.child)
+        el.child(self.child).probe("Positioned")
     }
 }

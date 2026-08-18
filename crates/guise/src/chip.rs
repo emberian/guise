@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, ClickEvent, ElementId, FontWeight, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::input::ClickHandler;
 use crate::reactive::Binding;
 use crate::style::ColorValue;
@@ -122,6 +123,8 @@ impl RenderOnce for Chip {
                 }
             });
         }
-        el
+        el.probe("Chip")
+            .attr("size", self.size.label())
+            .attr_if("checked", self.checked)
     }
 }

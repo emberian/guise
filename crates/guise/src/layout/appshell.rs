@@ -20,6 +20,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, AnyElement, App, IntoElement, Window};
 
+use crate::devtools::Probed;
 use crate::theme::theme;
 
 /// A region-content builder, re-invoked every render (mirrors
@@ -214,6 +215,6 @@ impl RenderOnce for AppShell {
             );
         }
 
-        root
+        root.probe("AppShell")
     }
 }

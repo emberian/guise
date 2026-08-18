@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, AnyElement, App, IntoElement, Window};
 
+use crate::devtools::Probed;
 use crate::paper::apply_shadow;
 use crate::theme::{theme, Size};
 
@@ -74,6 +75,6 @@ impl RenderOnce for Card {
             el = el.border_1().border_color(t.border().hsla());
         }
         el = apply_shadow(el, self.shadow);
-        el.children(self.children)
+        el.children(self.children).probe("Card")
     }
 }

@@ -5,6 +5,7 @@ use std::time::Duration;
 use gpui::prelude::*;
 use gpui::{div, px, ClickEvent, ClipboardItem, Context, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, ColorName, Size};
 
 /// A small button that writes `text` to the system clipboard when clicked, then
@@ -99,6 +100,6 @@ impl Render for CopyButton {
         if !copied {
             el = el.hover(move |s| s.bg(hover_bg));
         }
-        el
+        el.probe("CopyButton")
     }
 }

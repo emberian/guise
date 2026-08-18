@@ -20,6 +20,7 @@ use std::rc::Rc;
 use gpui::prelude::*;
 use gpui::{div, px, App, ElementId, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::reactive::Binding;
 use crate::style::ColorValue;
 use crate::theme::{theme, ColorName, Size};
@@ -162,7 +163,7 @@ impl RenderOnce for Rating {
             }
             row = row.child(star);
         }
-        row
+        row.probe("Rating")
     }
 }
 

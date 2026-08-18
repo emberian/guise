@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, FontWeight, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, Color};
 
 /// A heading. `order` 1..=6 selects the heading level.
@@ -56,5 +57,7 @@ impl RenderOnce for Title {
             .line_height(px(size * 1.3))
             .text_color(color.hsla())
             .child(self.content)
+            .probe("Title")
+            .attr_with("order", || self.order.to_string())
     }
 }

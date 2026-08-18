@@ -20,6 +20,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, ClickEvent, ElementId, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::icon::{Icon, IconName};
 use crate::input::ClickHandler;
 use crate::markdown::Markdown;
@@ -140,5 +141,6 @@ impl RenderOnce for AIReasoning {
                         .child(Markdown::new(self.text).size(self.size)),
                 )
             })
+            .probe("AIReasoning")
     }
 }

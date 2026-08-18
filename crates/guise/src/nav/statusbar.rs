@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, AnyElement, App, IntoElement, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, Size};
 
 /// A bottom/top status bar with three slots — the shell most desktop apps
@@ -92,5 +93,6 @@ impl RenderOnce for StatusBar {
                     .gap(px(12.0))
                     .children(self.right),
             )
+            .probe("StatusBar")
     }
 }

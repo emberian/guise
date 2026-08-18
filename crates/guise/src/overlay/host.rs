@@ -32,6 +32,7 @@ use gpui::{
     Window,
 };
 
+use crate::devtools::Probed;
 use crate::feedback::ToastStack;
 use crate::theme::ColorName;
 
@@ -178,6 +179,6 @@ impl Render for OverlayHost {
                     .child(content),
             );
         }
-        root
+        root.probe("OverlayHost")
     }
 }

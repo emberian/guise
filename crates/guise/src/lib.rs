@@ -43,6 +43,7 @@ pub mod ai;
 pub mod anim;
 pub mod chart;
 pub mod data;
+pub mod devtools;
 pub mod dnd;
 pub mod editor;
 pub mod feedback;
@@ -192,6 +193,11 @@ pub mod prelude {
         Accordion, Avatar, AvatarGroup, Column, DataView, DataViewEvent, DataViewLayout, List,
         SelectionMode, SortDir, TabBar, TabBarEvent, Table, TableView, TableViewEvent, Tabs,
         Timeline, TreeNode, TreeView, TreeViewEvent, VirtualList,
+    };
+    pub use crate::devtools::{
+        DevTools, DevToolsEvent, DevToolsState, DevToolsTab, Dock, LogLevel, LogRecord,
+        NetworkRecord, Probed, ProbedAny, RequestState, ResourceKind, SourceRef, StorageDomain,
+        StorageEntry, StorageKind, TimelineEvent, TimelineKind, Timings,
     };
     pub use crate::dnd::{apply_reorder, Draggable, DropTarget, SortableList};
     pub use crate::editor::{

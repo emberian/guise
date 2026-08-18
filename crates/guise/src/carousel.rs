@@ -10,6 +10,7 @@ use std::time::Duration;
 use gpui::prelude::*;
 use gpui::{div, px, AnyElement, App, Context, EventEmitter, IntoElement, Window};
 
+use crate::devtools::Probed;
 use crate::icon::{Icon, IconName};
 use crate::theme::{theme, Size};
 
@@ -222,7 +223,13 @@ impl Render for Carousel {
             );
         }
 
-        div().flex().flex_col().w_full().child(stage).child(dots)
+        div()
+            .flex()
+            .flex_col()
+            .w_full()
+            .child(stage)
+            .child(dots)
+            .probe("Carousel")
     }
 }
 

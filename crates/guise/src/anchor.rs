@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, ClickEvent, ElementId, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::input::ClickHandler;
 use crate::theme::{theme, ColorName, Size};
 
@@ -65,6 +66,6 @@ impl RenderOnce for Anchor {
         if let Some(handler) = self.on_click {
             el = el.on_click(handler);
         }
-        el
+        el.probe("Anchor").attr("size", self.size.label())
     }
 }

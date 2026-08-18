@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, FontWeight, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, ColorName, Size};
 
 const PALETTE: [ColorName; 6] = [
@@ -115,6 +116,6 @@ impl RenderOnce for AvatarGroup {
                 shown == 0,
             ));
         }
-        row
+        row.probe("AvatarGroup")
     }
 }

@@ -20,6 +20,7 @@ use gpui::prelude::*;
 use gpui::{div, px, AnyElement, App, IntoElement, SharedString, Window};
 
 use super::AIStreamingText;
+use crate::devtools::Probed;
 use crate::icon::{Icon, IconName};
 use crate::markdown::Markdown;
 use crate::theme::{theme, ColorName, Size};
@@ -251,5 +252,6 @@ impl RenderOnce for AIMessage {
                     .child(header)
                     .child(content),
             )
+            .probe("AIMessage")
     }
 }

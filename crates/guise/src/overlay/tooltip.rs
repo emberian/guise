@@ -4,6 +4,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, AnyView, App, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, ColorName, Size};
 
 /// The floating tooltip bubble (a gpui view). Usually built for you by
@@ -37,6 +38,7 @@ impl Render for Tooltip {
             .text_color(t.white.hsla())
             .shadow_md()
             .child(self.label.clone())
+            .probe("Tooltip")
     }
 }
 

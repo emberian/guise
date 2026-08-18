@@ -7,6 +7,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, relative, AnyElement, App, IntoElement, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, Size};
 
 /// A responsive-feeling fixed-column grid. `SimpleGrid::new(3).spacing(Size::Md)`.
@@ -67,6 +68,6 @@ impl RenderOnce for SimpleGrid {
             }
             column = column.child(div().flex().flex_row().gap(px(gap)).children(row_cells));
         }
-        column
+        column.probe("SimpleGrid")
     }
 }

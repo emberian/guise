@@ -15,6 +15,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, IntoElement, Window};
 
+use crate::devtools::ProbedAny;
 use crate::feedback::Loader;
 use crate::theme::theme;
 
@@ -73,6 +74,8 @@ impl RenderOnce for LoadingOverlay {
             .justify_center()
             .bg(scrim)
             .child(self.loader.unwrap_or_default())
+            .into_any_element()
+            .probe_any("LoadingOverlay")
             .into_any_element()
     }
 }

@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, ClickEvent, ElementId, IntoElement, Window};
 
+use crate::devtools::Probed;
 use crate::icon::{Glyph, IconName};
 use crate::input::ClickHandler;
 use crate::style::icon_size;
@@ -61,6 +62,6 @@ impl RenderOnce for CloseButton {
         if let Some(handler) = self.on_click {
             el = el.on_click(handler);
         }
-        el
+        el.probe("CloseButton")
     }
 }

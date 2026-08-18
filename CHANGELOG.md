@@ -1,8 +1,71 @@
 # Changelog
 
 Notable changes to [`guise-ui`](https://crates.io/crates/guise-ui). Versions
-follow [semver](https://semver.org); while the crate is pre-1.0, breaking
-changes land in minor releases and are called out under **Breaking**.
+follow [semver](https://semver.org): from 1.0 on, a breaking change means a
+major release, and is called out under **Breaking**. Releases before 1.0 landed
+breaking changes in minor versions.
+
+## 1.0.0 — 2026-08-18
+
+The API is stable. Everything below 1.0 moved breaking changes through minor
+versions; from here a break means a major release.
+
+That is the whole meaning of this number — it is not a rewrite. `guise` has
+been carrying real applications for months: ~60 components, a reactive layer, a
+pane system, an editor, a markdown editor, an AI component set, a self-updater,
+515 tests, and a documented page for every module. What changes today is the
+promise, not the code.
+
+One caveat worth stating plainly: `guise` builds against `gpui = "0.2.2"`, which
+is itself pre-1.0. A breaking change in gpui forces a breaking change here, so
+2.0 may well arrive on gpui's schedule rather than this crate's. The alternative
+— staying at 0.x forever because a dependency is — helps nobody.
+
+
+### New in 1.0: DevTools — Safari's Web Inspector, aimed at your own app
+
+`guise::devtools` adds an in-app inspector with eight tools across the top:
+Elements, Network, Sources, Timelines, Storage, Layers, Logs and Audit.
+
+```rust
+DevToolsState::new().init(cx);          // once at startup
+let devtools = cx.new(DevTools::new);   // then put it wherever you like
+```
+
+`cargo run -p guise-ui --example devtools` opens it beside a small app.
+
+- **Elements is real introspection, not a mock.** Every component now ends its
+  `render` with `.probe("Name")`, which snapshots the element's
+  `StyleRefinement` and brackets `prepaint` to rebuild the tree. So the outline
+  is the live component hierarchy — `<Button variant="filled" size="sm" />`,
+  foldable, with closing tags — and the Styles sidebar shows the element's
+  actual declarations with color swatches, the Computed sidebar its real box
+  model, and the Node sidebar the source location it was constructed at. gpui
+  exposes only the element under the pointer and no way to enumerate a tree,
+  which is why the recording exists.
+- **Logs, Network, Storage and Timelines are reported by the host**, the same
+  arrangement `ai/` uses: `log`, `network_begin`/`network_update`,
+  `storage_set`, `measure`. Nothing in `guise` opens a socket. `log` is
+  `#[track_caller]`, so a line knows where it came from without being told.
+- **Sources** reads the files the tree points at off disk, resolving the
+  workspace-relative paths `#[track_caller]` produces against the working
+  directory and its ancestors.
+- **Audit** runs rules over the recorded tree — WCAG text contrast, hit target
+  size, collapsed containers, children escaping their parent — each finding
+  selecting the node it came from.
+- **Cost.** A probe is one boolean check per element per frame while the
+  inspector is closed, and allocates nothing in that state. Recording starts
+  with the first `DevTools` and stops with the last. An app that never
+  constructs one links none of the panels.
+
+Named Logs rather than Console on purpose: half of Safari's Console tab is a
+JavaScript evaluator, and a compiled binary has nothing to evaluate.
+
+### Also
+
+- `Size::label()` and `Variant::label()` — the token names the docs already
+  used, now available to code.
+- New guide: [DevTools](docs/devtools.md).
 
 ## 0.13.0 — 2026-08-17
 

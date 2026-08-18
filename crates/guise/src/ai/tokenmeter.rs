@@ -9,6 +9,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::feedback::Progress;
 use crate::theme::{theme, Color, Size};
 
@@ -117,6 +118,7 @@ impl RenderOnce for AITokenMeter {
                         .color(fill.hsla()),
                 )
             })
+            .probe("AITokenMeter")
     }
 }
 

@@ -22,6 +22,7 @@ use gpui::{img, px, AnyElement, App, ImageSource, IntoElement, Window};
 
 pub use gpui::ObjectFit;
 
+use crate::devtools::Probed;
 use crate::theme::{theme, Size};
 
 /// An image element.
@@ -110,6 +111,6 @@ impl RenderOnce for Image {
         } else if let Some(radius) = self.radius {
             el = el.rounded(px(t.radius(radius)));
         }
-        el
+        el.probe("Image")
     }
 }

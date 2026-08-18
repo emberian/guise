@@ -18,6 +18,7 @@ use crate::theme::theme;
 use super::axis::nice_ticks;
 use super::frame::{hover_slots, x_label_row, y_axis_column};
 use super::{bar_heights, bar_slot, series_color, tick_label};
+use crate::devtools::Probed;
 
 /// A vertical bar chart. Bars scale against the largest value with the
 /// baseline at zero; negative values clamp to zero (no downward bars in v1).
@@ -205,6 +206,6 @@ impl RenderOnce for BarChart {
         if self.axis {
             body = body.child(y_axis_column(t, &ticks, self.height));
         }
-        body.child(plot_column)
+        body.child(plot_column).probe("BarChart")
     }
 }

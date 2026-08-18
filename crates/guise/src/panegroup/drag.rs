@@ -10,6 +10,7 @@ use gpui::{
 use crate::SplitDirection;
 
 use super::{ItemId, PaneId};
+use crate::devtools::Probed;
 
 /// Which edge of a pane a drop targets — or the center (add as a tab, no split).
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -51,6 +52,7 @@ impl Render for TabDrag {
             .text_color(gpui::rgb(0xf2f2f7))
             .text_size(px(12.0))
             .child(self.label.clone())
+            .probe("TabDrag")
     }
 }
 

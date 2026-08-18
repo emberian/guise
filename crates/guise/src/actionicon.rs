@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, ClickEvent, ElementId, IntoElement, Window};
 
+use crate::devtools::Probed;
 use crate::icon::Glyph;
 use crate::input::ClickHandler;
 use crate::style::{icon_size, surface, ColorValue, Variant};
@@ -92,7 +93,7 @@ impl RenderOnce for ActionIcon {
             el = el.border_1().border_color(border);
         }
 
-        if self.disabled {
+        let element = if self.disabled {
             el.opacity(0.5)
         } else {
             let hover_bg = s.bg_hover;
@@ -101,6 +102,12 @@ impl RenderOnce for ActionIcon {
                 el = el.on_click(handler);
             }
             el
-        }
+        };
+
+        element
+            .probe("ActionIcon")
+            .attr("variant", self.variant.label())
+            .attr("size", self.size.label())
+            .attr_if("disabled", self.disabled)
     }
 }

@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, ClickEvent, FontWeight, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::input::ClickHandler;
 use crate::theme::{theme, Size};
 
@@ -110,6 +111,6 @@ impl RenderOnce for Breadcrumbs {
                 None => row = row.child(item),
             }
         }
-        row
+        row.probe("Breadcrumbs")
     }
 }

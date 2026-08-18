@@ -17,6 +17,19 @@ impl Default for Size {
     }
 }
 
+impl Size {
+    /// The token's name, as the docs and the inspector spell it.
+    pub fn label(self) -> &'static str {
+        match self {
+            Size::Xs => "xs",
+            Size::Sm => "sm",
+            Size::Md => "md",
+            Size::Lg => "lg",
+            Size::Xl => "xl",
+        }
+    }
+}
+
 /// Five px values addressed by [`Size`]. Used for spacing, radius and font.
 #[derive(Debug, Clone, Copy)]
 pub struct Scale {

@@ -4,6 +4,7 @@ use gpui::prelude::*;
 use gpui::{div, px, App, Context, IntoElement, SharedString, Window};
 
 use super::Content;
+use crate::devtools::Probed;
 use crate::theme::{theme, Size};
 
 struct AccItem {
@@ -130,6 +131,6 @@ impl Render for Accordion {
             root = root.child(panel);
         }
 
-        root
+        root.probe("Accordion")
     }
 }

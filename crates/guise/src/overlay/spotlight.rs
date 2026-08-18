@@ -10,6 +10,7 @@ use gpui::{
     deferred, div, px, App, Context, FocusHandle, IntoElement, KeyDownEvent, SharedString, Window,
 };
 
+use crate::devtools::ProbedAny;
 use crate::icon::{Icon, IconName};
 use crate::input::TextEdit;
 use crate::theme::{theme, Size};
@@ -146,7 +147,7 @@ impl Render for Spotlight {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let mut root = div();
         if !self.open {
-            return root;
+            return root.into_any_element();
         }
 
         let t = theme(cx);
@@ -270,6 +271,6 @@ impl Render for Spotlight {
             .child(panel);
 
         root = root.child(deferred(backdrop));
-        root
+        root.probe_any("Spotlight").into_any_element()
     }
 }

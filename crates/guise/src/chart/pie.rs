@@ -14,6 +14,7 @@ use crate::style::ColorValue;
 use crate::theme::{theme, Size};
 
 use super::{arc_point, series_color, slice_spans};
+use crate::devtools::Probed;
 
 /// A pie (or donut) chart. Slices are proportional to each value's share of
 /// the total, starting at 12 o'clock and sweeping clockwise. Non-positive
@@ -162,7 +163,7 @@ impl RenderOnce for PieChart {
                     .children(items),
             );
         }
-        root
+        root.probe("PieChart")
     }
 }
 

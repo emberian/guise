@@ -5,6 +5,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, AnyElement, App, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, ColorName, Size};
 
 /// Label / description / error wrapper around a single control.
@@ -87,6 +88,6 @@ impl RenderOnce for Field {
                     .child(description),
             );
         }
-        column
+        column.probe("Field")
     }
 }

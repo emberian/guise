@@ -13,6 +13,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, IntoElement, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, Size};
 
 /// The axis a [`Space`] occupies.
@@ -51,9 +52,12 @@ impl RenderOnce for Space {
     fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
         let gap = theme(cx).spacing(self.size);
         let el = div().flex_none();
-        match self.axis {
+
+        let element = match self.axis {
             SpaceAxis::Horizontal => el.w(px(gap)),
             SpaceAxis::Vertical => el.h(px(gap)),
-        }
+        };
+
+        element.probe("Space")
     }
 }

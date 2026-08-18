@@ -12,6 +12,7 @@ use gpui::{
 
 use super::control_metrics;
 use super::time::Time;
+use crate::devtools::Probed;
 use crate::icon::{Icon, IconName};
 use crate::reactive::Signal;
 use crate::theme::{theme, Size};
@@ -314,10 +315,12 @@ impl Render for TimePicker {
         }
         column = column.child(wrap);
 
-        if self.disabled {
+        let element = if self.disabled {
             column.opacity(0.6)
         } else {
             column
-        }
+        };
+
+        element.probe("TimePicker")
     }
 }

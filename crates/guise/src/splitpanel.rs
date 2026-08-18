@@ -23,6 +23,7 @@ use gpui::{
 };
 
 use crate::data::Content;
+use crate::devtools::Probed;
 use crate::style::FlexExt;
 use crate::theme::theme;
 
@@ -251,7 +252,10 @@ impl Render for SplitPanel {
             root.flex_col()
         };
 
-        root.child(first_pane).child(divider).child(second_pane)
+        root.child(first_pane)
+            .child(divider)
+            .child(second_pane)
+            .probe("SplitPanel")
     }
 }
 

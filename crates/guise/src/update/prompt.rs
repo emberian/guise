@@ -27,6 +27,7 @@ use gpui::{
 };
 
 use super::{InstallKind, Relaunch, Release, UpdateStage, Updater};
+use crate::devtools::Probed;
 use crate::theme::{theme, ColorName, Size};
 use crate::{Alert, Button, Progress, Variant};
 
@@ -520,6 +521,7 @@ impl Render for UpdatePrompt {
                             .on_click(cx.listener(|this, _, _, cx| this.accept(cx))),
                     ),
             )
+            .probe("UpdatePrompt")
     }
 }
 

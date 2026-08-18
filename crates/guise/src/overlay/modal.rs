@@ -12,6 +12,7 @@ use gpui::{
     deferred, div, px, AnyElement, App, ClickEvent, FontWeight, IntoElement, SharedString, Window,
 };
 
+use crate::devtools::ProbedAny;
 use crate::theme::{theme, Size};
 
 type CloseHandler = Rc<dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static>;
@@ -158,6 +159,6 @@ impl RenderOnce for Modal {
             backdrop = backdrop.on_click(move |ev, window, cx| handler(ev, window, cx));
         }
 
-        deferred(backdrop)
+        deferred(backdrop).probe_any("Modal")
     }
 }

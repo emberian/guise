@@ -11,6 +11,7 @@ use gpui::{
     Window,
 };
 
+use crate::devtools::ProbedAny;
 use crate::theme::{theme, Size};
 
 /// Tour progress events.
@@ -237,6 +238,9 @@ impl Render for Tour {
             .track_focus(&self.focus)
             .child(card);
 
-        deferred(backdrop).into_any_element()
+        deferred(backdrop)
+            .into_any_element()
+            .probe_any("Tour")
+            .into_any_element()
     }
 }

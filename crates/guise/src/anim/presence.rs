@@ -13,6 +13,7 @@ use gpui::prelude::*;
 use gpui::{div, px, AnimationExt, AnyElement, App, Context, EventEmitter, IntoElement, Window};
 
 use super::Easing;
+use crate::devtools::ProbedAny;
 use crate::transition::TransitionKind;
 
 /// Emitted at the ends of the enter/exit animations.
@@ -165,6 +166,8 @@ impl Render for Presence {
                     TransitionKind::SlideRight => el.opacity(opacity).ml(px(-shift)),
                 }
             })
+            .into_any_element()
+            .probe_any("Presence")
             .into_any_element()
     }
 }

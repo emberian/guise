@@ -10,6 +10,7 @@ use std::collections::BTreeSet;
 use gpui::prelude::*;
 use gpui::{div, px, Context, EventEmitter, FocusHandle, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::icon::{Icon, IconName};
 use crate::theme::{theme, Size};
 
@@ -243,11 +244,9 @@ impl Render for Transfer {
             .child(buttons)
             .child(right_pane);
 
-        if self.disabled {
-            row.opacity(0.6)
-        } else {
-            row
-        }
+        let element = if self.disabled { row.opacity(0.6) } else { row };
+
+        element.probe("Transfer")
     }
 }
 

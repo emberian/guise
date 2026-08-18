@@ -7,6 +7,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, relative, App, FontWeight, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, ColorName};
 
 /// A circular progress gauge. `RingProgress::new(72.0).label("72%")`.
@@ -90,5 +91,6 @@ impl RenderOnce for RingProgress {
                     .text_color(text)
                     .child(label),
             )
+            .probe("RingProgress")
     }
 }

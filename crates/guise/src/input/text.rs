@@ -16,6 +16,7 @@ use gpui::{
 
 use super::line::{self, Line, LineEditor, LineState};
 use super::{control_metrics, edit::TextEdit, Field, KeyOutcome};
+use crate::devtools::ProbedAny;
 use crate::reactive::Signal;
 use crate::theme::{theme, ColorName, Size};
 
@@ -289,6 +290,6 @@ impl Render for TextInput {
         } else if let Some(description) = self.description.clone() {
             chrome = chrome.description(description);
         }
-        chrome
+        chrome.probe_any("TextInput")
     }
 }

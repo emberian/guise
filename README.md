@@ -36,7 +36,7 @@ Full docs live in [`docs/`](docs/readme.md) (also rendered at
 - **[App walkthrough](docs/appguide.md)** — a project tracker wired the way a real guise app fits together
 - [Getting started](docs/gettingstarted.md) · [Theming](docs/theming.md) · [Component model](docs/components.md)
 - Components: [Buttons](docs/buttons.md) · [Icons](docs/icons.md) · [Inputs](docs/inputs.md) · [Dates & times](docs/dates.md) · [File handling](docs/files.md) · [Typography](docs/typography.md) · [Layout](docs/layout.md) · [Panels](docs/panels.md) · [Feedback](docs/feedback.md) · [Data](docs/data.md) · [Charts](docs/charts.md) · [Editor](docs/editor.md) · [Markdown editor](docs/markdowneditor.md) · [AI](docs/ai.md) · [Overlays](docs/overlays.md) · [Navigation](docs/navigation.md)
-- Systems: [Flex layout](docs/flex.md) · [Macros](docs/macros.md) · [Transitions & animation](docs/transitions.md) · [Drag & drop](docs/dnd.md) · [Reactive state](docs/reactive.md) · [Software update](docs/update.md) · [Window menu](docs/windowmenu.md) · [Architecture](docs/architecture.md) · [Size & performance](docs/performance.md)
+- Systems: [Flex layout](docs/flex.md) · [Macros](docs/macros.md) · [Transitions & animation](docs/transitions.md) · [Drag & drop](docs/dnd.md) · [Reactive state](docs/reactive.md) · [Software update](docs/update.md) · [DevTools](docs/devtools.md) · [Window menu](docs/windowmenu.md) · [Architecture](docs/architecture.md) · [Size & performance](docs/performance.md)
 - [Changelog](CHANGELOG.md)
 
 ## Workspace
@@ -133,6 +133,7 @@ string (hex must be a string — `#228be6` isn't a Rust token). Component
 | Drag & drop | `Draggable`, `DropTarget`, `SortableList` — typed payloads |
 | Motion  | `Transition`, `Collapse` (true height animation), `Presence` (exit animations), `Easing` curves + `Spring` physics |
 | Update  | `Updater` (release check + in-place install), `UpdatePrompt`, `UpdateNotice` — a whole self-update feature |
+| DevTools | `DevTools` — an in-app Safari-style inspector: Elements, Network, Sources, Timelines, Storage, Layers, Logs, Audit |
 | Polish  | `Icon` (all of [Lucide](https://lucide.dev) embedded), `ActionIcon`, `ThemeIcon`, `CloseButton`, `CopyButton`, `Anchor`, `Code`, `Kbd`, `Chip`, `Indicator`, `Skeleton`, `SegmentedControl` |
 
 Inputs come in two flavors that match how each control behaves in gpui:
@@ -261,6 +262,35 @@ anything touches the installed app. `UpdatePrompt` and `UpdateNotice` are ordina
 entities, so they work embedded in a window you own as readily as in the ones
 `update::open` creates. See [Software update](docs/update.md).
 
+## DevTools
+
+`guise::devtools` is Safari's Web Inspector, aimed at the gpui app it is running
+inside — Elements, Network, Sources, Timelines, Storage, Layers, Logs and Audit.
+
+```rust
+DevToolsState::new().init(cx);          // once at startup
+let devtools = cx.new(DevTools::new);   // then put it wherever you like
+```
+
+The Elements tree is real introspection: every component tags its root with
+`.probe("Name")`, which snapshots the element's `StyleRefinement` and brackets
+`prepaint`, so the tree is the live component hierarchy and the Styles sidebar
+shows the element's actual declarations, its real box model, and the source
+location it was constructed at. Do the same in your own components and they
+appear alongside the library's.
+
+Logs, Network, Storage and Timelines are reported by the host — nothing in
+`guise` opens a socket — and Audit runs rules over the recorded tree (WCAG text
+contrast, hit-target size, collapsed containers, children escaping their
+parent). A probe costs one boolean check per element per frame while the
+inspector is closed, and an app that never constructs one links none of it.
+
+```sh
+cargo run -p guise-ui --example devtools
+```
+
+See [DevTools](docs/devtools.md).
+
 ## Variants
 
 Colored components share one variant system: `Filled`, `Light`,
@@ -273,7 +303,7 @@ sections:
 
 ```toml
 [dependencies]
-guise-ui = "0.10"
+guise-ui = "1.0"
 gpui = "0.2.2"
 ```
 
@@ -284,7 +314,7 @@ gpui = "0.2.2"
 Pinning via git works too:
 
 ```toml
-guise-ui = { git = "https://github.com/wess/guise", tag = "v0.10.0" }
+guise-ui = { git = "https://github.com/wess/guise", tag = "v1.0.0" }
 ```
 
 ## Building

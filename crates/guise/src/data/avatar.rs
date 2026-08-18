@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, FontWeight, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::style::{surface, Variant};
 use crate::theme::{theme, ColorName, Size};
 
@@ -85,6 +86,8 @@ impl RenderOnce for Avatar {
         if let Some(border) = s.border {
             el = el.border_1().border_color(border);
         }
-        el
+        el.probe("Avatar")
+            .attr("variant", self.variant.label())
+            .attr("size", self.size.label())
     }
 }

@@ -4,6 +4,7 @@ use gpui::prelude::*;
 use gpui::{div, px, App, ClickEvent, ElementId, IntoElement, SharedString, Window};
 
 use super::ClickHandler;
+use crate::devtools::Probed;
 use crate::reactive::Binding;
 use crate::theme::{theme, ColorName, Size};
 
@@ -134,7 +135,7 @@ impl RenderOnce for Switch {
             );
         }
 
-        if self.disabled {
+        let element = if self.disabled {
             row.opacity(0.5)
         } else {
             if self.binding.is_some() || self.on_change.is_some() {
@@ -151,6 +152,12 @@ impl RenderOnce for Switch {
                 });
             }
             row
-        }
+        };
+
+        element
+            .probe("Switch")
+            .attr("size", self.size.label())
+            .attr_if("checked", self.checked)
+            .attr_if("disabled", self.disabled)
     }
 }

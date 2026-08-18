@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, relative, App, IntoElement, Window};
 
+use crate::devtools::Probed;
 use crate::style::ColorValue;
 use crate::theme::{theme, ColorName, Size};
 
@@ -75,5 +76,8 @@ impl RenderOnce for Progress {
                     .rounded(px(radius))
                     .bg(fill),
             )
+            .probe("Progress")
+            .attr_with("value", || format!("{:.0}%", self.value * 100.0))
+            .attr("size", self.size.label())
     }
 }

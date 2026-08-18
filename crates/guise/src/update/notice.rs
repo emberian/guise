@@ -14,6 +14,7 @@ use gpui::{
 };
 
 use super::Updater;
+use crate::devtools::Probed;
 use crate::theme::{theme, Size};
 use crate::{Button, Variant};
 
@@ -157,6 +158,7 @@ impl Render for UpdateNotice {
                         .on_click(cx.listener(|this, _, _, cx| this.dismiss(cx))),
                 ),
             )
+            .probe("UpdateNotice")
     }
 }
 

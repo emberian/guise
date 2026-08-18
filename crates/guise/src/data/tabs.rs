@@ -4,6 +4,7 @@ use gpui::prelude::*;
 use gpui::{div, px, transparent_black, App, Context, IntoElement, SharedString, Window};
 
 use super::Content;
+use crate::devtools::Probed;
 use crate::theme::{theme, Size};
 
 struct TabItem {
@@ -98,6 +99,6 @@ impl Render for Tabs {
             let panel = (self.tabs[active].content)(window, cx);
             root = root.child(panel);
         }
-        root
+        root.probe("Tabs")
     }
 }

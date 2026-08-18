@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, ClickEvent, FontWeight, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::icon::Glyph;
 use crate::input::ClickHandler;
 use crate::theme::{theme, ColorName, Size};
@@ -111,6 +112,6 @@ impl RenderOnce for Notification {
                     .on_click(handler),
             );
         }
-        row
+        row.probe("Notification")
     }
 }

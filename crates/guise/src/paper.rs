@@ -4,6 +4,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, AnyElement, App, Div, IntoElement, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, Size};
 
 /// A surface container.
@@ -72,7 +73,7 @@ impl RenderOnce for Paper {
             el = el.border_1().border_color(t.border().hsla());
         }
         el = apply_shadow(el, self.shadow);
-        el.children(self.children)
+        el.children(self.children).probe("Paper")
     }
 }
 

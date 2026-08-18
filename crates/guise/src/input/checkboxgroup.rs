@@ -9,6 +9,7 @@ use gpui::prelude::*;
 use gpui::{div, px, App, IntoElement, SharedString, Window};
 
 use super::Checkbox;
+use crate::devtools::Probed;
 use crate::reactive::Binding;
 use crate::theme::{theme, ColorName, Size};
 
@@ -138,6 +139,6 @@ impl RenderOnce for CheckboxGroup {
             }
             column = column.child(checkbox);
         }
-        column
+        column.probe("CheckboxGroup")
     }
 }

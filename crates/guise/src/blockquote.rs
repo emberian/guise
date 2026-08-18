@@ -11,6 +11,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, AnyElement, App, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::icon::{Icon, IconName};
 use crate::theme::{theme, ColorName, Size};
 
@@ -131,6 +132,6 @@ impl RenderOnce for Blockquote {
         if let Some(cite) = self.cite {
             el = el.child(div().text_size(px(font_sm)).text_color(dimmed).child(cite));
         }
-        el
+        el.probe("Blockquote")
     }
 }

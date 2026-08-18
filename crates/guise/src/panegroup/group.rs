@@ -24,6 +24,7 @@ use super::{
     compute_layout, neighbor, Direction, ItemId, Node, Pane, PaneId, PaneIds, PaneTree, Rect,
     SplitId,
 };
+use crate::devtools::Probed;
 
 /// Per-item content, re-invoked every render so content stays live.
 type RenderItem = Rc<dyn Fn(ItemId, &mut Window, &mut App) -> AnyElement>;
@@ -688,6 +689,7 @@ impl Render for PaneGroup {
                 }),
             )
             .child(inner)
+            .probe("PaneGroup")
     }
 }
 

@@ -10,6 +10,7 @@ use gpui::prelude::*;
 use gpui::{div, px, App, ElementId, FontWeight, IntoElement, SharedString, Window};
 
 use super::date::{month_grid, Date, Weekday};
+use crate::devtools::Probed;
 use crate::icon::{Icon, IconName};
 use crate::theme::{theme, Size};
 
@@ -258,5 +259,6 @@ impl RenderOnce for Calendar {
             .child(header)
             .child(weekdays)
             .child(days)
+            .probe("Calendar")
     }
 }

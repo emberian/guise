@@ -918,3 +918,73 @@ hstack![
     ],
 ];"#,
 };
+
+pub const DEVTOOLS: Snippet = Snippet {
+    plain: r#"// Once at startup: the store every panel reads from.
+DevToolsState::new().init(cx);
+
+// The inspector itself. Put it anywhere — a pane, a drawer, its own window.
+let devtools = cx.new(DevTools::new);
+
+// Elements, Layers and the Styles sidebar need no wiring: components report
+// themselves through `.probe(..)` while the inspector is open.
+
+// The other panels are fed by the host, because guise never opens a socket.
+guise::devtools::log(cx, LogLevel::Warning, "Layout pass took 22ms");
+
+let id = guise::devtools::network_begin(
+    cx,
+    NetworkRecord::new("GET", "https://api.example.com/v1/items")
+        .kind(ResourceKind::Fetch)
+        .request_header("Accept", "application/json"),
+);
+// …and when the response lands:
+if let Some(id) = id {
+    guise::devtools::network_update(cx, id, |record| {
+        record.state = RequestState::Finished;
+        record.status = Some(200);
+        record.transfer_size = 4_200;
+    });
+}
+
+guise::devtools::storage_set(
+    cx,
+    StorageDomain::new("prefs", "app.preferences")
+        .kind(StorageKind::Local)
+        .entry(StorageEntry::new("theme", "dark")),
+);
+
+// Time work into the Timelines panel.
+guise::devtools::measure(cx, "reindex()", || reindex());
+
+// The one thing the inspector cannot do alone: open a file in your editor.
+cx.subscribe(&devtools, |this, _devtools, event: &DevToolsEvent, cx| {
+    if let DevToolsEvent::RevealSource(source) = event {
+        this.open_in_editor(source);
+    }
+})
+.detach();"#,
+    macros: r#"DevToolsState::new().init(cx);
+let devtools = cx.new(DevTools::new);
+
+vstack![
+    hstack![
+        button!("log", "Log").on_click(cx.listener(|_, _, _, cx| {
+            guise::devtools::log(cx, LogLevel::Log, "hello");
+        })),
+    ],
+    devtools.clone(),
+];
+
+// Components tag themselves, so the Elements tree needs no wiring:
+impl RenderOnce for Button {
+    fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
+        // ...
+        element
+            .probe("Button")
+            .attr("variant", self.variant.label())
+            .attr("size", self.size.label())
+            .attr_if("disabled", self.disabled)
+    }
+}"#,
+};

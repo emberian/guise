@@ -11,6 +11,7 @@ use std::time::Duration;
 use gpui::prelude::*;
 use gpui::{deferred, div, px, Context, FontWeight, IntoElement, SharedString, Window};
 
+use crate::devtools::ProbedAny;
 use crate::theme::{theme, ColorName, Size};
 
 struct Toast {
@@ -129,7 +130,7 @@ impl Render for ToastStack {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let mut root = div();
         if self.toasts.is_empty() {
-            return root;
+            return root.into_any_element();
         }
 
         let t = theme(cx);
@@ -195,6 +196,6 @@ impl Render for ToastStack {
         }
 
         root = root.child(deferred(stack));
-        root
+        root.probe_any("ToastStack").into_any_element()
     }
 }

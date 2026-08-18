@@ -16,6 +16,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, AnyElement, App, IntoElement, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, Size};
 
 /// Max content width (px) for each [`Size`].
@@ -74,15 +75,21 @@ impl ParentElement for Container {
 impl RenderOnce for Container {
     fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
         let pad = theme(cx).spacing(self.padding);
-        div().w_full().flex().flex_col().items_center().child(
-            div()
-                .w_full()
-                .max_w(px(max_width(self.size)))
-                .px(px(pad))
-                .flex()
-                .flex_col()
-                .children(self.children),
-        )
+        div()
+            .w_full()
+            .flex()
+            .flex_col()
+            .items_center()
+            .child(
+                div()
+                    .w_full()
+                    .max_w(px(max_width(self.size)))
+                    .px(px(pad))
+                    .flex()
+                    .flex_col()
+                    .children(self.children),
+            )
+            .probe("Container")
     }
 }
 

@@ -30,6 +30,7 @@ use gpui::{
     deferred, div, px, App, Context, FocusHandle, IntoElement, KeyDownEvent, SharedString, Window,
 };
 
+use crate::devtools::Probed;
 use crate::input::control_metrics;
 use crate::theme::{theme, ColorName, Size};
 
@@ -424,6 +425,6 @@ impl Render for MenuBar {
             bar = bar.child(wrap);
         }
 
-        bar
+        bar.probe("MenuBar")
     }
 }

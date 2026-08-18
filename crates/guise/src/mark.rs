@@ -11,6 +11,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, ColorName, Size};
 
 /// A highlighter-pen span.
@@ -67,6 +68,6 @@ impl RenderOnce for Mark {
         if let Some(size) = self.size {
             el = el.text_size(px(t.font_size(size)));
         }
-        el
+        el.probe("Mark")
     }
 }

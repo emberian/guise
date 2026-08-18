@@ -3,6 +3,7 @@
 use gpui::prelude::*;
 use gpui::{div, px, App, FontWeight, IntoElement, SharedString, Window};
 
+use crate::devtools::Probed;
 use crate::theme::{theme, ColorName, Size};
 
 struct Item {
@@ -122,6 +123,6 @@ impl RenderOnce for Timeline {
 
             column = column.child(div().flex().gap(px(10.0)).child(rail).child(content));
         }
-        column
+        column.probe("Timeline")
     }
 }

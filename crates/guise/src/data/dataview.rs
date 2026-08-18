@@ -36,6 +36,7 @@ use gpui::{
 };
 
 use super::Content;
+use crate::devtools::ProbedAny;
 use crate::reactive::Signal;
 use crate::style::{surface, Variant};
 use crate::theme::{theme, Size};
@@ -365,7 +366,8 @@ impl<T: 'static> Render for DataView<T> {
 
         let cells = self.build_cells(0..count, window, cx);
         let root = div().w_full().flex().flex_col().gap(px(gap));
-        match self.layout {
+
+        let element = match self.layout {
             DataViewLayout::List => root.children(cells).into_any_element(),
             DataViewLayout::Grid(cols) => {
                 let cols = cols.max(1);
@@ -383,7 +385,9 @@ impl<T: 'static> Render for DataView<T> {
                 }
                 root.children(rows).into_any_element()
             }
-        }
+        };
+
+        element.probe_any("DataView").into_any_element()
     }
 }
 

@@ -13,6 +13,7 @@ use gpui::{
 
 use guise::flex::{Container, EdgeInsets, Expanded, Row, SizedBox, Spacer};
 use guise::prelude::*;
+use std::time::Duration;
 
 mod code;
 mod sections;
@@ -146,6 +147,9 @@ struct Gallery {
     confirm_open: bool,
     // App structure
     tabbar: Entity<TabBar>,
+    // DevTools
+    devtools: Entity<DevTools>,
+    devtools_requests: u32,
     // Typography extras
     spoiler_open: bool,
     // Dates & files
@@ -208,6 +212,7 @@ const SECTION_SOURCES: &[(&str, code::Snippet)] = &[
     ("update", code::UPDATE),
     ("editor", code::EDITOR),
     ("ai", code::AI),
+    ("devtools", code::DEVTOOLS),
     ("navigation", code::NAVIGATION),
     ("shell", code::SHELL),
     ("panels", code::PANELS),
@@ -878,8 +883,34 @@ impl Gallery {
         });
         let ai_settings = cx.new(AISettings::new);
 
+        // The inspector. Records are seeded here so every panel has something
+        // to show; a real app feeds them from where the work happens.
+        let devtools = cx.new(DevTools::new);
+        cx.subscribe(
+            &devtools,
+            |_this: &mut Gallery, devtools, event: &DevToolsEvent, cx| match event {
+                // Nothing to close into here, so send it back to Elements.
+                DevToolsEvent::Close => {
+                    devtools.update(cx, |devtools, cx| {
+                        devtools.set_tab(DevToolsTab::Elements, cx)
+                    });
+                }
+                DevToolsEvent::RevealSource(source) => {
+                    guise::devtools::log(
+                        cx,
+                        LogLevel::Info,
+                        format!("Host asked to open {}", source.short()),
+                    );
+                }
+                _ => {}
+            },
+        )
+        .detach();
+
         Gallery {
             agree: false,
+            devtools,
+            devtools_requests: 0,
             notifications: true,
             plan: 0,
             chip_on: true,
@@ -1035,6 +1066,131 @@ impl Gallery {
     /// Wrap a section body with its title and a "view source" toggle (`</>`).
     /// Clicking the toggle reveals the example's code (with a copy button)
     /// beneath the demo.
+    /// The inspector, live, with controls that give its panels something to
+    /// show. Everything below the buttons is the host reporting its own work —
+    /// `guise` never sees the request, only the record of it.
+    fn devtools_demo(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let controls = Group::new()
+            .gap(Size::Sm)
+            .child(
+                Button::new("dt-log", "Log")
+                    .variant(Variant::Default)
+                    .size(Size::Xs)
+                    .on_click(cx.listener(|_this, _, _, cx| {
+                        guise::devtools::log(cx, LogLevel::Log, "Gallery: hello from the host");
+                        cx.notify();
+                    })),
+            )
+            .child(
+                Button::new("dt-warn", "Warn")
+                    .variant(Variant::Light)
+                    .color(ColorName::Yellow)
+                    .size(Size::Xs)
+                    .on_click(cx.listener(|_this, _, _, cx| {
+                        guise::devtools::log_record(
+                            cx,
+                            LogRecord::new(LogLevel::Warning, "Layout pass took 22ms")
+                                .detail("budget", "16.7ms")
+                                .detail("frame", "1042"),
+                        );
+                        cx.notify();
+                    })),
+            )
+            .child(
+                Button::new("dt-error", "Error")
+                    .variant(Variant::Light)
+                    .color(ColorName::Red)
+                    .size(Size::Xs)
+                    .on_click(cx.listener(|_this, _, _, cx| {
+                        guise::devtools::log(cx, LogLevel::Error, "Failed to decode avatar.png");
+                        cx.notify();
+                    })),
+            )
+            .child(
+                Button::new("dt-request", "Request")
+                    .variant(Variant::Default)
+                    .size(Size::Xs)
+                    .on_click(cx.listener(|this: &mut Gallery, _, _, cx| {
+                        this.devtools_requests += 1;
+                        let n = this.devtools_requests;
+                        let record = NetworkRecord::new(
+                            "GET",
+                            format!("https://api.example.com/v1/items?page={n}"),
+                        )
+                        .kind(ResourceKind::Fetch)
+                        .status(200, "OK")
+                        .sizes(4_200 + u64::from(n) * 130, 11_800 + u64::from(n) * 400)
+                        .timings(Timings {
+                            stalled: Duration::from_millis(2),
+                            dns: Duration::from_millis(4),
+                            connect: Duration::from_millis(11),
+                            tls: Duration::from_millis(19),
+                            request: Duration::from_millis(3),
+                            response: Duration::from_millis(24 + u64::from(n % 7) * 9),
+                        })
+                        .request_header("Accept", "application/json")
+                        .request_header("Cookie", "session=8f2c1a; theme=dark")
+                        .response_header("Content-Type", "application/json")
+                        .response_header("Set-Cookie", "session=8f2c1a; Path=/; HttpOnly")
+                        .response_body("{\n  \"items\": [],\n  \"page\": 1\n}")
+                        .finished();
+                        guise::devtools::network_begin(cx, record);
+                        cx.notify();
+                    })),
+            )
+            .child(
+                Button::new("dt-work", "Slow work")
+                    .variant(Variant::Default)
+                    .size(Size::Xs)
+                    .on_click(cx.listener(|_this, _, _, cx| {
+                        guise::devtools::measure(cx, "reindex()", || {
+                            std::thread::sleep(Duration::from_millis(24));
+                        });
+                        cx.notify();
+                    })),
+            )
+            .child(
+                Button::new("dt-storage", "Publish storage")
+                    .variant(Variant::Default)
+                    .size(Size::Xs)
+                    .on_click(cx.listener(|_this, _, _, cx| {
+                        let scheme = cx.global::<Theme>().scheme;
+                        guise::devtools::storage_set(
+                            cx,
+                            StorageDomain::new("prefs", "gallery.preferences")
+                                .kind(StorageKind::Local)
+                                .entry(StorageEntry::new("theme", format!("{scheme:?}")))
+                                .entry(StorageEntry::new("code.style", "builder"))
+                                .entry(StorageEntry::new("window.size", "960×880")),
+                        );
+                        cx.notify();
+                    })),
+            );
+
+        Stack::new()
+            .gap(Size::Sm)
+            .child(
+                Text::new(
+                    "A Safari-shaped inspector for the app it is running inside. Elements, \
+                     Layers and Styles read the live component tree; Console, Network, \
+                     Storage and Timelines are fed by the host.",
+                )
+                .size(Size::Sm)
+                .dimmed(),
+            )
+            .child(controls)
+            .child(
+                div()
+                    .h(px(520.0))
+                    .w_full()
+                    .rounded(px(6.0))
+                    .overflow_hidden()
+                    .border_1()
+                    .border_color(cx.global::<Theme>().border().hsla())
+                    .child(self.devtools.clone()),
+            )
+    }
+
     fn section(
         &self,
         cx: &mut Context<Self>,
@@ -2000,6 +2156,8 @@ impl Render for Gallery {
         let update = self.section(cx, "update", "Software update", update_body);
         let editor_body = self.editor_demo();
         let editor = self.section(cx, "editor", "Editor", editor_body);
+        let devtools_body = self.devtools_demo(cx);
+        let devtools = self.section(cx, "devtools", "DevTools (inspector)", devtools_body);
         let ai_body = self.ai_demo(cx);
         let ai = self.section(cx, "ai", "AI", ai_body);
         let nav_body = self.navigation(cx);
@@ -2069,6 +2227,7 @@ impl Render for Gallery {
                     .child(motion)
                     .child(editor)
                     .child(ai)
+                    .child(devtools)
                     .child(navigation)
                     .child(misc)
                     .child(update)
@@ -2148,6 +2307,9 @@ pub fn toggle_theme(window: &mut Window, cx: &mut App) {
 fn main() {
     gpui::Application::new().run(|cx: &mut App| {
         Theme::dark().init(cx);
+        // The inspector's record store. Installing it is what makes the
+        // `devtools::*` reporting calls anything other than a no-op.
+        DevToolsState::new().init(cx);
 
         // The native window menu. Actions dispatch to the global handlers below.
         cx.set_menus(vec![

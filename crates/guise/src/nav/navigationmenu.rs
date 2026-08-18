@@ -9,6 +9,7 @@ use gpui::{
     deferred, div, px, Context, EventEmitter, FocusHandle, IntoElement, SharedString, Window,
 };
 
+use crate::devtools::Probed;
 use crate::icon::{Icon, IconName};
 use crate::theme::{theme, Size};
 
@@ -212,6 +213,6 @@ impl Render for NavigationMenu {
             }
             bar = bar.child(cell);
         }
-        bar
+        bar.probe("NavigationMenu")
     }
 }

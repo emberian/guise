@@ -52,6 +52,7 @@ use gpui::{
 
 use self::state::{cycle_sort, identity_order, sorted_order, SelectionState};
 use super::Content;
+use crate::devtools::Probed;
 use crate::layout::Align;
 use crate::reactive::Signal;
 use crate::style::FlexExt;
@@ -720,7 +721,7 @@ impl<T: 'static> Render for TableView<T> {
                 .rounded(px(radius))
                 .overflow_hidden();
         }
-        table
+        table.probe("TableView")
     }
 }
 
