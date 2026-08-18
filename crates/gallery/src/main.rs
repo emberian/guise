@@ -7,8 +7,8 @@ use std::rc::Rc;
 
 use gpui::prelude::*;
 use gpui::{
-    div, px, size, App, Bounds, Context, Entity, IntoElement, MouseButton, MouseDownEvent,
-    SharedString, TitlebarOptions, Window, WindowBounds, WindowOptions,
+    div, px, size, AnyElement, App, Bounds, Context, Entity, IntoElement, MouseButton,
+    MouseDownEvent, SharedString, TitlebarOptions, Window, WindowBounds, WindowOptions,
 };
 
 use guise::flex::{Container, EdgeInsets, Expanded, Row, SizedBox, Spacer};
@@ -147,6 +147,8 @@ struct Gallery {
     confirm_open: bool,
     // App structure
     tabbar: Entity<TabBar>,
+    // Settings
+    settings: Entity<SettingsView>,
     // DevTools
     devtools: Entity<DevTools>,
     devtools_requests: u32,
@@ -213,6 +215,7 @@ const SECTION_SOURCES: &[(&str, code::Snippet)] = &[
     ("editor", code::EDITOR),
     ("ai", code::AI),
     ("devtools", code::DEVTOOLS),
+    ("settings", code::SETTINGS),
     ("navigation", code::NAVIGATION),
     ("shell", code::SHELL),
     ("panels", code::PANELS),
@@ -265,6 +268,82 @@ struct ToggleThemeAction;
 #[derive(Clone, PartialEq, Default, Debug, gpui::Action)]
 #[action(namespace = gallery, no_json)]
 struct QuitAction;
+
+/// The Appearance page: a switch bound to a signal, and a row of choice buttons.
+fn appearance_page(
+    dark: &Signal<bool>,
+    size: &Signal<String>,
+    query: &str,
+    cx: &mut App,
+) -> AnyElement {
+    let current = size.get(cx);
+    let mut sizes = Group::new().gap(Size::Xs);
+    for value in ["12", "14", "16", "18"] {
+        let target = size.clone();
+        sizes = sizes.child(
+            Button::new(SharedString::from(format!("fs-{value}")), value)
+                .size(Size::Xs)
+                .variant(if current == value {
+                    Variant::Filled
+                } else {
+                    Variant::Default
+                })
+                .on_click(move |_, _, cx| target.set(cx, value.to_string())),
+        );
+    }
+
+    let mut section = SettingsSection::new("Theme").description("How the gallery looks.");
+    if query.is_empty() || "dark mode".contains(&query.to_lowercase()) {
+        section = section.child(
+            SettingsRow::new("dark", "Dark mode")
+                .description("Pin the scheme instead of following the system.")
+                .modified(dark.get(cx))
+                .control(Switch::new("dark-switch").bind(dark.binding())),
+        );
+    }
+    section = section.child(
+        SettingsRow::new("font-size", "Editor font size")
+            .description("Named sizes beat a slider that invites values nobody wants.")
+            .modified(current != "14")
+            .divider(false)
+            .control(sizes),
+    );
+    section.into_any_element()
+}
+
+/// The Editor page.
+fn editor_page(autosave: &Signal<bool>, cx: &mut App) -> AnyElement {
+    SettingsSection::new("Editing")
+        .description("How notes behave while you write them.")
+        .child(
+            SettingsRow::new("autosave", "Autosave")
+                .description("Write to disk as you type.")
+                .modified(autosave.get(cx))
+                .control(Switch::new("autosave-switch").bind(autosave.binding())),
+        )
+        .child(
+            SettingsRow::new("wrap", "Soft wrap")
+                .description("Wrap long lines to the viewport.")
+                .divider(false)
+                .control(Switch::new("wrap-switch").checked(true)),
+        )
+        .into_any_element()
+}
+
+/// The Security page, showing the reset affordance.
+fn security_page() -> AnyElement {
+    SettingsSection::new("Keys")
+        .description("The settings worth reading twice.")
+        .child(
+            SettingsRow::new("lock", "Lock after")
+                .description("A reset arrow appears on a row the user has pinned.")
+                .modified(true)
+                .on_reset(|_, _, _| {})
+                .divider(false)
+                .control(Badge::new("15 minutes").size(Size::Sm)),
+        )
+        .into_any_element()
+}
 
 impl Gallery {
     fn new(cx: &mut Context<Self>) -> Self {
@@ -883,6 +962,36 @@ impl Gallery {
         });
         let ai_settings = cx.new(AISettings::new);
 
+        // A settings screen driven by signals, so the demo rows are live: the
+        // content closure re-runs every frame and reads the current values.
+        let dark_ui = use_state(cx, true);
+        let autosave = use_state(cx, false);
+        let font_size = use_state(cx, String::from("14"));
+        let settings = cx.new(|cx| {
+            let (dark, save, size) = (dark_ui.clone(), autosave.clone(), font_size.clone());
+            SettingsView::new(cx)
+                .page_icon("appearance", "Appearance", IconName::Palette)
+                .page_icon("editor", "Editor", IconName::FileCode)
+                .page_icon("security", "Security", IconName::ShieldCheck)
+                .searchable(true)
+                .content(move |page, query, _window, cx| match page {
+                    "appearance" => appearance_page(&dark, &size, query, cx),
+                    "editor" => editor_page(&save, cx),
+                    _ => security_page(),
+                })
+                .footer(|_window, _cx| {
+                    Group::new()
+                        .align(Align::Center)
+                        .child(
+                            Text::new("Settings live in a JSON file you can edit directly.")
+                                .size(Size::Xs)
+                                .dimmed(),
+                        )
+                        .child(div().flex_1())
+                        .child(Button::new("settings-done", "Done").size(Size::Xs))
+                })
+        });
+
         // The inspector. Records are seeded here so every panel has something
         // to show; a real app feeds them from where the work happens.
         let devtools = cx.new(DevTools::new);
@@ -909,6 +1018,7 @@ impl Gallery {
 
         Gallery {
             agree: false,
+            settings,
             devtools,
             devtools_requests: 0,
             notifications: true,
@@ -1188,6 +1298,59 @@ impl Gallery {
                     .border_1()
                     .border_color(cx.global::<Theme>().border().hsla())
                     .child(self.devtools.clone()),
+            )
+    }
+
+    /// The settings shell, plus the two pieces of window chrome ported with it.
+    fn settings_demo(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let _ = cx;
+        Stack::new()
+            .gap(Size::Sm)
+            .child(
+                Text::new(
+                    "The chrome only: a page list, groups, and rows. Each app keeps its own \
+                     schema and write path — that is the part worth owning.",
+                )
+                .size(Size::Sm)
+                .dimmed(),
+            )
+            .child(
+                div()
+                    .h(px(420.0))
+                    .w_full()
+                    .rounded(px(6.0))
+                    .overflow_hidden()
+                    .border_1()
+                    .border_color(cx.global::<Theme>().border().hsla())
+                    .child(self.settings.clone()),
+            )
+            .child(
+                Group::new()
+                    .gap(Size::Md)
+                    .child(
+                        Paper::new().child(
+                            About::new("guise gallery")
+                                .version(env!("CARGO_PKG_VERSION"))
+                                .tagline("A component library for gpui.")
+                                .build(BuildKind::Development, "2026-08-18")
+                                .icon(Icon::new(IconName::Boxes).size(Size::Xl))
+                                .link(Anchor::new("about-repo", "github.com/wess/guise"))
+                                .credits("MIT licensed"),
+                        ),
+                    )
+                    .child(
+                        Paper::new().child(
+                            Stack::new()
+                                .gap(Size::Xs)
+                                .child(Text::new("Window controls").size(Size::Sm))
+                                .child(
+                                    Text::new("Drawn by the app where the OS doesn't — Linux CSD.")
+                                        .size(Size::Xs)
+                                        .dimmed(),
+                                )
+                                .child(WindowControls::new()),
+                        ),
+                    ),
             )
     }
 
@@ -2156,6 +2319,8 @@ impl Render for Gallery {
         let update = self.section(cx, "update", "Software update", update_body);
         let editor_body = self.editor_demo();
         let editor = self.section(cx, "editor", "Editor", editor_body);
+        let settings_body = self.settings_demo(cx);
+        let settings = self.section(cx, "settings", "Settings screen", settings_body);
         let devtools_body = self.devtools_demo(cx);
         let devtools = self.section(cx, "devtools", "DevTools (inspector)", devtools_body);
         let ai_body = self.ai_demo(cx);
@@ -2227,6 +2392,7 @@ impl Render for Gallery {
                     .child(motion)
                     .child(editor)
                     .child(ai)
+                    .child(settings)
                     .child(devtools)
                     .child(navigation)
                     .child(misc)

@@ -54,7 +54,8 @@ export const groups: DocGroup[] = [
       { slug: "reactive", title: "Reactive state" },
       { slug: "update", title: "Software update" },
       { slug: "devtools", title: "DevTools" },
-      { slug: "windowmenu", title: "Window menu" },
+      { slug: "settings", title: "Settings" },
+      { slug: "windowmenu", title: "Window menu & chrome" },
     ],
   },
   {

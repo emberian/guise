@@ -54,8 +54,10 @@ pub mod markdown;
 pub mod nav;
 pub mod overlay;
 pub mod reactive;
+pub mod settings;
 pub mod update;
 
+mod about;
 mod actionicon;
 mod anchor;
 mod badge;
@@ -85,7 +87,9 @@ mod themeicon;
 mod title;
 mod transition;
 mod webview;
+mod windowcontrols;
 
+pub use about::{About, BuildKind};
 pub use actionicon::ActionIcon;
 pub use ai::{
     format_cost, AIChatView, AIChatViewEvent, AICitation, AIComposer, AIComposerEvent, AICost,
@@ -123,6 +127,7 @@ pub use themeicon::ThemeIcon;
 pub use title::Title;
 pub use transition::{Collapse, Transition, TransitionKind};
 pub use webview::{WebView, WebViewEvent};
+pub use windowcontrols::{ResizeHandles, WindowControls, TRAFFIC_LIGHT_INSET};
 
 pub use chart::{AreaChart, BarChart, LineChart, PieChart, ScatterChart, Sparkline};
 pub use data::{
@@ -234,6 +239,9 @@ pub mod prelude {
         provide, use_context, use_effect, use_form, use_memo, use_state, validators, watch,
         Binding, Form, FormState, FormValues, Rule, Signal, Validator,
     };
+    pub use crate::settings::{
+        SettingsPage, SettingsRow, SettingsSection, SettingsView, SettingsViewEvent,
+    };
     pub use crate::style::{ColorValue, StyleExt, Variant};
     pub use crate::theme::{
         css, hsl, hsla, rgb, rgba, theme, Color, ColorName, ColorScheme, Size, Theme,
@@ -246,6 +254,7 @@ pub mod prelude {
     pub use crate::{badge, button, code, kbd, text, title};
     pub use crate::{card, center, col, hstack, modal, paper, row, vstack, wrap, zstack};
     pub use crate::{color, style};
+    pub use crate::{About, BuildKind, ResizeHandles, WindowControls};
     pub use crate::{
         ActionIcon, Anchor, Chip, CloseButton, Code, CopyButton, Glyph, Icon, IconName, Indicator,
         Kbd, ScrollArea, Skeleton, ThemeIcon,

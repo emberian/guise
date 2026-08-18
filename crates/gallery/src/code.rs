@@ -988,3 +988,62 @@ impl RenderOnce for Button {
     }
 }"#,
 };
+
+pub const SETTINGS: Snippet = Snippet {
+    plain: r#"// The shell: pages down the left, the active page on the right.
+let settings = cx.new(|cx| {
+    SettingsView::new(cx)
+        .page_icon("appearance", "Appearance", IconName::Palette)
+        .page_icon("editor", "Editor", IconName::FileCode)
+        .searchable(true)
+        // Re-invoked every frame with the active page and the live query, so
+        // rows show current values rather than a snapshot.
+        .content(move |page, query, _window, cx| match page {
+            "appearance" => appearance_page(&dark, query, cx),
+            _ => editor_page(&autosave, cx),
+        })
+        .footer(|_window, _cx| Button::new("done", "Done").size(Size::Xs))
+});
+
+// A page is built from sections and rows.
+SettingsSection::new("Theme")
+    .description("How the app looks.")
+    .child(
+        SettingsRow::new("dark", "Dark mode")
+            .description("Pin the scheme instead of following the system.")
+            .modified(options.pinned("theme"))
+            .on_reset(cx.listener(|this, _, _, cx| this.reset("theme", cx)))
+            .control(Switch::new("dark-switch").bind(dark.binding())),
+    );
+
+// Searching is the host's job — the view has nothing to search, so it
+// reports the query and hands it to the content closure.
+cx.subscribe(&settings, |this, _view, event: &SettingsViewEvent, cx| {
+    if let SettingsViewEvent::PageChanged(id) = event {
+        this.remember_page(id, cx);
+    }
+})
+.detach();"#,
+    macros: r#"let settings = cx.new(|cx| {
+    SettingsView::new(cx)
+        .page("appearance", "Appearance")
+        .page("editor", "Editor")
+        .content(move |page, _query, _window, cx| match page {
+            "appearance" => appearance_page(&dark, cx),
+            _ => editor_page(&autosave, cx),
+        })
+});
+
+// The window chrome that came with it: About, and the controls an app has
+// to draw itself where the OS won't.
+About::new("Acme")
+    .version(env!("CARGO_PKG_VERSION"))
+    .build(BuildKind::Released, env!("BUILD_DATE"))
+    .link(Anchor::new("repo", "github.com/acme/acme"));
+
+vstack![
+    hstack![tabs.clone(), WindowControls::new()],
+    body,
+]
+.children(ResizeHandles::needed().then(ResizeHandles::new));"#,
+};

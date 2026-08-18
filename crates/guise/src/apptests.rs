@@ -16,6 +16,7 @@ use crate::devtools::{
 };
 use crate::input::{Date, DatePicker, LineEditor as _, Select, TextInput};
 use crate::reactive::{validators, Form, Signal};
+use crate::settings::{SettingsView, SettingsViewEvent};
 use crate::theme::{theme, Color, Theme};
 use crate::update::{
     is_installing, Release, UpdateNotice, UpdateNoticeEvent, UpdateOutcome, UpdatePrompt,
@@ -944,4 +945,125 @@ fn picking_selects_the_deepest_node_under_the_point(cx: &mut TestAppContext) {
             assert_eq!(devtools.selected_bounds(), Some(button_bounds));
         });
     });
+}
+
+// --- settings ---------------------------------------------------------------
+
+fn settings_view(cx: &mut TestAppContext) -> Entity<SettingsView> {
+    cx.update(|cx| Theme::light().init(cx));
+    cx.update(|cx| {
+        cx.new(|cx| {
+            SettingsView::new(cx)
+                .page("appearance", "Appearance")
+                .page("editor", "Editor")
+                .page("security", "Security")
+                .searchable(true)
+                .content(|page, query, _window, _cx| div().child(format!("{page}/{query}")))
+        })
+    })
+}
+
+#[gpui::test]
+fn a_settings_view_opens_on_its_first_page(cx: &mut TestAppContext) {
+    let view = settings_view(cx);
+    assert_eq!(
+        view.read_with(cx, |view, _| view.active_page().cloned()),
+        Some("appearance".into())
+    );
+}
+
+#[gpui::test]
+fn selecting_a_page_reports_it(cx: &mut TestAppContext) {
+    let view = settings_view(cx);
+    let seen = std::rc::Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+    let sink = seen.clone();
+
+    cx.update(|cx| {
+        cx.subscribe(&view, move |_view, event: &SettingsViewEvent, _cx| {
+            if let SettingsViewEvent::PageChanged(id) = event {
+                sink.borrow_mut().push(id.to_string());
+            }
+        })
+        .detach();
+    });
+
+    view.update(cx, |view, cx| view.set_page("security", cx));
+    cx.run_until_parked();
+
+    assert_eq!(seen.borrow().as_slice(), ["security"]);
+    assert_eq!(
+        view.read_with(cx, |view, _| view.active_page().cloned()),
+        Some("security".into())
+    );
+
+    // Selecting the page that is already active is not a change.
+    view.update(cx, |view, cx| view.set_page("security", cx));
+    cx.run_until_parked();
+    assert_eq!(seen.borrow().len(), 1);
+}
+
+#[gpui::test]
+fn an_unknown_page_id_is_ignored_rather_than_panicking(cx: &mut TestAppContext) {
+    let view = settings_view(cx);
+    // A stale id from a restored session must not take the window down.
+    view.update(cx, |view, cx| view.set_page("does-not-exist", cx));
+    assert_eq!(
+        view.read_with(cx, |view, _| view.active_page().cloned()),
+        Some("appearance".into())
+    );
+}
+
+#[gpui::test]
+fn the_active_builder_accepts_only_ids_that_exist(cx: &mut TestAppContext) {
+    cx.update(|cx| Theme::light().init(cx));
+    let opened = cx.update(|cx| {
+        cx.new(|cx| {
+            SettingsView::new(cx)
+                .page("a", "A")
+                .page("b", "B")
+                .active("b")
+        })
+    });
+    assert_eq!(
+        opened.read_with(cx, |view, _| view.active_page().cloned()),
+        Some("b".into())
+    );
+
+    let stale = cx.update(|cx| cx.new(|cx| SettingsView::new(cx).page("a", "A").active("gone")));
+    assert_eq!(
+        stale.read_with(cx, |view, _| view.active_page().cloned()),
+        Some("a".into())
+    );
+}
+
+#[gpui::test]
+fn clearing_the_search_empties_the_query_and_reports_it(cx: &mut TestAppContext) {
+    let view = settings_view(cx);
+    let seen = std::rc::Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+    let sink = seen.clone();
+
+    cx.update(|cx| {
+        cx.subscribe(&view, move |_view, event: &SettingsViewEvent, _cx| {
+            if let SettingsViewEvent::Search(query) = event {
+                sink.borrow_mut().push(query.to_string());
+            }
+        })
+        .detach();
+    });
+
+    view.update(cx, |view, cx| view.clear_search(cx));
+    cx.run_until_parked();
+
+    assert_eq!(seen.borrow().as_slice(), [""]);
+    assert!(view.read_with(cx, |view, _| view.query().is_empty()));
+}
+
+#[gpui::test]
+fn a_view_with_no_pages_has_no_active_page(cx: &mut TestAppContext) {
+    cx.update(|cx| Theme::light().init(cx));
+    let empty = cx.update(|cx| cx.new(SettingsView::new));
+    assert_eq!(
+        empty.read_with(cx, |view, _| view.active_page().cloned()),
+        None
+    );
 }

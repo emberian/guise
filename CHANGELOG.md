@@ -5,6 +5,47 @@ follow [semver](https://semver.org): from 1.0 on, a breaking change means a
 major release, and is called out under **Breaking**. Releases before 1.0 landed
 breaking changes in minor versions.
 
+## Unreleased
+
+### Settings screens, from sinclair
+
+Three apps had built the same settings screen separately, and the copies had
+already drifted — one marked an overridden key with a reset arrow, another with
+a dot. `guise::settings` is the part they shared.
+
+```rust
+SettingsView::new(cx)
+    .page_icon("appearance", "Appearance", IconName::Palette)
+    .searchable(true)
+    .content(|page, query, _window, cx| appearance_page(page, query, cx))
+```
+
+- **`SettingsView`** — the shell: page list, content pane, optional search and
+  footer. `content` is re-invoked every frame with the active page and the live
+  query, the same contract `Tabs` and `Accordion` use.
+- **`SettingsSection`** — a titled group of rows, a plain `ParentElement`.
+- **`SettingsRow`** — `Field`'s horizontal sibling: name and description on the
+  left, control on the right. Exactly one "modified" marker, never two — a reset
+  control when you offer `on_reset`, a dot when you don't.
+
+**No schema type, and that is the point.** Every app types its settings against
+its own config struct, and a component generic enough to hold those would push
+the cost back onto the caller as type parameters or stringly-typed values. The
+schema is the product surface; it stays in the app. Search works the same way:
+the view has nothing to search, so it reports the query and the host matches.
+
+### App chrome, also from sinclair
+
+- **`About`** — the small centred card, with `BuildKind` behind it. A build made
+  from some commit that merely carries the version number is not the release, and
+  printing "Released 2026-08-18" on one is a small lie that costs a bug report,
+  so a development build says what it is.
+- **`WindowControls`** and **`ResizeHandles`** — the minimise/maximise/close
+  buttons and the resize border a client-side-decorated window has to draw
+  itself. `needed()` carries the `cfg`, not the components, because a
+  `cfg!(target_os)` buried in a component cannot be previewed from the other
+  side. `TRAFFIC_LIGHT_INSET` comes with them.
+
 ## 1.0.0 — 2026-08-18
 
 The API is stable. Everything below 1.0 moved breaking changes through minor
