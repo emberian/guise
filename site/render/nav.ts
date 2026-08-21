@@ -66,6 +66,7 @@ export const groups: DocGroup[] = [
     title: "Reference",
     items: [
       { slug: "architecture", title: "Architecture" },
+      { slug: "release", title: "Releasing" },
       { slug: "performance", title: "Size & performance" },
     ],
   },
