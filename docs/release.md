@@ -49,7 +49,7 @@ cargo publish -p guise-ui
 The library builds against plain crates.io `gpui`, with no patch section, so
 this works from a clean checkout. It stays a human step because publishing
 cannot be undone — a version can be yanked, never replaced. Nothing about
-Tailor reaches crates.io: its five crates are `publish = false`, and
+Tailor reaches crates.io: its six crates are `publish = false`, and
 `cargo package -p guise-ui --list` is the proof.
 
 ## Signing & notarization

@@ -68,7 +68,7 @@ export const groups: DocGroup[] = [
       { slug: "tailorstate", title: "State & actions" },
       { slug: "tailorcodegen", title: "What gets generated" },
       { slug: "tailormcp", title: "The MCP server" },
-      { slug: "tailorzed", title: "Zed: the jump loop" },
+      { slug: "tailorzed", title: "Zed & other editors" },
     ],
   },
   {

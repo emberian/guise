@@ -7,11 +7,16 @@ import { groups, outFor } from "./nav";
 const blurb: Record<string, string> = {
   gettingstarted: "Add the crate, install a theme, and render your first window.",
   tutorial: "Build a SQL data workbench end to end — eleven chapters, one app.",
+  appguide: "A project tracker wired the way a real app fits together: forms, overlays, reordering, motion.",
   theming: "The palette, scales, color scheme, and semantic colors.",
   components: "RenderOnce builders vs. stateful entities, variants, and events.",
   buttons: "Button, ActionIcon, CloseButton, ThemeIcon, and CopyButton.",
   icons: "The Icon component and the embedded Lucide icon set.",
   inputs: "TextInput, Select, Combobox, NumberInput, Slider, Rating, and more.",
+  dates: "Calendar, DatePicker and TimePicker, over pure Date / Time models.",
+  files: "FileInput's native dialog and Dropzone's OS drag-and-drop.",
+  ai: "A chat kit: transcript, composer, streaming text, tool calls, citations, cost — transport-agnostic.",
+  markdowneditor: "MarkdownEditor: an Obsidian-style live-preview editor, and the read-only Markdown renderer.",
   editor: "A multiline code editor: gutter, syntax highlighting, styling, highlights, and undo/redo.",
   typography: "Text, Title, Anchor, Code, Kbd, Mark, and Spoiler.",
   layout: "Stack, Group, SimpleGrid, Card, Paper, ScrollArea, and AppShell.",
@@ -24,10 +29,26 @@ const blurb: Record<string, string> = {
   webview: "A native OS web view embedded via wry.",
   flex: "Flutter-style Row, Column, Expanded, Container, and Wrap.",
   macros: "The row! / col! / zstack! layout macros and style! / color!.",
-  transitions: "Transition and Collapse mount animations.",
+  transitions: "Easing curves, Spring physics, Transition, Collapse, and Presence exit animations.",
+  dnd: "Draggable, DropTarget and SortableList, with typed drag payloads.",
+  update: "Check a release feed, verify the signature, install in place, and restart.",
+  devtools: "An in-app Safari-shaped inspector: Elements, Styles, Logs, Network, Timelines, Audit.",
+  settings: "SettingsView, SettingsSection and SettingsRow — the settings screen, without a schema to adopt.",
   reactive: "Signal, Binding, context / provider, hooks, and FormState validation.",
   windowmenu: "Wiring the native application menu.",
   architecture: "Workspace layout, the gpui dependency, and adding a component.",
+  release: "Cutting a version, signing and notarizing Tailor, publishing the crate.",
+  performance: "What the crate costs to compile, link and render, and where the money goes.",
+
+  // Tailor
+  tailor: "The visual interface builder that ships in this repository — the map to the rest.",
+  tailortutorial: "Build an app end to end in Tailor, export it, and run what comes out.",
+  tailorcanvas: "Modes, selecting, resizing, layout modes, snapping, and the live window.",
+  tailorcomponents: "The 101-component catalog, slots, the five drawn containers, and your own components.",
+  tailorstate: "State variables, two-way bindings, events and actions, and the lint pass.",
+  tailorcodegen: "The Rust that falls out, the two flavours, export, and the .tailor file format.",
+  tailormcp: "Driving the same document from an agent, over MCP.",
+  tailorzed: "Jumping between a component and its code, in both directions.",
 };
 
 export function renderDocsIndex(): string {
@@ -52,11 +73,12 @@ export function renderDocsIndex(): string {
   <div class="container">
     <span class="eyebrow">Documentation</span>
     <h1 class="display">Build with <span class="grad">guise</span>.</h1>
-    <p class="lead">Everything from installing the crate to embedding a native web view. Press <kbd class="kbd-inline">&#8984; K</kbd> to search, or start with the essentials.</p>
+    <p class="lead">Everything from installing the crate to embedding a native web view — and the whole of Tailor, the interface builder that draws with it. Press <kbd class="kbd-inline">&#8984; K</kbd> to search, or start with the essentials.</p>
     <div class="hero-cta">
       <a class="btn btn-primary" href="gettingstarted.html">Installation</a>
       <a class="btn btn-ghost" href="tutorial.html">Read the tutorial</a>
       <a class="btn btn-ghost" href="components.html">Component model</a>
+      <a class="btn btn-ghost" href="tailor.html">Tailor</a>
     </div>
     ${sections}
   </div>
@@ -65,7 +87,7 @@ export function renderDocsIndex(): string {
   return shell({
     title: "Documentation — guise",
     description:
-      "guise documentation: installation, theming, the component model, every component family, layout, reactive state, and more.",
+      "guise documentation: installation, theming, the component model, every component family, layout, reactive state, and Tailor, the visual interface builder.",
     body,
     active: "docs",
   });

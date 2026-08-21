@@ -167,7 +167,12 @@ export function renderDoc(opts: { md: string; out: string; title: string }): str
     title: `${opts.title} — guise`,
     description: `${opts.title} — documentation for guise, a component library for gpui.`,
     body,
-    active: opts.out === "tutorial.html" ? "tutorial" : "docs",
+    // Tailor has its own header link, so its pages light that one instead.
+    active: opts.out === "tutorial.html"
+      ? "tutorial"
+      : opts.out.startsWith("tailor")
+        ? "tailor"
+        : "docs",
     tail: DOC_SCRIPT,
   });
 }

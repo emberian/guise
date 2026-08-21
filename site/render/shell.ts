@@ -9,7 +9,7 @@ export type ShellOpts = {
   title: string;
   description: string;
   body: string;
-  active?: "docs" | "tutorial" | "gallery" | "home";
+  active?: "docs" | "tutorial" | "gallery" | "tailor" | "home";
   tail?: string;
 };
 
@@ -29,6 +29,7 @@ function header(active: string): string {
       ${link("docs.html", "Docs", "docs")}
       ${link("tutorial.html", "Tutorial", "tutorial")}
       ${link("gallery.html", "Gallery", "gallery")}
+      ${link("tailor.html", "Tailor", "tailor")}
       <a href="${REPO}" class="ext" rel="noreferrer">GitHub &#8599;</a>
     </nav>
     <button class="navtoggle" aria-label="Toggle navigation">&#9776;</button>
@@ -56,7 +57,7 @@ function footer(): string {
   <div class="container foot-grid">
     <div class="foot-brand">
       <span class="foot-word">guise</span>
-      <p>A component library for gpui — native UI for Rust.</p>
+      <p>A component library for gpui — native UI for Rust — and Tailor, the interface builder for it.</p>
       <span class="foot-meta">MIT &middot; built on gpui</span>
     </div>
     <div class="foot-col">
@@ -73,6 +74,14 @@ function footer(): string {
       <a href="inputs.html">Inputs</a>
       <a href="overlays.html">Overlays</a>
       <a href="webview.html">WebView</a>
+    </div>
+    <div class="foot-col">
+      <span class="foot-h">Tailor</span>
+      <a href="tailor.html">Overview</a>
+      <a href="tailortutorial.html">Tutorial</a>
+      <a href="tailorcodegen.html">Generated code</a>
+      <a href="tailormcp.html">MCP server</a>
+      <a href="${REPO}/releases" rel="noreferrer">Download</a>
     </div>
     <div class="foot-col">
       <span class="foot-h">Project</span>

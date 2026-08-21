@@ -2,17 +2,23 @@
 
 A component library for [gpui](https://github.com/zed-industries/zed)
 (Zed's GPU-accelerated Rust UI framework). Workspace: `crates/guise` (library) +
-`crates/gallery` (live showcase). Full human docs live in [`docs/`](docs/readme.md);
+`crates/gallery` (live showcase) + `crates/tailor/*` (Tailor, the visual
+interface builder), with `docs/` (markdown) rendered by `site/` (Bun).
+Full human docs live in [`docs/`](docs/readme.md);
 [`docs/architecture.md`](docs/architecture.md) is the map,
-[`docs/tutorial.md`](docs/tutorial.md) the walkthrough.
+[`docs/tutorial.md`](docs/tutorial.md) the walkthrough, and
+[`docs/tailor.md`](docs/tailor.md) the builder.
 
 ## Commands
 
 ```sh
 cargo run -p gallery      # launch the showcase
+cargo run -p tailor-app   # launch Tailor, the interface builder (binary: tailordev)
 cargo check -p guise-ui   # fast type-check (package is guise-ui; lib name is guise)
-cargo test -p guise-ui    # unit tests (pure logic only)
-cargo build -p gallery    # full binary build
+cargo test -p guise-ui    # 520+ tests: inline #[cfg(test)] + src/apptests.rs
+cargo test -p tailor-model -p tailor-codegen -p tailor-store   # Tailor's pure half
+cargo build --workspace --locked                               # what CI builds
+cd site && bun run build.ts                                    # docs/ -> site/dist
 ```
 
 ## Build constraints

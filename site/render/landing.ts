@@ -1,6 +1,13 @@
-// The landing page. Dark, gradient-washed, component-forward — the centerpiece
-// is a guise "app" inside a window frame with annotation callouts pointing at
-// the components, in the spirit of the React Aria landing page.
+// The landing page. Dark, gradient-washed, component-forward.
+//
+// The hero carries both halves of what this repository ships, side by side: the
+// Tailor workbench on the left, the guise interface it generates on the right.
+// Leading with only the library undersold the pair — you cannot tell from a
+// component grid that there is a builder for it.
+//
+// The annotated exhibit (a guise "app" with callouts pointing at the
+// components, in the spirit of the React Aria landing page) moved down into the
+// components band, where the callouts have the horizontal room they need.
 
 import { shell } from "./shell";
 import { ribbon, plate } from "./bits";
@@ -9,12 +16,17 @@ const REPO = "https://github.com/wess/guise";
 const DEP = 'guise-ui = { git = "https://github.com/wess/guise" }';
 const DEP_HTML = DEP.replace(/&/g, "&amp;").replace(/</g, "&lt;");
 
-// The annotated hero exhibit: a guise interface with callout labels.
-function exhibit(): string {
-  const app = `<div class="g-app">
+// A guise interface, in mock. `compact` drops the two rows the hero has no
+// vertical room for — the annotated version below shows the whole thing.
+function guiseApp(compact = false): string {
+  const dimmed = compact ? "" : `<span class="g-dimmed">A component layer for gpui.</span>`;
+  const alert = compact
+    ? ""
+    : `<div class="g-alert"><span class="g-alert-bar"></span><div><strong>Heads up</strong><span class="g-dimmed">Theme switches light / dark at runtime.</span></div></div>`;
+  return `<div class="g-app">
   <div class="g-stack">
     <div class="g-row"><span class="g-title">Create project</span><span class="g-badge is-violet">v0.1</span></div>
-    <span class="g-dimmed">A component layer for gpui.</span>
+    ${dimmed}
     <div class="g-field"><span class="g-label">Name</span><div class="g-input"><span>guise-app</span><i class="g-caret"></i></div></div>
     <div class="g-group">
       <button class="g-btn g-btn--filled">Filled</button>
@@ -28,10 +40,16 @@ function exhibit(): string {
       <span class="g-badge is-orange">Orange</span>
     </div>
     <div class="g-switchrow"><span class="g-switch is-on"><i></i></span><span class="g-dimmed">Enable notifications</span></div>
-    <div class="g-alert"><span class="g-alert-bar"></span><div><strong>Heads up</strong><span class="g-dimmed">Theme switches light / dark at runtime.</span></div></div>
+    ${alert}
     <div class="g-progress"><span style="width:68%"></span></div>
   </div>
 </div>`;
+}
+
+// The annotated exhibit: the same interface with callout labels naming the
+// components it is made of.
+function exhibit(): string {
+  const app = guiseApp();
   const cal = (cls: string, top: string, label: string) =>
     `<span class="cal ${cls}" style="top:${top}"><span>${label}</span></span>`;
   return `<div class="exhibit">
@@ -111,6 +129,28 @@ function tailorMock(): string {
 </div>`;
 }
 
+// The hero exhibit: the two things this repository ships, and the arrow
+// between them. The builder on the left is not a preview of the app on the
+// right — it renders the same components, which is the whole claim.
+function heroDuo(): string {
+  return `<div class="hero-duo">
+  <figure class="duo duo--tailor">
+    <figcaption class="duo-cap"><span class="duo-k">Tailor</span> the builder</figcaption>
+    ${tailorMock()}
+    <p class="duo-note">Drag real components onto a canvas, wire the state and the actions, and export.</p>
+  </figure>
+  <span class="duo-join" aria-hidden="true"><i></i><em>generates</em><i></i></span>
+  <figure class="duo duo--guise">
+    <figcaption class="duo-cap"><span class="duo-k">guise</span> the components</figcaption>
+    <div class="win" role="img" aria-label="A guise interface: a title, an input, buttons, badges, a switch and a progress bar.">
+      <div class="win-bar"><span class="win-dots"><i></i><i></i><i></i></span><span class="win-title">people.rs</span></div>
+      <div class="win-body">${guiseApp(true)}</div>
+    </div>
+    <p class="duo-note">Rust you own, with no dependency on Tailor left in it — or write it by hand from the start.</p>
+  </figure>
+</div>`;
+}
+
 type Feature = { icon: string; title: string; body: string };
 const features: Feature[] = [
   { icon: "&#9632;", title: "Themed palette", body: "A 14-hue open-color palette, sizing tokens, and semantic colors. Read every value from the theme — light / dark switching is free." },
@@ -122,6 +162,9 @@ const features: Feature[] = [
   { icon: "&#10038;", title: "Lucide icons built in", body: "Every <a href=\"https://lucide.dev\">Lucide</a> icon as an <code>IconName</code> variant, drawn from an embedded icon font — no asset pipeline, tinted and sized like text." },
   { icon: "&#9707;&#65038;", title: "An inspector in the box", body: "<a href=\"devtools.html\">DevTools</a> shaped like Safari's Web Inspector — an element tree your components record themselves, the box model, resolved styles with the line each came from, plus logs, network and timelines the host feeds." },
   { icon: "&#8635;", title: "Self-update included", body: "<a href=\"update.html\">Check a release feed</a>, install the new version in place — rsync onto the <code>.app</code>, rename over the AppImage — verify its signature, and restart. Prompt included." },
+  { icon: "&#9998;", title: "A builder in the box", body: "<a href=\"tailor.html\">Tailor</a> lays these components out on a canvas and writes the Rust — an interface builder that ships in the same repository as the library it draws with." },
+  { icon: "&#9993;", title: "An AI chat kit", body: "<a href=\"ai.html\">Transcript, composer, streaming text, reasoning blocks, tool calls, citations and a cost meter</a> — transport-agnostic, so nothing here opens a socket or holds a key." },
+  { icon: "&#9636;", title: "Data views that scale", body: "<a href=\"data.html\"><code>TableView</code>, <code>DataView</code>, <code>TreeView</code></a> and <code>VirtualList</code> window their rows — a hundred thousand of them render as cheaply as twenty." },
 ];
 
 function bandHead(h: string, p: string, learnHref?: string, learnLabel?: string): string {
@@ -150,6 +193,9 @@ export function renderLanding(): string {
     ["Transitions", "Transition · Collapse", "transitions.html"],
     ["Theming", "14 hues × 10 shades · light / dark", "theming.html"],
     ["Native WebView", "WKWebView · WebView2 · WebKitGTK", "webview.html"],
+    ["Drag &amp; drop", "Draggable · DropTarget · SortableList", "dnd.html"],
+    ["DevTools", "Elements · Styles · Logs · Audit", "devtools.html"],
+    ["Software update", "check · verify · install in place", "update.html"],
   ]
     .map(
       ([t, n, h], i) =>
@@ -169,22 +215,24 @@ export function renderLanding(): string {
 <section class="hero">
   <div class="container">
     <span class="eyebrow">Native UI · built on Zed's gpui</span>
-    <h1 class="display">Native UI components<br />for <span class="grad">Rust</span>.</h1>
+    <h1 class="display display--wide">Native UI for Rust.<br /><span class="grad">Write it, or draw it.</span></h1>
     <p class="lead">
-      A batteries-included component layer for
+      <strong>guise</strong> is a batteries-included component layer for
       <a href="https://github.com/zed-industries/zed" rel="noreferrer">gpui</a> — a themed palette,
-      sizing tokens, and over a hundred and twenty composable components, GPU-rendered at native speed.
+      sizing tokens, and over a hundred and thirty composable components, GPU-rendered at native speed.
+      <strong>Tailor</strong> is the drag-and-drop builder for it, in the same repository: it lays those
+      same components out on a canvas and hands back the Rust.
     </p>
     <div class="hero-cta">
       <a class="btn btn-primary" href="gettingstarted.html">Get started</a>
-      <a class="btn btn-ghost" href="tutorial.html">Read the tutorial</a>
+      <a class="btn btn-ghost" href="tailor.html">Meet Tailor</a>
       <a class="btn btn-ghost" href="gallery.html">Explore components</a>
     </div>
     <div class="cmd" style="margin-left:auto;margin-right:auto;">
       <code>${DEP_HTML}</code>
       <button class="copybtn" data-copy='${DEP}' aria-label="Copy dependency line">Copy</button>
     </div>
-    ${exhibit()}
+    ${heroDuo()}
     ${ribbon(true)}
     <p class="ribbon-cap">The palette — 14 open-color hues, 10 shades each, read straight from the theme.</p>
   </div>
@@ -219,7 +267,9 @@ export function renderLanding(): string {
 
 <section class="band band-grape">
   <div class="container">
-    ${bandHead(`Over 120 components, <span class="gw">one palette</span>.`, "From buttons to a native web view — a selection of the families below.")}
+    ${bandHead(`Over 130 components, <span class="gw">one palette</span>.`, "From buttons to a native web view, a code editor and an AI chat kit — a selection of the families below.")}
+    ${exhibit()}
+    <p class="ribbon-cap">One window, seven components, every value read from the theme.</p>
     <div class="plate-grid">${teaser}</div>
     <a class="more-link" href="gallery.html">See every component in the gallery &#8594;</a>
   </div>
@@ -235,7 +285,7 @@ export function renderLanding(): string {
 
 <section class="band band-orange">
   <div class="container">
-    ${bandHead(`Draw the interface. <span class="gw">Keep the Rust</span>.`, "Tailor is a drag-and-drop builder for guise, shipped in the same repository. Its canvas renders the real components against the real theme, so what you lay out is what it generates — and what it generates is a file you own.", "tailor.html", "Read about Tailor")}
+    ${bandHead(`Draw the interface. <span class="gw">Keep the Rust</span>.`, "Tailor is a drag-and-drop builder for guise, shipped in the same repository and downloadable as an app. Its canvas renders the real components against the real theme — there is no second drawing to keep in step — so what you lay out is what it generates, and what it generates is a file you own.", "tailor.html", "Read about Tailor")}
     <div class="split">
       ${tailorMock()}
       <div class="codepanel">
@@ -244,11 +294,18 @@ export function renderLanding(): string {
       </div>
     </div>
     <ul class="ticks ticks-wide">
+      <li>101 components in the library rail, an Interface-Builder five-tab inspector, and a Problems panel</li>
       <li>A <code>Render</code> entity when the screen holds state, a <code>RenderOnce</code> builder when it does not</li>
       <li>State variables become <code>Signal</code> fields; events become <code>cx.listener</code> and <code>cx.subscribe</code></li>
+      <li>Eight resize knobs, snapping to grid and to siblings, and a live window that follows every edit</li>
       <li>An MCP server over the same document, so an agent can build a screen while you watch the canvas</li>
       <li>Jumps both ways with your editor — a component to its generated line, and a line back to its component</li>
     </ul>
+    <div class="endgrid endgrid--tailor">
+      <a class="endcard" href="tailortutorial.html"><h3>Tailor tutorial &#8594;</h3><p>Build an app end to end in the builder, export it, and run what comes out.</p></a>
+      <a class="endcard" href="tailorcodegen.html"><h3>What it generates &#8594;</h3><p>The shape of the output, the two flavours, and the <code>.tailor</code> file format.</p></a>
+      <a class="endcard" href="${REPO}/releases" rel="noreferrer"><h3>Download Tailor &#8594;</h3><p>Every release attaches <code>Tailor.dmg</code>, signed and built from this repository.</p></a>
+    </div>
   </div>
 </section>
 
@@ -261,9 +318,9 @@ export function renderLanding(): string {
 </section>`;
 
   return shell({
-    title: "guise — native UI components for Rust, on gpui",
+    title: "guise — native UI components for Rust, and Tailor, the builder for them",
     description:
-      "A component library for gpui (Zed's GPU UI framework): themed palette, sizing tokens, and 130+ composable, GPU-rendered components for native Rust desktop apps.",
+      "A component library for gpui (Zed's GPU UI framework): themed palette, sizing tokens, and 130+ composable, GPU-rendered components for native Rust desktop apps — plus Tailor, the drag-and-drop interface builder that generates them.",
     body,
     active: "home",
   });

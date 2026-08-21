@@ -1,12 +1,17 @@
 # guise documentation
 
-A component library for [gpui](https://github.com/zed-industries/zed).
+A component library for [gpui](https://github.com/zed-industries/zed), and the
+visual interface builder that draws with it.
 
 `guise` gives you a themed palette, sizing tokens, 130+ ready-made components,
 a Flutter-style flexbox layer, terse layout macros, an animation toolkit
 (easings, springs, exit transitions), typed drag & drop, and a lightweight
 React-style state layer (signals, two-way bindings, and a reactive form) —
 all on top of gpui's retained-mode renderer.
+
+**[Tailor](tailor.md)** ships in the same repository: drag those components onto
+a canvas, wire the state and the actions, and export idiomatic Rust. Write the
+interface or draw it — you end up with the same components either way.
 
 ## Start here
 
@@ -30,6 +35,7 @@ all on top of gpui's retained-mode renderer.
 - [Data display](data.md) — `Avatar`, `AvatarGroup`, `Badge`, `Indicator`, `Image`, `List`, `VirtualList`, `Table`, `TableView`, `DataView`, `TreeView`, `TabBar`, `Timeline`, `Tabs`, `Accordion`, `Carousel`
 - [Charts](charts.md) — `Sparkline`, `LineChart`, `AreaChart`, `BarChart`, `ScatterChart`, `PieChart` — with optional axes, legends, and hover readouts
 - [Editor](editor.md) — `Editor`, a code editor entity with 10-language highlighting and a diagnostics API
+- [AI](ai.md) — `AIChatView`, `AIComposer`, streaming text, reasoning, tool calls, citations and cost meters — transport-agnostic
 - [Markdown editor](markdowneditor.md) — `MarkdownEditor`, an Obsidian-style live-preview markdown editor
 - [Overlays](overlays.md) — `Modal`, `Drawer`, `ConfirmModal`, `Menu`, `MenuBar`, `ContextMenu`, `Popover`, `HoverCard`, `LoadingOverlay`, `Spotlight`, `Tooltip`, `Tour`, and `OverlayHost` (window-level modals + toasts)
 - [Navigation](navigation.md) — `Breadcrumbs`, `NavLink`, `NavigationMenu`, `Stepper`, `Pagination`, `StatusBar`
@@ -46,11 +52,27 @@ all on top of gpui's retained-mode renderer.
 - [Settings](settings.md) — `SettingsView`, `SettingsSection`, `SettingsRow`: the settings screen chrome, without a schema you have to adopt
 - [DevTools](devtools.md) — `DevTools`: an in-app Safari-style inspector, with an Elements tree read back out of what actually rendered
 - [Window menu & chrome](windowmenu.md) — the native application menu, plus `About`, `WindowControls` and `ResizeHandles`
-- [Tailor](tailor.md) — the visual interface builder that ships in this repo
-  - [Tutorial](tailortutorial.md) — build an app in it, end to end, and run what comes out
-  - [The canvas](tailorcanvas.md) · [Components](tailorcomponents.md) · [State](tailorstate.md) · [Generated code](tailorcodegen.md) · [MCP](tailormcp.md) · [Zed](tailorzed.md)
-- [Releasing](release.md) — cutting a version, signing Tailor, publishing the crate
+
+## Tailor — the interface builder
+
+A drag-and-drop builder for guise interfaces, shipped in this repository and
+downloadable as an app. Its canvas renders the real components against the real
+theme, so what you lay out is what it generates.
+
+- [Overview](tailor.md) — what it is, the window, right-click, settings, the workspace
+- [Tutorial](tailortutorial.md) — build an app in it end to end, export it, and run what comes out
+- [The canvas](tailorcanvas.md) — modes, selecting, resizing, layout modes, snapping, the live window
+- [Components and slots](tailorcomponents.md) — the 101-component catalog, slots, the five drawn containers, your own components
+- [State, bindings and actions](tailorstate.md) — signals, two-way binding, events, the lint pass
+- [What gets generated](tailorcodegen.md) — the output, the flavours, export, the file format, the theme
+- [The MCP server](tailormcp.md) — driving the same document from an agent
+- [Zed and other editors](tailorzed.md) — jumping between a component and its code, in both directions
+
+## Reference
+
 - [Architecture](architecture.md) — workspace layout, the gpui dependency, and how to add a component
+- [Releasing](release.md) — cutting a version, signing and notarizing Tailor, publishing the crate
+- [Size & performance](performance.md) — what the crate costs to compile, link and render
 
 ## A taste
 

@@ -5,6 +5,64 @@ follow [semver](https://semver.org): from 1.0 on, a breaking change means a
 major release, and is called out under **Breaking**. Releases before 1.0 landed
 breaking changes in minor versions.
 
+## 1.2.1 — 2026-08-21
+
+Documentation and the website. The library's code is unchanged from 1.2.0 —
+what ships here is the reading material around it, which on crates.io means the
+front page of the crate.
+
+### The site leads with both things this repository ships
+
+The landing page made one claim, and there are two. The hero now carries the
+pair side by side — the Tailor workbench, an arrow, and the guise interface that
+falls out of it — under a headline that says what the choice actually is: write
+it, or draw it. The annotated component exhibit moved down into the components
+band, where its callouts have the horizontal room they need.
+
+Tailor is a top-level nav item now, lit across all eight of its pages, with a
+footer column of its own. Three feature cards were missing entirely — the
+builder, the AI chat kit, and the data views that window their rows — and so
+were three systems rows: drag and drop, DevTools, and self-update.
+
+Twenty-one cards on the documentation index were rendering with an empty
+description. That was every page added since the blurb list was last touched:
+`appguide`, `dates`, `files`, `ai`, `markdowneditor`, `dnd`, `update`,
+`devtools`, `settings`, `release`, `performance`, and all eight Tailor pages.
+
+### The README says what the repository is
+
+Tailor was a paragraph at the bottom of a library README. It is a section now,
+with the workbench, direct manipulation, what comes out, the live window, the
+MCP server and the editor jump each accounted for — and the workspace list names
+the Tailor crates, the Zed extension and the site generator rather than stopping
+at the library and the gallery.
+
+`guise::ai` was not in the README at all, despite being a whole component
+family: a transcript, a composer, streaming text, reasoning blocks, tool calls,
+citations and cost meters, none of which opens a socket. It has a section now,
+and a row in the component table, as does the read-only `Markdown` renderer and
+`PaneGroup`.
+
+In the docs, Tailor moved out of a nested bullet under *Systems* into a section
+of its own listing all eight pages; `architecture.md` gained the `mcp/` crate,
+`extensions/zed/`, `panegroup/` and `icon/`, and its *adding a component* list
+gained the two steps that were missing — the `.probe("Name")` call that makes a
+component visible to DevTools, and the catalog entry that lets Tailor place it.
+
+### Corrections
+
+Things that had quietly stopped being true:
+
+- `docs/tutorial.md` asked for `guise-ui = "0.2"`, and `gettingstarted.md` for
+  `"1.0"` at tag `v1.0.0`.
+- The test count was given as 300+ in the README and 320+ in `CLAUDE.md`. It is
+  526.
+- `AGENTS.md` described the workspace as the library plus the gallery, which it
+  has not been since 1.1.0.
+- `release.md` counted five Tailor crates; there are six.
+- Five source comments still called the menu item *Open in Zed*. It has been
+  *Open in Editor* since 1.2.0, because it opens any of six editors.
+
 ## 1.2.0 — 2026-08-21
 
 The library itself is unchanged from 1.1.0 — everything here is Tailor, its
