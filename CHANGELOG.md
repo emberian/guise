@@ -25,6 +25,27 @@ how three bugs surfaced that every test had walked past.
   borrows a context that cannot outlive the method. It goes through a weak
   handle now, cloned in ahead of the closure and upgraded when the event fires.
 
+### Tailor talks to Zed
+
+Two seams, in opposite directions, because Zed extensions cannot draw — the
+capability list is languages, debuggers, themes, icon themes, snippets and MCP
+servers, so a Tailor panel inside Zed is absent rather than difficult.
+
+`extensions/zed/` registers `tailor-mcp` as a context server: a manifest and one
+trait method saying where the binary is. It finds the copy the DMG installs, or
+one on `$PATH`, or whatever Zed's settings name. Its own workspace on purpose —
+it builds for `wasm32-wasip2` and has no business in the lockfile CI builds
+`--locked` against.
+
+**Open in Zed** (⌥⌘O, or a node's right-click menu) goes the other way: it puts
+your cursor on the line that node generated. The generator now tags each node's
+expression while it writes the file and records the line the tag came off,
+which ships as `Generated::lines`. Tagging rather than searching the finished
+text is what makes it cover everything: a `Button` carries its node id into the
+output and could be found by searching, but `Text::new("Ada Whitfield")` carries
+nothing. Exporting — from the app or over MCP — remembers where it went, so the
+jump does not ask every time.
+
 ### Tailor's documentation
 
 One page became seven, and it grew a tutorial. `docs/tailortutorial.md` builds a

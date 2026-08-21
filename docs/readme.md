@@ -48,7 +48,7 @@ all on top of gpui's retained-mode renderer.
 - [Window menu & chrome](windowmenu.md) — the native application menu, plus `About`, `WindowControls` and `ResizeHandles`
 - [Tailor](tailor.md) — the visual interface builder that ships in this repo
   - [Tutorial](tailortutorial.md) — build an app in it, end to end, and run what comes out
-  - [The canvas](tailorcanvas.md) · [Components](tailorcomponents.md) · [State](tailorstate.md) · [Generated code](tailorcodegen.md) · [MCP](tailormcp.md)
+  - [The canvas](tailorcanvas.md) · [Components](tailorcomponents.md) · [State](tailorstate.md) · [Generated code](tailorcodegen.md) · [MCP](tailormcp.md) · [Zed](tailorzed.md)
 - [Releasing](release.md) — cutting a version, signing Tailor, publishing the crate
 - [Architecture](architecture.md) — workspace layout, the gpui dependency, and how to add a component
 
