@@ -25,26 +25,30 @@ how three bugs surfaced that every test had walked past.
   borrows a context that cannot outlive the method. It goes through a weak
   handle now, cloned in ahead of the closure and upgraded when the event fires.
 
-### Tailor talks to Zed
+### Tailor and Zed jump to each other
 
-Two seams, in opposite directions, because Zed extensions cannot draw — the
-capability list is languages, debuggers, themes, icon themes, snippets and MCP
-servers, so a Tailor panel inside Zed is absent rather than difficult.
+What Interface Builder gives you inside Xcode is a loop: click a control, land
+on its code; sit on a line of code, find the control. Tailor and Zed now do that
+across two apps, with no extension, agent or network in it.
 
-`extensions/zed/` registers `tailor-mcp` as a context server: a manifest and one
-trait method saying where the binary is. It finds the copy the DMG installs, or
-one on `$PATH`, or whatever Zed's settings name. Its own workspace on purpose —
-it builds for `wasm32-wasip2` and has no business in the lockfile CI builds
-`--locked` against.
+**Open in Zed** (⌥⌘O, or a node's right-click menu) puts your cursor on the line
+that node generated. The generator tags each node's expression while it writes
+the file and records the line the tag came off, which ships as
+`Generated::lines`. Tagging rather than searching the finished text is what
+makes it cover everything: a `Button` carries its node id into the output and
+could be found by searching, but `Text::new("Ada Whitfield")` carries nothing.
 
-**Open in Zed** (⌥⌘O, or a node's right-click menu) goes the other way: it puts
-your cursor on the line that node generated. The generator now tags each node's
-expression while it writes the file and records the line the tag came off,
-which ships as `Generated::lines`. Tagging rather than searching the finished
-text is what makes it cover everything: a `Button` carries its node id into the
-output and could be found by searching, but `Text::new("Ada Whitfield")` carries
-nothing. Exporting — from the app or over MCP — remembers where it went, so the
-jump does not ask every time.
+**`tailordev --reveal <file>:<line>`** goes the other way, which a Zed task binds
+to a key. It resolves the file to a project, the line to a node, and leaves a
+request the open window picks up on the poll it already runs — so Tailor comes
+forward with that component selected. Exporting records which project owns which
+directory, in Tailor's own config rather than in your source tree: generated code
+stays code, with no dotfiles or absolute local paths committed beside it.
+
+Separately, and not part of that loop, `extensions/zed/` registers `tailor-mcp`
+as a Zed context server for building a design from the agent panel. A Tailor
+canvas *inside* a Zed pane is not on the table at all — extensions are
+WebAssembly with no UI API, so it is absent rather than difficult.
 
 ### Tailor's documentation
 
