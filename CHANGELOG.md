@@ -45,6 +45,16 @@ forward with that component selected. Exporting records which project owns which
 directory, in Tailor's own config rather than in your source tree: generated code
 stays code, with no dotfiles or absolute local paths committed beside it.
 
+**View → Set Up Editor Jump…** writes that task into Zed's global task file and
+copies the keybinding. It never overwrites — a file that will not parse is an
+error rather than something to replace — and it does not touch your keymap,
+because claiming a key in somebody's keymap is not a thing to do quietly.
+
+**Settings → General → Jump to** picks the editor: Zed, VS Code, Sublime,
+IntelliJ, Emacs or Neovim. They all take a path and a position, so it is a table
+of command lines rather than a plugin per editor, and the menu item is *Open in
+Editor* rather than *Open in Zed*.
+
 Separately, and not part of that loop, `extensions/zed/` registers `tailor-mcp`
 as a Zed context server for building a design from the agent panel. A Tailor
 canvas *inside* a Zed pane is not on the table at all — extensions are
