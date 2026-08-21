@@ -84,6 +84,12 @@ half. Full docs in [`docs/tailor.md`](docs/tailor.md).
   handle, because a live component tree must not own the view that renders it.
 - **`app/`** — one `Workbench` entity owns the project and every panel; the
   panels are render methods in sibling files, not views of their own.
+- **The editor bridge** (`store/src/bridge.rs` + `--reveal`) jumps both ways
+  between a component and its code: out through `Generated::lines`, the map
+  codegen builds by tagging each node's expression as it writes; in through an
+  export index and a focus request the open window picks up on its existing
+  poll. `extensions/zed/` is separate — a Zed MCP context server, its own cargo
+  workspace because it targets `wasm32-wasip2`.
 - **`mcp/`** — an MCP server over the same model (`tailor-mcp`). Hand-rolled
   JSON-RPC over stdio; it saves after every change, and the app polls the file
   it has open, which is the whole integration between them.

@@ -247,6 +247,7 @@ export function renderLanding(): string {
       <li>A <code>Render</code> entity when the screen holds state, a <code>RenderOnce</code> builder when it does not</li>
       <li>State variables become <code>Signal</code> fields; events become <code>cx.listener</code> and <code>cx.subscribe</code></li>
       <li>An MCP server over the same document, so an agent can build a screen while you watch the canvas</li>
+      <li>Jumps both ways with your editor — a component to its generated line, and a line back to its component</li>
     </ul>
   </div>
 </section>

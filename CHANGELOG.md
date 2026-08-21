@@ -5,7 +5,13 @@ follow [semver](https://semver.org): from 1.0 on, a breaking change means a
 major release, and is called out under **Breaking**. Releases before 1.0 landed
 breaking changes in minor versions.
 
-## Unreleased
+## 1.2.0 — 2026-08-21
+
+The library itself is unchanged from 1.1.0 — everything here is Tailor, its
+documentation, and the editor bridge between them. Note that 1.1.0 never
+reached crates.io, so for anyone installing from there this release also carries
+1.1.0's library work: the window-scoped DevTools recorder and the Elements tree
+rework.
 
 ### Generated code that binds or handles an event now compiles
 

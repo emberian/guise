@@ -39,7 +39,9 @@ cargo run -p tailor-app
 ```
 
 Or take the app: every [release](https://github.com/wess/guise/releases)
-attaches `Tailor.dmg`. See [`docs/tailor.md`](docs/tailor.md).
+attaches `Tailor.dmg`. It jumps both ways with your editor — select a component
+and land on its generated line, or put the cursor on a line and have Tailor
+select the component. See [`docs/tailor.md`](docs/tailor.md).
 
 ## Documentation
 
