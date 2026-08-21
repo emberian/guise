@@ -65,6 +65,53 @@ Both patterns can two-way bind to the reactive layer (`guise::reactive`):
   regenerate with `bun scripts/icons.ts`. Icon slots on components take
   `impl Into<Glyph>` (a Lucide `IconName` or literal text).
 
+## Tailor — the interface builder in `crates/tailor/`
+
+A drag-and-drop builder for guise interfaces, shipped in this repo as five
+`publish = false` crates. `cargo run -p tailor-app` (binary `tailordev`);
+`cargo test -p tailor-model -p tailor-codegen -p tailor-store` for the pure
+half. Full docs in [`docs/tailor.md`](docs/tailor.md).
+
+- **`model/`** — the document: the component catalog, the node arena, tokens,
+  state variables, actions, undo, and the `.tailor` file format. No gpui, and it
+  carries most of the tests: reparent rules, cycle checks, the lint pass, and the
+  file round-trip are where a builder actually goes wrong.
+- **`codegen/`** — document → guise Rust. Driven by the same catalog the canvas
+  reads, so a component cannot render one way and generate another.
+- **`store/`** — project files, recents, editor settings, export.
+- **`render/`** — document → live guise components. Interaction never reaches
+  back into the app directly: it goes through `Hooks`, built from a *weak*
+  handle, because a live component tree must not own the view that renders it.
+- **`app/`** — one `Workbench` entity owns the project and every panel; the
+  panels are render methods in sibling files, not views of their own.
+- **`mcp/`** — an MCP server over the same model (`tailor-mcp`). Hand-rolled
+  JSON-RPC over stdio; it saves after every change, and the app polls the file
+  it has open, which is the whole integration between them.
+
+Two things about it are load-bearing and easy to break:
+
+- **The catalog is the single source of truth.** Adding a component is one
+  `comp!` entry plus one arm in `render/src/nodes/build.rs`. `PropSpec::emit`
+  decides what the generator prints. Editing one without the other is how the
+  canvas and the export drift.
+- **Five containers are drawn, not instantiated** (`Tabs`, `Accordion`,
+  `SplitPanel`, `AppShell`, `Carousel`). Their regions take `'static` closures,
+  which a designer cannot drop into; drawing them from the theme is what makes
+  their slots real drop targets. Generated code uses the real component.
+
+Tailor wears the *project's* theme app-wide, because guise resolves colours when
+a component paints rather than when you build it — there is no way to scope a
+second theme to the canvas subtree.
+
+The project is held as `Arc<Project>` and edited through `Arc::make_mut`: the
+history and the canvas share the same allocation, so a commit and a frame are
+free and an edit pays for exactly one copy. Codegen, lint, autosave, export and
+the file watcher run on the background executor, debounced, guarded by a
+revision counter and cancelled by dropping the held `Task`. Anything touching
+gpui entities — the preview store — stays on the main thread. Tests zero the
+debounce and call `cx.run_until_parked()` before asserting on generated code or
+problems.
+
 ## File/naming conventions
 
 - **One component per file**, lowercase, no `-`/`_`/spaces. Group with directories

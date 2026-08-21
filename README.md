@@ -27,6 +27,20 @@ Stack::new()
     )
 ```
 
+## Tailor — the visual interface builder
+
+The repository also ships **Tailor**: a drag-and-drop interface builder for gpui
+and guise, in the shape of Interface Builder and Android Studio's layout editor.
+Lay out a screen from real components, wire the state and the actions, and
+export idiomatic Rust that has no dependency on Tailor left in it.
+
+```sh
+cargo run -p tailor-app
+```
+
+Or take the app: every [release](https://github.com/wess/guise/releases)
+attaches `Tailor.dmg`. See [`docs/tailor.md`](docs/tailor.md).
+
 ## Documentation
 
 Full docs live in [`docs/`](docs/readme.md) (also rendered at

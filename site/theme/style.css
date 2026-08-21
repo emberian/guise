@@ -610,3 +610,28 @@ body.searching { overflow: hidden; }
   .search-trigger > kbd { display: none; }
   .search-trigger { margin-right: 6px; }
 }
+
+/* The Tailor workbench sketch on the landing page: library rail, canvas,
+   inspector. Deliberately unlabelled — it is a shape, not a screenshot. */
+.band-orange { --accent: var(--orange); }
+.tailor-body { display: grid; grid-template-columns: 88px 1fr 78px; min-height: 264px; background: #101014; }
+.tailor-rail,
+.tailor-insp { display: flex; flex-direction: column; gap: 9px; padding: 14px 10px; }
+.tailor-rail { border-right: 1px solid var(--line); }
+.tailor-insp { border-left: 1px solid var(--line); }
+.tailor-rail i,
+.tailor-insp i { display: block; height: 8px; border-radius: 3px; background: rgba(255, 255, 255, 0.07); }
+.tailor-rail i.is-on,
+.tailor-insp i.is-on { background: var(--accent); opacity: 0.55; }
+.tailor-canvas { display: flex; flex-direction: column; gap: 10px; padding: 16px; background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px); background-size: 12px 12px; }
+.tailor-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+.tailor-card,
+.tailor-chart { border: 1px solid var(--line2); border-radius: 9px; background: #17171d; }
+.tailor-card { height: 52px; }
+.tailor-chart { flex: 1; min-height: 96px; }
+/* The selected node wears the eight knobs the canvas draws around it. */
+.tailor-card.is-sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 0 5px rgba(253, 126, 20, 0.14); }
+.ticks-wide { margin-top: 34px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px 34px; }
+@media (max-width: 860px) {
+  .tailor-body { grid-template-columns: 64px 1fr 56px; min-height: 210px; }
+}

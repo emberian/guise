@@ -5,7 +5,151 @@ follow [semver](https://semver.org): from 1.0 on, a breaking change means a
 major release, and is called out under **Breaking**. Releases before 1.0 landed
 breaking changes in minor versions.
 
-## Unreleased
+## 1.1.0 — 2026-08-21
+
+### Tailor, a visual interface builder
+
+The repository now ships a second binary: **Tailor**, a drag-and-drop interface
+builder for gpui and guise, in `crates/tailor/`. It is five crates — a gpui-free
+document model with the component catalog, a Rust generator, a file layer, a
+renderer, and the workbench — and it is `publish = false` throughout, so nothing
+about `guise-ui` on crates.io changes.
+
+The canvas renders the real components against the real theme rather than a
+second drawing of them, which is what stops a builder from showing you one thing
+and generating another. Five containers are the exception and are drawn from the
+theme (`Tabs`, `Accordion`, `SplitPanel`, `AppShell`, `Carousel`): their regions
+are `'static` closures, and drawing them is what lets you click a tab and drop
+into the slot behind it.
+
+Output is a Rust file you own — a `Render` entity when the document holds state,
+a `RenderOnce` builder when it does not — with state variables as `Signal<T>`
+fields, events wired through `cx.listener` or `cx.subscribe`, and every resolved
+colour hoisted into a `let` at the top of `render` the way guise's own
+conventions require.
+
+Also in the box: a live second window that follows every edit, a Split mode that
+regenerates the Rust as you drag, an Interface-Builder-shaped five-tab
+inspector, a Problems panel, embed/unwrap, align and distribute, and four
+project templates.
+
+Every panel resizes from the divider beside it and folds away from the chevron
+in its header, leaving a rail to click it back; the inspector's sections fold
+individually. All of it persists, so the layout you left is the one you come
+back to. Right-clicking a component on the canvas or a row in the outline
+selects it and opens a menu on it — including **Extract to a component**, which
+lifts the selection into a new component document and leaves a reference behind.
+
+Selection puts eight resize knobs around a node, Interface Builder's way:
+drag a knob to resize, drag an absolutely placed node's body to move, with
+snapping to the grid and to siblings' edges, guides drawn where it caught, a
+live size readout, and arrow-key nudging. A component that carries its own
+pixel size — an image, a chart — resizes through those props rather than
+through the box around it.
+
+Tailor ships as an app, not only as a cargo target: every release from here
+attaches **`Tailor.dmg`**, built and notarized by `release.yml` from
+`scripts/bundle.sh`. It carries the MCP server beside the executable, and it
+takes the workspace version — one repository, one version, one set of notes.
+
+Also shipping: **`tailor-mcp`**, an MCP server over the same document model, so
+an agent can place components, wire state and actions, and generate or export
+Rust without opening the app. It edits the `.tailor` file, and the app watches
+the file it has open — so a screen built over MCP appears on the canvas as it
+is built. See [`docs/tailor.md`](docs/tailor.md).
+
+The project is now shared behind an `Arc` rather than copied: an undo snapshot
+and the canvas's view of it are refcount bumps, and editing goes through
+`Arc::make_mut`, which pays for one copy per edit instead of one per commit and
+one per frame — an idle frame copies nothing. Regenerating the Rust, the lint
+pass, autosave, export, and the file watcher all moved to gpui's background
+executor, debounced, with a revision guard so a stale result never overwrites a
+newer one and a held `Task` so superseded work is cancelled. On a debug build of
+a 3,744-node project a keystroke went from about 7.9 ms of main-thread work to
+about 2.4 ms. Two hundred undo entries used to be two hundred whole projects;
+they now share.
+
+Preferences (⌘,) are built out of guise's own `SettingsView`, `SettingsSection`
+and `SettingsRow`, across General, Canvas, Panels and About pages — the settings
+screen the library ships is the one its builder uses. The canvas page carries
+what any layout program carries: grid spacing, snap to grid and snap to objects
+as separate toggles, the nudge distance, and whether new frames are free form.
+The same options are on the Arrange menu, with ⇧⌘G to flip the selected
+container between flow and free form.
+
+`View → Developer Tools` (⌥⌘I) opens guise's own inspector along the bottom of
+the live window, so a design can be drilled into where it is running: the
+Elements tree, the box model, and each resolved style with the source line it
+came from. It goes in the live window rather than on the canvas because that
+window renders the document alone — the tree is your interface, with none of
+Tailor's own panels in it. It is closed until asked for, and closing it drops
+it, which is what stops the recorder; a preference opens the live window with
+it already showing. Right-clicking the design gives you **Inspect element**, the
+browser move: it selects the deepest component under the pointer, scrolls the
+tree to it, and boxes it in the window. The inspector takes its room from the
+window rather than from the design — opening it makes the window bigger and
+leaves the document at its device size, because showing the design at that size
+is the whole reason the window exists.
+
+Every surface now has a right-click menu, each acting on the row under the
+pointer: document tabs (rename, duplicate, delete), both kinds of Library row
+(insert into the selection or at the top level; edit, rename, duplicate or
+delete your own components), Problems rows (reveal, copy the message), the
+generated code (copy, export, hide), and the start screen's recents (open,
+reveal in Finder, copy the path, forget). Nothing in them is a command that
+exists only there.
+
+Two bugs worth naming. Every node's wrapper reused its component's `ElementId`,
+so gpui aliased their element state and some components — `Switch` among them —
+never appeared on the canvas at all. And nothing in the app ever took focus, so
+gpui had no dispatch path: every action registered on an element was
+unreachable, which greyed out the whole menu bar and swallowed most keyboard
+shortcuts. Focus now lives on the canvas, and returns to the window root
+whenever it would otherwise go nowhere.
+
+A `.tailor` file is text somebody can edit, so loading one assumes nothing:
+`Document::repair` now makes a document a real tree — a root that exists, one
+parent per node, no loops, bounded depth — and the traversals underneath it are
+cycle-safe regardless, so a file with a loop in it comes back with a short
+answer instead of hanging the app that opened it. Saving refuses a project
+holding an infinity or a NaN rather than writing the `null` serde would produce
+and leaving a file that no longer loads, and every field those could come from
+rejects them on the way in. Generated string literals escape every control
+character, a document whose name would collide with a guise component is an
+error rather than a mystery compile failure, and an export only writes below the
+directory it was given.
+
+### The inspector's Elements tree is a tree, not markup
+
+It printed `<Button variant="filled" size="sm" />` with the closing rows a
+browser prints. But these are components built from builder calls: there is no
+attributes-versus-children distinction to draw, the self-closing form promises a
+model gpui does not have, and a `</Card>` row says nothing the next row's
+indentation has not already said — while costing every container half the panel.
+
+It is now an indented tree, one row per component, with props read as a YAML flow
+mapping the way the Styles pane reads a declaration:
+
+```
+▾ Card
+    Text        size: sm, dimmed
+    Title       order: 2
+    Sparkline
+```
+
+`ElementsPanel::reveal` also scrolls the tree to what it revealed. Expanding a
+node's ancestors is not much use when the node is still below the fold, which is
+what happens every time the element picker selects something.
+
+### Fixed
+
+- **The DevTools element recorder now records one window.** It is thread-local,
+  and every window a thread draws was recording into the same tree — so an app
+  with a second window open showed an inspector a tree of both, its own window
+  included. An inspector now claims the frame when it renders, and elements
+  prepainting in any other window that frame are skipped. `probe::begin_frame`
+  takes the window it is claiming for and is exported alongside `set_enabled`
+  for hosts driving the recorder by hand.
 
 ### Settings screens, from sinclair
 

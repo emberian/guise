@@ -9,8 +9,18 @@ guise/
 ├── site/                 # docs-website generator (Bun; one page per docs/*.md, via render/nav.ts)
 └── crates/
     ├── guise/            # the library — published as `guise-ui`, lib name `guise`
-    └── gallery/          # a live showcase (cargo run -p gallery)
+    ├── gallery/          # a live showcase (cargo run -p gallery)
+    └── tailor/           # Tailor, the visual interface builder (see tailor.md)
+        ├── model/        #   the document: catalog, node tree, file format
+        ├── codegen/      #   document -> idiomatic guise Rust
+        ├── store/        #   project files, recents, settings, export
+        ├── render/       #   document -> live guise components
+        └── app/          #   the gpui workbench (cargo run -p tailor-app)
 ```
+
+Only `crates/guise` is published. The gallery and the five Tailor crates are
+`publish = false`; they are in the workspace so CI builds them and so the
+library and the builder can never drift apart.
 
 ## The gpui dependency
 
@@ -88,6 +98,7 @@ See the [component model](components.md) for the two patterns in detail.
 
 ```sh
 cargo run -p gallery        # launch the showcase
+cargo run -p tailor-app     # launch Tailor, the interface builder
 cargo check -p guise-ui     # fast type-check (package is guise-ui; lib name is guise)
 cargo test -p guise-ui      # unit tests
 cargo build -p gallery      # full build of the binary
