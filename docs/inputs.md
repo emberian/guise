@@ -357,7 +357,7 @@ its content; `max_rows` caps that growth and scrolls instead.
 
 `submit_on_enter(true)` makes Enter commit the value (emitting a separate
 `TextAreaSubmit(String)`) and Shift+Enter insert the newline, which is the
-convention a chat composer uses — see [`AIComposer`](ai.md#aicomposer), which
+convention a chat composer uses — see [`AIComposer`](ai.md#aicomposer-entity), which
 is built on it.
 
 ## Combobox (entity)

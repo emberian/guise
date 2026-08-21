@@ -5,6 +5,40 @@ follow [semver](https://semver.org): from 1.0 on, a breaking change means a
 major release, and is called out under **Breaking**. Releases before 1.0 landed
 breaking changes in minor versions.
 
+## Unreleased
+
+### Generated code that binds or handles an event now compiles
+
+Writing Tailor's tutorial meant exporting a real app and building it, which is
+how three bugs surfaced that every test had walked past.
+
+- **A bound prop said `self` inside `new`.** `.value(self.query.get(cx))` is
+  fine in `render` and impossible in a constructor — the thing being built *is*
+  what `self` will be made of. State variables are locals at the top of `new`
+  now, and a binding reads the local while it is one.
+- **A binding was one-way.** guise binds two ways in two shapes: entities take
+  `X::bind(&entity, &signal, cx)` after both exist, controlled builders take
+  `.bind(signal.binding())` in the chain. Tailor emitted a read for both, so a
+  bound switch showed its variable and then refused to change it.
+- **An event inside a drawn container's region did not compile at all.** Those
+  regions take `'static` closures, and the handler was `cx.listener(..)`, which
+  borrows a context that cannot outlive the method. It goes through a weak
+  handle now, cloned in ahead of the closure and upgraded when the event fires.
+
+### Tailor's documentation
+
+One page became seven, and it grew a tutorial. `docs/tailortutorial.md` builds a
+complete app — app shell, a component of its own placed three times, two bound
+controls, a wired action — then exports it and runs it. Every code block in it
+is output Tailor actually produced: the project was built through the MCP server
+so the tutorial cannot drift from the generator.
+
+The reference splits into [the canvas](docs/tailorcanvas.md),
+[components and slots](docs/tailorcomponents.md),
+[state, bindings and actions](docs/tailorstate.md),
+[what gets generated](docs/tailorcodegen.md) and
+[the MCP server](docs/tailormcp.md), with the overview keeping the map.
+
 ## 1.1.0 — 2026-08-21
 
 ### Tailor, a visual interface builder
