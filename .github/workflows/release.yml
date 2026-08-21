@@ -73,9 +73,12 @@ jobs:
   tailor-macos:
     needs: github-release
     runs-on: macos-latest
-    # Signing creds are optional: with a Developer ID the app is signed with a
-    # hardened runtime and notarized; without them the build falls back to an
-    # ad-hoc signature (runs locally, but unsigned for distribution).
+    # Signing and notarization are gated separately, because they need different
+    # credentials and one can be set up without the other. With a Developer ID
+    # the app is signed with a hardened runtime; with notary credentials on top
+    # it is also notarized and stapled, which is what stops Gatekeeper warning
+    # on a downloaded build. With neither, the build falls back to an ad-hoc
+    # signature — it runs on the machine that made it and nowhere else.
     env:
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -117,7 +120,7 @@ jobs:
           scripts/bundle.sh
 
       - name: Notarize app
-        if: env.APPLE_SIGNING_IDENTITY != ''
+        if: env.APPLE_SIGNING_IDENTITY != '' && env.APPLE_APP_PASSWORD != ''
         run: |
           set -euo pipefail
           ditto -c -k --keepParent dist/Tailor.app "$RUNNER_TEMP/Tailor.zip"
@@ -134,7 +137,7 @@ jobs:
           scripts/dmg.sh
 
       - name: Notarize dmg
-        if: env.APPLE_SIGNING_IDENTITY != ''
+        if: env.APPLE_SIGNING_IDENTITY != '' && env.APPLE_APP_PASSWORD != ''
         run: |
           set -euo pipefail
           xcrun notarytool submit dist/Tailor.dmg \
@@ -151,7 +154,9 @@ jobs:
           test -x dist/Tailor.app/Contents/MacOS/tailor-mcp
           test -f dist/Tailor.app/Contents/Resources/icon.icns
           if [ -z "${APPLE_SIGNING_IDENTITY}" ]; then
-            echo "::warning::Ad-hoc build — unsigned and not notarized; Gatekeeper will warn on install."
+            echo "::warning::Ad-hoc build — unsigned and not notarized; Gatekeeper will refuse a downloaded copy."
+          elif [ -z "${APPLE_APP_PASSWORD}" ]; then
+            echo "::warning::Signed but not notarized (no APPLE_APP_PASSWORD) — Gatekeeper will still warn on a downloaded copy."
           fi
 
       - name: Upload DMG
