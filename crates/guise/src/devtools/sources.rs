@@ -392,7 +392,7 @@ mod tests {
         probe::set_enabled(false);
         probe::set_enabled(true);
         probe::test_record("Root", || {});
-        probe::begin_frame();
+        probe::begin_frame_unclaimed();
 
         // The recorder's test driver reports no source, so build the map from a
         // tree assembled by hand instead.
@@ -413,7 +413,7 @@ mod tests {
         probe::set_enabled(false);
         probe::set_enabled(true);
         probe::test_record("Root", || {});
-        probe::begin_frame();
+        probe::begin_frame_unclaimed();
 
         let mut tree = probe::tree();
         let template = tree.nodes[0].clone();

@@ -773,6 +773,51 @@ fn the_recorder_rebuilds_the_component_tree(cx: &mut TestAppContext) {
     assert!(names.contains(&"Badge".to_string()), "{names:?}");
 }
 
+/// A second window on the same thread. The recorder is thread-local, so
+/// without a claim its elements land in whatever tree is being built.
+struct Neighbour;
+
+impl Render for Neighbour {
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        div()
+            .size_full()
+            .child(crate::Badge::new("elsewhere"))
+            .probe("Neighbour")
+    }
+}
+
+#[gpui::test]
+fn the_recorder_skips_windows_the_inspector_did_not_claim(cx: &mut TestAppContext) {
+    cx.update(|cx| {
+        Theme::light().init(cx);
+        DevToolsState::new().init(cx);
+    });
+    let neighbour = cx.add_window(|_window, _cx| Neighbour);
+    let (view, cx) = cx.add_window_view(|_window, cx| Inspected {
+        devtools: cx.new(DevTools::new),
+    });
+    cx.run_until_parked();
+    // Both windows draw this frame; only one of them has an inspector in it.
+    neighbour
+        .update(cx, |_this, _window, cx| cx.notify())
+        .expect("the neighbour window should still be open");
+    view.update(cx, |_this, cx| cx.notify());
+    cx.run_until_parked();
+
+    let names: Vec<String> = view.read_with(cx, |this, cx| {
+        this.devtools
+            .read(cx)
+            .tree()
+            .nodes
+            .iter()
+            .map(|node| node.name.to_string())
+            .collect()
+    });
+
+    assert!(names.contains(&"Inspected".to_string()), "{names:?}");
+    assert!(!names.contains(&"Neighbour".to_string()), "{names:?}");
+}
+
 #[gpui::test]
 fn a_recorded_node_carries_its_attributes_style_and_source(cx: &mut TestAppContext) {
     let (view, cx) = inspected(cx);

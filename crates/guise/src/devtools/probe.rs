@@ -18,6 +18,12 @@
 //!   two boolean checks per wrapped element per frame.
 //! * It never allocates while off — attributes are dropped at the setter.
 //!
+//! Every window on a thread shares one recorder, so an inspector claims the
+//! window it renders in ([`begin_frame`]) and elements prepainting in any
+//! other window are skipped. Without that, an app with a second window open
+//! records both trees into one and the inspector shows a tree its panels
+//! cannot explain.
+//!
 //! The recorder always runs one frame behind: an entity's `render` happens
 //! during `request_layout`, before anything has prepainted, so the panel reads
 //! the tree the *previous* frame built. [`begin_frame`] is what rotates them.
@@ -27,7 +33,7 @@ use std::panic::Location;
 
 use gpui::{
     App, Bounds, ElementId, GlobalElementId, InspectorElementId, IntoElement, LayoutId, Pixels,
-    SharedString, StyleRefinement, Styled, Window,
+    SharedString, StyleRefinement, Styled, Window, WindowId,
 };
 
 use super::state::SourceRef;
@@ -141,6 +147,10 @@ struct Registry {
     current: ProbeTree,
     /// Open ancestors, innermost last.
     stack: Vec<usize>,
+    /// The window whose inspector claimed this frame, if one did. `None` means
+    /// record every window, which is what a host driving the recorder by hand
+    /// through [`set_enabled`] wants.
+    window: Option<WindowId>,
 }
 
 impl Registry {
@@ -152,6 +162,7 @@ impl Registry {
         self.building = ProbeTree::default();
         self.current = ProbeTree::default();
         self.stack.clear();
+        self.window = None;
     }
 }
 
@@ -193,19 +204,41 @@ pub fn is_enabled() -> bool {
     REGISTRY.with(|registry| registry.borrow().recorders > 0)
 }
 
-/// Promote the tree the last frame recorded and start a fresh one. Called from
-/// the inspector's `render`, which runs before any of this frame's prepaints.
-pub fn begin_frame() {
+/// Promote the tree the last frame recorded and start a fresh one, claiming
+/// this frame for `window`. Called from the inspector's `render`, which runs
+/// before any of this frame's prepaints, so elements in every other window
+/// this thread draws are skipped for the rest of the frame.
+///
+/// There is one tree per thread, so two inspectors in two windows take the
+/// claim from each other every frame and both come up empty. Showing each of
+/// them a tree of both windows would be worse.
+pub fn begin_frame(window: &Window) {
+    rotate(Some(window.window_handle().window_id()))
+}
+
+/// Rotate with no window claimed, so every window records. For the sibling
+/// tests, which drive the recorder without standing up a window.
+#[cfg(test)]
+pub(crate) fn begin_frame_unclaimed() {
+    rotate(None)
+}
+
+fn rotate(claim: Option<WindowId>) {
     REGISTRY.with(|registry| {
         let mut registry = registry.borrow_mut();
         if !registry.is_recording() {
             return;
         }
+        let previous = std::mem::replace(&mut registry.window, claim);
         // An unbalanced stack would mean an element was pushed and never
         // popped; drop it rather than nesting the next frame under a ghost.
         registry.stack.clear();
         let built = std::mem::take(&mut registry.building);
-        if !built.is_empty() {
+        // A tree recorded before this window held the claim belongs to some
+        // other window, or to no window in particular — the frame an inspector
+        // first opens on. Drop it rather than show a tree its panels cannot
+        // explain; the next frame records a real one.
+        if previous == claim && !built.is_empty() {
             registry.current = built;
         }
     });
@@ -222,10 +255,15 @@ pub fn with_tree<R>(f: impl FnOnce(&ProbeTree) -> R) -> R {
     REGISTRY.with(|registry| f(&registry.borrow().current))
 }
 
-fn push(meta: &ProbeMeta) -> Option<usize> {
+fn push(meta: &ProbeMeta, window: Option<WindowId>) -> Option<usize> {
     REGISTRY.with(|registry| {
         let mut registry = registry.borrow_mut();
         if !registry.is_recording() {
+            return None;
+        }
+        // Another window prepainting into a tree this window's inspector
+        // claimed. Its elements are not what is being inspected.
+        if registry.window.is_some() && registry.window != window {
             return None;
         }
 
@@ -293,7 +331,7 @@ pub(crate) fn test_record(name: &'static str, children: impl FnOnce()) {
         source: None,
         style: None,
     };
-    let index = push(&meta);
+    let index = push(&meta, None);
     children();
     if let Some(index) = index {
         pop(index, Bounds::default(), None);
@@ -500,7 +538,7 @@ impl<E: gpui::Element> gpui::Element for ProbeElement<E> {
         window: &mut Window,
         cx: &mut App,
     ) -> Self::PrepaintState {
-        self.index = push(&self.meta);
+        self.index = push(&self.meta, Some(window.window_handle().window_id()));
         let state = self
             .inner
             .prepaint(id, inspector_id, bounds, request_layout, window, cx);
@@ -553,7 +591,7 @@ mod tests {
     }
 
     fn record(name: &str, children: impl FnOnce()) {
-        let index = push(&meta(name));
+        let index = push(&meta(name), None);
         children();
         if let Some(index) = index {
             pop(index, Bounds::default(), None);
@@ -567,7 +605,7 @@ mod tests {
             record("Button", || {});
             record("Badge", || {});
         });
-        begin_frame();
+        begin_frame_unclaimed();
 
         let tree = tree();
         assert_eq!(tree.roots, vec![0]);
@@ -585,7 +623,7 @@ mod tests {
             record("Button", || {});
             record("Button", || {});
         });
-        begin_frame();
+        begin_frame_unclaimed();
 
         let tree = tree();
         assert_eq!(tree.nodes[0].key.as_ref(), "Stack[0]");
@@ -598,11 +636,11 @@ mod tests {
     fn a_key_survives_the_next_frame() {
         reset();
         record("Stack", || record("Button", || {}));
-        begin_frame();
+        begin_frame_unclaimed();
         let before = tree().find("Stack[0]/Button[0]");
 
         record("Stack", || record("Button", || {}));
-        begin_frame();
+        begin_frame_unclaimed();
         let after = tree().find("Stack[0]/Button[0]");
 
         assert_eq!(before, after);
@@ -613,7 +651,7 @@ mod tests {
     fn ancestry_runs_root_first() {
         reset();
         record("AppShell", || record("Stack", || record("Button", || {})));
-        begin_frame();
+        begin_frame_unclaimed();
 
         let tree = tree();
         let button = tree.find("AppShell[0]/Stack[0]/Button[0]").unwrap();
@@ -630,7 +668,7 @@ mod tests {
         reset();
         record("AppShell", || {});
         record("Modal", || {});
-        begin_frame();
+        begin_frame_unclaimed();
 
         let tree = tree();
         assert_eq!(tree.roots, vec![0, 1]);
@@ -671,7 +709,7 @@ mod tests {
     fn the_recorded_tree_is_released_with_the_last_inspector() {
         reset();
         record("Stack", || {});
-        begin_frame();
+        begin_frame_unclaimed();
         assert!(!tree().is_empty());
 
         release();
@@ -683,7 +721,7 @@ mod tests {
         reset();
         set_enabled(false);
         record("Stack", || record("Button", || {}));
-        begin_frame();
+        begin_frame_unclaimed();
 
         assert!(tree().is_empty());
     }
@@ -691,8 +729,8 @@ mod tests {
     #[test]
     fn hit_testing_picks_the_deepest_containing_node() {
         reset();
-        let outer = push(&meta("Stack")).unwrap();
-        let inner = push(&meta("Button")).unwrap();
+        let outer = push(&meta("Stack"), None).unwrap();
+        let inner = push(&meta("Button"), None).unwrap();
         pop(
             inner,
             Bounds {
@@ -709,7 +747,7 @@ mod tests {
             },
             None,
         );
-        begin_frame();
+        begin_frame_unclaimed();
 
         let tree = tree();
         let hit = tree
@@ -731,10 +769,10 @@ mod tests {
     fn an_unbalanced_stack_does_not_leak_into_the_next_frame() {
         reset();
         // Push without popping, as a panicking prepaint would leave things.
-        push(&meta("Orphan"));
-        begin_frame();
+        push(&meta("Orphan"), None);
+        begin_frame_unclaimed();
         record("Stack", || {});
-        begin_frame();
+        begin_frame_unclaimed();
 
         let tree = tree();
         assert_eq!(tree.roots.len(), 1);

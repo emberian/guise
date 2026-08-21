@@ -457,7 +457,7 @@ mod tests {
         probe::set_enabled(false);
         probe::set_enabled(true);
         probe::test_record("Root", || {});
-        probe::begin_frame();
+        probe::begin_frame_unclaimed();
         let mut tree = probe::tree();
         build(&mut tree);
         tree

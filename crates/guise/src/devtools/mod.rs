@@ -55,7 +55,9 @@ mod styles;
 mod timelines;
 
 pub use elements::ElementsSidebar;
-pub use probe::{set_enabled, tree, with_tree, Probe, ProbeNode, ProbeTree, Probed, ProbedAny};
+pub use probe::{
+    begin_frame, set_enabled, tree, with_tree, Probe, ProbeNode, ProbeTree, Probed, ProbedAny,
+};
 pub use state::*;
 pub use styles::{box_model, declarations, hex, BoxModel, Declaration};
 
@@ -526,7 +528,7 @@ impl Render for DevTools {
         // Rotate the recorder before anything prepaints this frame, then read
         // the tree the previous frame finished. Doing it here — rather than in
         // the Elements panel — keeps every panel on the same snapshot.
-        probe::begin_frame();
+        probe::begin_frame(window);
         self.tree = probe::tree();
 
         // Open on something rather than on "no element selected", the way the

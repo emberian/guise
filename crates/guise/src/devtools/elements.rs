@@ -15,7 +15,7 @@
 use std::collections::HashSet;
 
 use gpui::prelude::*;
-use gpui::{div, px, AnyElement, Context, Hsla, SharedString, Window};
+use gpui::{div, px, AnyElement, Context, Hsla, ScrollHandle, SharedString, Window};
 
 use super::probe::{ProbeNode, ProbeTree};
 use super::shell::{
@@ -61,6 +61,10 @@ pub struct ElementsPanel {
     /// expanded, matching how Safari reveals new DOM.
     collapsed: HashSet<SharedString>,
     pub(crate) sidebar: ElementsSidebar,
+    /// The tree's scroll, so a selection made from outside the panel can be
+    /// scrolled to. Expanding a node's ancestors reveals it in the list; it
+    /// still has to be brought on screen.
+    scroll: ScrollHandle,
 }
 
 impl ElementsPanel {
@@ -87,6 +91,15 @@ impl ElementsPanel {
             }
         }
         self.selected = Some(key.clone());
+        // The rows are counted after the ancestors are expanded, because that
+        // is what decides which row the node ends up on.
+        if let Some(row) = self
+            .rows(tree)
+            .iter()
+            .position(|index| tree.get(*index).map(|node| &node.key) == Some(key))
+        {
+            self.scroll.scroll_to_top_of_item(row);
+        }
     }
 
     /// The selected node, if it is still in the current tree. A node can vanish
@@ -97,10 +110,11 @@ impl ElementsPanel {
         tree.find(key).and_then(|index| tree.get(index))
     }
 
-    /// Flatten the tree into rows, honouring folds. Each row is
-    /// `(index, is_closing_tag)`; a closing tag is the `</Stack>` line Safari
-    /// prints under an expanded node's children.
-    fn rows(&self, tree: &ProbeTree) -> Vec<(usize, bool)> {
+    /// Flatten the tree into rows, honouring folds. One row per node, and no
+    /// closing row: a browser prints `</div>` because markup nests in text,
+    /// but this tree nests by indentation, where a closing line says nothing
+    /// the next row's indent does not already say — and costs half the panel.
+    fn rows(&self, tree: &ProbeTree) -> Vec<usize> {
         let mut rows = Vec::with_capacity(tree.len());
         for root in &tree.roots {
             self.push_rows(tree, *root, &mut rows);
@@ -108,18 +122,17 @@ impl ElementsPanel {
         rows
     }
 
-    fn push_rows(&self, tree: &ProbeTree, index: usize, rows: &mut Vec<(usize, bool)>) {
+    fn push_rows(&self, tree: &ProbeTree, index: usize, rows: &mut Vec<usize>) {
         let Some(node) = tree.get(index) else {
             return;
         };
-        rows.push((index, false));
+        rows.push(index);
         if node.is_leaf() || self.is_collapsed(&node.key) {
             return;
         }
         for child in &node.children {
             self.push_rows(tree, *child, rows);
         }
-        rows.push((index, true));
     }
 
     pub fn render(
@@ -158,6 +171,7 @@ impl ElementsPanel {
         let rows = self.rows(tree);
         let mut list = div()
             .id("devtools-elements-tree")
+            .track_scroll(&self.scroll)
             .flex()
             .flex_col()
             .flex_1()
@@ -168,11 +182,11 @@ impl ElementsPanel {
             .font_family(MONO_FAMILY)
             .text_size(px(MONO_SIZE));
 
-        for (index, closing) in rows {
+        for index in rows {
             let Some(node) = tree.get(index) else {
                 continue;
             };
-            list = list.child(self.row(node, index, closing, ink, cx));
+            list = list.child(self.row(node, index, ink, cx));
         }
 
         div()
@@ -192,12 +206,11 @@ impl ElementsPanel {
         &self,
         node: &ProbeNode,
         index: usize,
-        closing: bool,
         ink: &Ink,
         cx: &mut Context<DevTools>,
     ) -> AnyElement {
         let selected = self.selected.as_ref() == Some(&node.key);
-        let expandable = !node.is_leaf() && !closing;
+        let expandable = !node.is_leaf();
         let expanded = !self.is_collapsed(&node.key);
         let indent = node.depth as f32 * 12.0 + 6.0;
         let text_color = if selected {
@@ -216,6 +229,9 @@ impl ElementsPanel {
         let key_for_click = node.key.clone();
         let key_for_toggle = node.key.clone();
 
+        // The component, then its props as a YAML flow mapping. These are
+        // builder arguments, not markup attributes, so they are printed the way
+        // the Styles pane prints a declaration rather than the way HTML would.
         let mut markup = div()
             .flex()
             .items_center()
@@ -224,11 +240,6 @@ impl ElementsPanel {
             .min_w(px(0.0))
             .overflow_hidden()
             .whitespace_nowrap()
-            .child(div().flex_none().text_color(punct).child(if closing {
-                SharedString::new_static("</")
-            } else {
-                SharedString::new_static("<")
-            }))
             .child(
                 div()
                     .flex_none()
@@ -236,48 +247,44 @@ impl ElementsPanel {
                     .child(node.name.clone()),
             );
 
-        if !closing {
-            for (name, value) in &node.attrs {
-                markup = markup.child(
-                    div()
-                        .flex()
-                        .flex_none()
-                        .child(div().text_color(punct).child(SharedString::new_static(" ")))
+        for (position, (name, value)) in node.attrs.iter().enumerate() {
+            markup = markup.child(
+                div()
+                    .flex()
+                    .flex_none()
+                    .child(div().text_color(punct).child(SharedString::new_static(
+                        if position == 0 { "   " } else { ", " },
+                    )))
+                    .child(
+                        div()
+                            .text_color(if selected {
+                                ink.selected_text
+                            } else {
+                                ink.attr
+                            })
+                            .child(name.clone()),
+                    )
+                    .when(!value.is_empty(), |el| {
+                        el.child(
+                            div()
+                                .text_color(punct)
+                                .child(SharedString::new_static(": ")),
+                        )
                         .child(
                             div()
                                 .text_color(if selected {
                                     ink.selected_text
                                 } else {
-                                    ink.attr
+                                    ink.value
                                 })
-                                .child(name.clone()),
+                                .child(value.clone()),
                         )
-                        .when(!value.is_empty(), |el| {
-                            el.child(div().text_color(punct).child(SharedString::new_static("=")))
-                                .child(
-                                    div()
-                                        .text_color(if selected {
-                                            ink.selected_text
-                                        } else {
-                                            ink.value
-                                        })
-                                        .child(SharedString::from(format!("\"{value}\""))),
-                                )
-                        }),
-                );
-            }
+                    }),
+            );
         }
 
-        markup = markup.child(div().flex_none().text_color(punct).child(
-            if !closing && node.is_leaf() {
-                SharedString::new_static(" />")
-            } else {
-                SharedString::new_static(">")
-            },
-        ));
-
         div()
-            .id(("devtools-element-row", index * 2 + closing as usize))
+            .id(("devtools-element-row", index))
             .flex()
             .items_center()
             .flex_none()
@@ -290,7 +297,7 @@ impl ElementsPanel {
             .when(!selected, |el| el.hover(move |st| st.bg(hover_bg)))
             .child(
                 div()
-                    .id(("devtools-element-twisty", index * 2 + closing as usize))
+                    .id(("devtools-element-twisty", index))
                     .flex()
                     .flex_none()
                     .items_center()
@@ -999,7 +1006,7 @@ mod tests {
         probe::set_enabled(false);
         probe::set_enabled(true);
         build();
-        probe::begin_frame();
+        probe::begin_frame_unclaimed();
         probe::tree()
     }
 
@@ -1008,8 +1015,10 @@ mod tests {
         probe::test_record(name, children);
     }
 
+    /// One row per node, however deep — the tree nests by indentation, so a
+    /// container costs one line and not two.
     #[test]
-    fn a_leaf_produces_one_row_and_a_parent_produces_two() {
+    fn every_node_produces_exactly_one_row() {
         let panel = ElementsPanel::default();
         let tree = tree_of(|| {
             node("Stack", || {
@@ -1017,16 +1026,11 @@ mod tests {
             });
         });
 
-        let rows = panel.rows(&tree);
-        // Stack open, Button (leaf), Stack close.
-        assert_eq!(rows.len(), 3);
-        assert_eq!(rows[0], (0, false));
-        assert_eq!(rows[1], (1, false));
-        assert_eq!(rows[2], (0, true));
+        assert_eq!(panel.rows(&tree), vec![0, 1]);
     }
 
     #[test]
-    fn collapsing_hides_children_and_the_closing_tag() {
+    fn collapsing_hides_children() {
         let mut panel = ElementsPanel::default();
         let tree = tree_of(|| {
             node("Stack", || {
@@ -1036,8 +1040,7 @@ mod tests {
         });
 
         panel.toggle(&tree.nodes[0].key.clone());
-        let rows = panel.rows(&tree);
-        assert_eq!(rows, vec![(0, false)]);
+        assert_eq!(panel.rows(&tree), vec![0]);
     }
 
     #[test]
@@ -1048,7 +1051,7 @@ mod tests {
 
         panel.toggle(&key);
         panel.toggle(&key);
-        assert_eq!(panel.rows(&tree).len(), 3);
+        assert_eq!(panel.rows(&tree), vec![0, 1]);
     }
 
     #[test]
@@ -1062,7 +1065,7 @@ mod tests {
         panel.reveal(&tree, &leaf);
 
         assert_eq!(panel.selected.as_ref(), Some(&leaf));
-        assert!(panel.rows(&tree).iter().any(|(index, _)| *index == 2));
+        assert!(panel.rows(&tree).contains(&2));
     }
 
     #[test]

@@ -15,7 +15,15 @@ DevToolsState::new().init(cx);
 let devtools = cx.new(DevTools::new);
 ```
 
-That is the whole integration for the panels that inspect the UI. Try it:
+That is the whole integration for the panels that inspect the UI.
+
+An inspector records the window it is rendered in, and only that one. The
+recorder is per thread rather than per window, so an inspector claims the
+current frame when it renders and every other window your app draws that frame
+is skipped — put the inspector in the window whose components you want to see.
+Two inspectors in two windows take that claim from each other every frame and
+both come up empty; there is one tree, and showing each of them a tree of both
+windows would be worse than showing neither. Try it:
 
 ```sh
 cargo run -p guise-ui --example devtools           # opens on Elements
@@ -46,8 +54,15 @@ The panel is named for the half that transfers.
 ## Elements
 
 The tree is the **component** hierarchy, not a wall of anonymous containers:
-`<Button variant="filled" size="sm" />`, foldable, with the closing tags Safari
-prints. Selecting a node fills the sidebar.
+`Button   variant: filled, size: sm`, foldable, one row per component.
+
+It is an indented tree rather than the markup a browser prints, because these
+are components built from builder calls, not tags: there is no attributes-versus
+-children distinction to draw, `<Button … />` would promise a model gpui does
+not have, and a closing row says nothing the next row's indentation has not
+already said while costing a container half the panel. Props read as a YAML flow
+mapping, the way the Styles pane reads a declaration. Selecting a node fills the
+sidebar.
 
 - **Styles** — the element's own declarations, rendered as a CSS rule, with color
   swatches and the source location it was constructed at. Click the location in
@@ -94,9 +109,9 @@ release-build frame.
 | --- | --- |
 | `probe(name)` | The normal case. Snapshots the element's style, which is what fills the Styles sidebar. Needs `Styled`. |
 | `probe_any(name)` | For a component that returns something already composed — a `Field`, a `deferred(..)` overlay. No style snapshot; the wrapped component reports its own. |
-| `attr(name, value)` | An attribute shown inline after the tag. |
+| `attr(name, value)` | A prop shown inline after the component's name. |
 | `attr_with(name, \|\| …)` | The same, but the value is only built while recording. |
-| `attr_if(name, bool)` | A bare attribute, the way HTML writes `disabled`. |
+| `attr_if(name, bool)` | A prop with no value, printed on its own when true — `dimmed` rather than `dimmed: true`. |
 
 ## Logs
 
@@ -238,8 +253,8 @@ if devtools.read(cx).is_picking() {
 }
 ```
 
-`pick_at` selects the deepest recorded node containing that point, reveals it in
-Elements, and disarms. `DevTools::selected_bounds` gives the selection's bounds
+`pick_at` selects the deepest recorded node containing that point, expands its
+ancestors, scrolls the tree to it, and disarms. `DevTools::selected_bounds` gives the selection's bounds
 back, for a host that wants to paint a highlight over its own window.
 
 ## Cost
