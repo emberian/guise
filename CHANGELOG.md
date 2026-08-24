@@ -5,6 +5,25 @@ follow [semver](https://semver.org): from 1.0 on, a breaking change means a
 major release, and is called out under **Breaking**. Releases before 1.0 landed
 breaking changes in minor versions.
 
+## 1.4.0 — 2026-08-24
+
+### ScrollArea fills
+
+`ScrollArea` had one way to be bounded — `max_height(f32)` — which is right for
+a list that takes a known slice of a larger layout and wrong for the other
+common desktop shape: a pane as tall as whatever the window gives it. There was
+no way to say that, so apps dropped the component and hand-rolled
+`div().id(..).size_full().overflow_y_scroll()`, leaving two scrolling idioms in
+one codebase.
+
+`ScrollArea::new("settings").fill()` is that mode. It grows into the leftover
+main axis under a flex parent and takes the height under a plain block one
+(gpui's default display, and what a route body usually is), so it does not care
+which shape it is mounted in. `max_height` is unchanged, and the two compose:
+`.fill().max_height(600.0)` grows with the window but never past 600px.
+
+Tailor's scroll area gets a **Fill parent** checkbox for the same thing.
+
 ## 1.3.0 — 2026-08-24
 
 An animation system, in the shape of [anime.js](https://animejs.com), and

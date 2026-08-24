@@ -1233,3 +1233,101 @@ fn a_new_animator_does_not_start_itself(cx: &mut TestAppContext) {
         assert_eq!(animator.time(), 0.0);
     });
 }
+
+// --- layout -----------------------------------------------------------------
+
+/// A window whose whole body is one filling `ScrollArea` over content far
+/// taller than any window, under a parent of the caller's choosing. The probe
+/// recorder is what reports the laid-out bounds, so a `DevTools` has to share
+/// the frame for any of this to be observable.
+struct Filled {
+    devtools: Entity<DevTools>,
+    header: bool,
+}
+
+impl Render for Filled {
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        let area = crate::ScrollArea::new("pane")
+            .fill()
+            .children((0..50).map(|row| div().h(gpui::px(40.0)).child(format!("row {row}"))));
+        // Two parents, because they lay out differently: a flex column where
+        // the pane has to claim what a sibling left, and a plain block box
+        // where nothing grows and the pane has to take the height itself.
+        let body = if self.header {
+            div()
+                .flex()
+                .flex_col()
+                .size_full()
+                .child(div().h(gpui::px(64.0)).child("header"))
+                .child(area)
+        } else {
+            div().size_full().child(area)
+        };
+        div()
+            .flex()
+            .size_full()
+            .child(body.w(gpui::px(400.0)))
+            .child(self.devtools.clone())
+            .probe("Filled")
+    }
+}
+
+/// The bounds the recorder captured for the named component in the last frame.
+fn probed_height(view: &Entity<Filled>, name: &str, cx: &mut gpui::VisualTestContext) -> f32 {
+    view.read_with(cx, |this, cx| {
+        this.devtools
+            .read(cx)
+            .tree()
+            .nodes
+            .iter()
+            .find(|node| node.name == name)
+            .unwrap_or_else(|| panic!("{name} was not recorded"))
+            .bounds
+            .size
+            .height
+            .to_f64() as f32
+    })
+}
+
+fn filled(header: bool, cx: &mut TestAppContext) -> (Entity<Filled>, &mut gpui::VisualTestContext) {
+    cx.update(|cx| {
+        Theme::light().init(cx);
+        DevToolsState::new().init(cx);
+    });
+    let (view, cx) = cx.add_window_view(|_window, cx| Filled {
+        devtools: cx.new(DevTools::new),
+        header,
+    });
+    cx.run_until_parked();
+    // The tree the panel reads is the one the *previous* frame recorded.
+    view.update(cx, |_this, cx| cx.notify());
+    cx.run_until_parked();
+    (view, cx)
+}
+
+/// `fill` under a flex parent: the pane takes what the header left and stops,
+/// rather than growing to its 2000px of content.
+#[gpui::test]
+fn a_filling_scrollarea_claims_the_rest_of_a_flex_column(cx: &mut TestAppContext) {
+    let (view, cx) = filled(true, cx);
+    let window = probed_height(&view, "Filled", cx);
+    let pane = probed_height(&view, "ScrollArea", cx);
+    assert!(window > 0.0, "the window measured nothing");
+    assert_eq!(
+        pane,
+        window - 64.0,
+        "the pane should be the window less the header"
+    );
+}
+
+/// `fill` under a plain block parent — gpui's default display, and the shape a
+/// route body usually has. Nothing grows here, so the relative height is what
+/// bounds it.
+#[gpui::test]
+fn a_filling_scrollarea_takes_the_height_of_a_block_parent(cx: &mut TestAppContext) {
+    let (view, cx) = filled(false, cx);
+    let window = probed_height(&view, "Filled", cx);
+    let pane = probed_height(&view, "ScrollArea", cx);
+    assert!(window > 0.0, "the window measured nothing");
+    assert_eq!(pane, window, "the pane should be the full window height");
+}

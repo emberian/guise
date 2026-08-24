@@ -123,14 +123,33 @@ A bounded, scrollable container — desktop UIs scroll, but most builders assume
 their content fits. Each instance needs a unique id so gpui can track its scroll
 offset. Implements `ParentElement`.
 
+There are two ways to bound one, and which is right is a layout question rather
+than a preference. `max_height` fixes the height in pixels — for a list that
+takes a known slice of a larger layout:
+
 ```rust
 ScrollArea::new("log")
     .max_height(240.0)
     .children(rows)
 ```
 
-Methods: `new(id)`, `max_height(f32)`, `horizontal(bool)` (scroll the x axis
-instead).
+`fill` takes whatever the parent has left over instead — for a pane that should
+be as tall as the window, where any fixed number is wrong at every size but one:
+
+```rust
+div().flex().flex_col().size_full()
+    .child(header)
+    .child(ScrollArea::new("settings").fill().children(sections))
+```
+
+It works both as a flex child (it grows into the leftover main axis) and inside
+a plain block parent, which is what a route body usually is. The parent still
+has to be bounded itself — filling an unbounded parent sizes to the content, and
+there is nothing to scroll. The two compose: `.fill().max_height(600.0)` grows
+with the window but never past 600px.
+
+Methods: `new(id)`, `max_height(f32)`, `fill()`, `horizontal(bool)` (scroll the
+x axis instead).
 
 ## Paper
 
