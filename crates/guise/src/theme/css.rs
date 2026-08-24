@@ -130,7 +130,7 @@ fn parse_hex(hex: &str) -> Option<Hsla> {
 
 fn tokens(inner: &str) -> Vec<&str> {
     inner
-        .split(|c| c == ',' || c == ' ' || c == '/')
+        .split([',', ' ', '/'])
         .filter(|t| !t.is_empty())
         .collect()
 }
@@ -340,7 +340,7 @@ mod tests {
     #[test]
     fn hex_forms() {
         assert_eq!(css("#228be6").unwrap(), rgb(0x22, 0x8b, 0xe6));
-        assert_eq!(css("228be6").is_err(), true); // needs the leading '#'
+        assert!(css("228be6").is_err()); // needs the leading '#'
         assert_eq!(css("#fff").unwrap(), rgb(255, 255, 255));
         assert_eq!(
             css("#ff000080").unwrap(),

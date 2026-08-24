@@ -10,6 +10,7 @@ use gpui::prelude::*;
 use gpui::{div, Context, Entity, Modifiers, MouseButton, TestAppContext, Window};
 
 use crate::ai::{AIChatView, AIComposer, AIComposerEvent, AITurn};
+use crate::anim::{Animator, AnimatorEvent, Easing, Motion, Prop, Stagger};
 use crate::devtools::{
     DevTools, DevToolsEvent, DevToolsState, DevToolsTab, LogLevel, NetworkRecord, Probed,
     RequestState, SourceRef, StorageDomain, StorageEntry,
@@ -22,7 +23,7 @@ use crate::update::{
     is_installing, Release, UpdateNotice, UpdateNoticeEvent, UpdateOutcome, UpdatePrompt,
     UpdatePromptEvent, UpdateStage, Updater,
 };
-use crate::{Carousel, CarouselEvent};
+use crate::{Carousel, CarouselEvent, TransitionKind};
 
 #[gpui::test]
 fn signal_binding_and_lens_round_trip(cx: &mut TestAppContext) {
@@ -1111,4 +1112,124 @@ fn a_view_with_no_pages_has_no_active_page(cx: &mut TestAppContext) {
         empty.read_with(cx, |view, _| view.active_page().cloned()),
         None
     );
+}
+
+#[gpui::test]
+fn animator_scrubs_without_a_clock(cx: &mut TestAppContext) {
+    use std::time::Instant;
+
+    let motion = Motion::new()
+        .duration(1000.0)
+        .ease(Easing::Linear)
+        .tween(Prop::Opacity, 0.0, 1.0);
+    let animator = cx.update(|cx| cx.new(|cx| Animator::new(motion, cx)));
+
+    animator.update(cx, |animator, cx| animator.seek(500.0, cx));
+    cx.update(|cx| {
+        let animator = animator.read(cx);
+        // Stopped: the playhead is exactly where it was put, and stays there.
+        assert!(!animator.is_playing());
+        let frame = animator.frame_at(Instant::now());
+        assert!((frame.number(Prop::Opacity).unwrap() - 0.5).abs() < 1e-4);
+        assert!((frame.progress - 0.5).abs() < 1e-4);
+    });
+
+    animator.update(cx, |animator, cx| animator.seek_progress(0.25, cx));
+    cx.update(|cx| {
+        assert!((animator.read(cx).time() - 250.0).abs() < 1e-4);
+    });
+}
+
+#[gpui::test]
+fn animator_completes_at_the_end_and_can_run_back(cx: &mut TestAppContext) {
+    use std::cell::RefCell;
+    use std::rc::Rc;
+    use std::time::Duration;
+
+    let motion = Motion::new()
+        .duration(200.0)
+        .ease(Easing::Linear)
+        .tween(Prop::Opacity, 0.0, 1.0);
+    let animator = cx.update(|cx| cx.new(|cx| Animator::new(motion, cx)));
+    let seen: Rc<RefCell<Vec<AnimatorEvent>>> = Rc::default();
+    let log = seen.clone();
+    cx.update(|cx| {
+        cx.subscribe(&animator, move |_animator, event: &AnimatorEvent, _cx| {
+            log.borrow_mut().push(*event);
+        })
+        .detach();
+    });
+
+    animator.update(cx, |animator, cx| animator.play(cx));
+    cx.executor().advance_clock(Duration::from_millis(500));
+    cx.run_until_parked();
+
+    cx.update(|cx| {
+        let animator = animator.read(cx);
+        assert!(!animator.is_playing());
+        assert_eq!(animator.time(), 200.0);
+    });
+    assert_eq!(
+        *seen.borrow(),
+        vec![AnimatorEvent::Begin, AnimatorEvent::Complete]
+    );
+
+    // Reversing from the end runs the same clip the other way.
+    animator.update(cx, |animator, cx| {
+        animator.reverse(cx);
+        animator.play(cx);
+    });
+    cx.executor().advance_clock(Duration::from_millis(500));
+    cx.run_until_parked();
+    cx.update(|cx| {
+        let animator = animator.read(cx);
+        assert!(animator.is_reversed());
+        assert_eq!(animator.time(), 0.0);
+    });
+}
+
+#[gpui::test]
+fn an_endless_animator_never_completes(cx: &mut TestAppContext) {
+    use std::time::Duration;
+
+    let animator = cx.update(|cx| cx.new(|cx| Animator::new(Motion::pulse(), cx).autoplay(cx)));
+    cx.executor().advance_clock(Duration::from_secs(5));
+    cx.run_until_parked();
+    cx.update(|cx| {
+        let animator = animator.read(cx);
+        assert!(animator.is_playing());
+        assert!(!animator.frame_at(std::time::Instant::now()).finished);
+    });
+}
+
+#[gpui::test]
+fn a_staggered_entrance_holds_every_row_hidden_until_its_turn(cx: &mut TestAppContext) {
+    let _ = cx;
+    let stagger = Stagger::new(60.0);
+    let rows = 4;
+    for index in 0..rows {
+        let motion = Motion::enter(TransitionKind::SlideUp).delay(stagger.at(index, rows));
+        // At 100ms only the first two rows have started moving.
+        let frame = motion.sample(100.0);
+        let opacity = frame.number(Prop::Opacity).unwrap();
+        if index < 2 {
+            assert!(opacity > 0.0, "row {index} should be moving");
+        } else {
+            assert_eq!(opacity, 0.0, "row {index} should still be waiting");
+        }
+    }
+    assert_eq!(stagger.span(rows), 180.0);
+}
+
+/// A clip is not a commitment to run it. Everything else about `Animator`
+/// assumes a stopped start, including the "replay a finished clip" branch in
+/// `play`.
+#[gpui::test]
+fn a_new_animator_does_not_start_itself(cx: &mut TestAppContext) {
+    let animator = cx.update(|cx| cx.new(|cx| Animator::new(Motion::pulse(), cx)));
+    cx.update(|cx| {
+        let animator = animator.read(cx);
+        assert!(!animator.is_playing());
+        assert_eq!(animator.time(), 0.0);
+    });
 }

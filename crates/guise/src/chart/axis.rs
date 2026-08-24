@@ -106,7 +106,7 @@ mod tests {
 
     #[test]
     fn degenerate_ranges_fall_back() {
-        assert_eq!(nice_ticks(5.0, 5.0, 4).len() >= 2, true);
+        assert!(nice_ticks(5.0, 5.0, 4).len() >= 2);
         assert_eq!(nice_ticks(f32::NAN, 3.0, 4), nice_ticks(0.0, 1.0, 4));
         assert!(nice_ticks(9.0, 2.0, 4).len() >= 2);
     }

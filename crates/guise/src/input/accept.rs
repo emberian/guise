@@ -19,7 +19,7 @@ pub(crate) fn path_accepted(path: &Path, accept: &[String]) -> bool {
         .and_then(|e| e.to_str())
         .is_some_and(|ext| {
             let ext = ext.to_ascii_lowercase();
-            accept.iter().any(|a| *a == ext)
+            accept.contains(&ext)
         })
 }
 

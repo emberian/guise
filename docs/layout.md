@@ -2,7 +2,7 @@
 
 The `guise::layout` components use the theme's spacing tokens. They cover the
 common cases; for a full Flutter-style box model see [Flex layout](flex.md), and
-for terse construction see [Layout macros](macros.md).
+for terse construction see [Macros](macros.md).
 
 All container components implement `ParentElement`, so `.child(...)` /
 `.children(...)` work.

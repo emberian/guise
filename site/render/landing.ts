@@ -188,9 +188,9 @@ export function renderLanding(): string {
 
   const systems = [
     ["Flex layout", "Row · Column · Expanded · Wrap", "flex.html"],
-    ["Layout macros", "row! · col! · zstack! · style!", "macros.html"],
+    ["Macros", "row! · col! · style! · motion!", "macros.html"],
     ["Reactive state", "Signal · use_state · use_form", "reactive.html"],
-    ["Transitions", "Transition · Collapse", "transitions.html"],
+    ["Motion", "Motion · Sequence · Stagger · Animator", "transitions.html"],
     ["Theming", "14 hues × 10 shades · light / dark", "theming.html"],
     ["Native WebView", "WKWebView · WebView2 · WebKitGTK", "webview.html"],
     ["Drag &amp; drop", "Draggable · DropTarget · SortableList", "dnd.html"],

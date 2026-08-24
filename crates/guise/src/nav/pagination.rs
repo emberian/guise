@@ -73,33 +73,6 @@ fn page_range(total: usize, active: usize) -> Vec<Option<usize>> {
     pages
 }
 
-#[cfg(test)]
-mod tests {
-    use super::page_range;
-
-    #[test]
-    fn small_totals_show_every_page() {
-        assert_eq!(
-            page_range(5, 3),
-            vec![Some(1), Some(2), Some(3), Some(4), Some(5)]
-        );
-    }
-
-    #[test]
-    fn large_totals_window_with_ellipses() {
-        // active in the middle: 1 … 4 5 6 … 10
-        assert_eq!(
-            page_range(10, 5),
-            vec![Some(1), None, Some(4), Some(5), Some(6), None, Some(10)]
-        );
-        // active near the start: no leading ellipsis
-        assert_eq!(
-            page_range(10, 2),
-            vec![Some(1), Some(2), Some(3), None, Some(10)]
-        );
-    }
-}
-
 impl Render for Pagination {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let t = theme(cx);
@@ -203,5 +176,32 @@ impl Render for Pagination {
         }
 
         row.child(next).probe("Pagination")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::page_range;
+
+    #[test]
+    fn small_totals_show_every_page() {
+        assert_eq!(
+            page_range(5, 3),
+            vec![Some(1), Some(2), Some(3), Some(4), Some(5)]
+        );
+    }
+
+    #[test]
+    fn large_totals_window_with_ellipses() {
+        // active in the middle: 1 … 4 5 6 … 10
+        assert_eq!(
+            page_range(10, 5),
+            vec![Some(1), None, Some(4), Some(5), Some(6), None, Some(10)]
+        );
+        // active near the start: no leading ellipsis
+        assert_eq!(
+            page_range(10, 2),
+            vec![Some(1), Some(2), Some(3), None, Some(10)]
+        );
     }
 }

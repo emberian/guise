@@ -126,13 +126,13 @@ impl LineState {
     }
 }
 
-/// A field that can be drawn and driven by [`Line`].
+/// A field that can be drawn and driven by this module's `Line` element.
 ///
 /// Implementors keep the buffer and the [`LineState`]; everything else — glyph
 /// layout, hit-testing, scrolling, IME, the clipboard — is shared.
 /// The platform trait comes along for the ride: a field that can be drawn by
-/// [`Line`] is by definition one the OS can drive text into, and every
-/// implementor gets it from [`line_input_handler!`].
+/// `Line` is by definition one the OS can drive text into, and every
+/// implementor gets it from the crate's `line_input_handler!` macro.
 pub trait LineEditor: 'static + Sized + gpui::EntityInputHandler {
     fn edit(&self) -> &TextEdit;
     fn edit_mut(&mut self) -> &mut TextEdit;

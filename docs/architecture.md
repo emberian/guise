@@ -68,8 +68,8 @@ crates.io — with `[lib] name = "guise"`. Cargo commands address the package as
 | `settings/` | `SettingsView`, `SettingsSection`, `SettingsRow` — settings-screen chrome only; the schema and the write path stay in the app |
 | `devtools/` | `DevTools` — a Safari-shaped inspector for the app itself: an Elements tree recorded by `Probed::probe` (with real `StyleRefinement` snapshots), plus Logs / Network / Storage / Timelines fed by the host, Sources read off disk, and an Audit computed from the tree |
 | `update/` | self-update: `Updater`/`UpdateConfig` (release check + in-place install, gpui-free), SHA-256 verification of the download (`checksum.rs`), and the `UpdatePrompt`/`UpdateNotice` entities that drive it |
-| `macros.rs` | the `row!`/`col!`/… layout macros |
-| `anim/` | `Easing` curves, `Spring` physics, `Presence` (exit animations) |
+| `macros.rs` | the `row!`/`col!`/… container macros, plus `style!` and `color!` |
+| `anim/` | The animation system: `Easing`/`Curve`, `Spring`, keyframed `Motion`, `Sequence`, `Stagger`, the `Animated`/`.animate(..)` one-shots, the `Animator` playhead, `Presence` (exit animations), and the `motion!` / `sequence!` macros |
 | `dnd/` | `Draggable`, `DropTarget`, `SortableList` — typed drag payloads |
 | `transition.rs` | `Transition` / `Collapse` (true height) animations |
 | `webview.rs` | `WebView` — native embedded web view via `wry` (default-on `webview` feature) |

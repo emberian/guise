@@ -596,11 +596,13 @@ impl MarkdownEditor {
                 if self.read_only {
                     return;
                 }
-                if self.model.selection().is_none() && !m.platform && !m.alt {
-                    if self.backspace_marker(cx) {
-                        cx.stop_propagation();
-                        return;
-                    }
+                if self.model.selection().is_none()
+                    && !m.platform
+                    && !m.alt
+                    && self.backspace_marker(cx)
+                {
+                    cx.stop_propagation();
+                    return;
                 }
                 let changed = if self.model.selection().is_some() {
                     self.model.delete_selection()

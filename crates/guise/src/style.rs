@@ -12,7 +12,7 @@ use crate::theme::{ColorName, Size, Theme};
 /// falls back to the prose font, which is how code stops looking like code.
 pub(crate) const MONO_FAMILY: &str = "Menlo";
 
-/// Apply an element transform — notably a [`style!`](crate::style) block — to
+/// Apply an element transform — notably a [`style!`](crate::style!) block — to
 /// any styled element: `div().apply(style! { … })`.
 pub trait StyleExt: Sized {
     /// Run `f` on `self` and return the result. `style!` produces exactly the

@@ -145,7 +145,7 @@ Three things to notice:
   [semantic colors](theming.md#semantic-colors-scheme-aware).
 
 > **Tip** `use guise::prelude::*;` brings in every component, the theme types,
-> the layout macros, and the reactive helpers. It deliberately excludes
+> the macros, and the reactive helpers. It deliberately excludes
 > [`guise::flex`](flex.md) — those names (`Row`, `Column`, `Container`) overlap
 > the themed layout module and must be imported explicitly.
 
@@ -1426,8 +1426,10 @@ palette, charts.
   [typography](typography.md) — every component used here has a fuller entry.
 - [Theming](theming.md) for palettes, scales, and CSS colors;
   [Reactive state](reactive.md) for signals, bindings, context, and forms.
-- [Flex layout](flex.md) and the [layout macros](macros.md) (`row!`, `col!`,
+- [Flex layout](flex.md) and the [macros](macros.md) (`row!`, `col!`,
   `zstack!`) when pixel-based, Flutter-style layout fits better than tokens.
+- The [motion tutorial](motiontutorial.md) — the same shape as this one, nine
+  chapters, for animation: entrances, stagger, keyframes, a playhead, exits.
 - The **gallery** (`cargo run -p gallery` in the guise repo) — live, compiling
   wiring for every component, with a "view source" toggle per section.
 

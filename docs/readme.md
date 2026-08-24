@@ -4,10 +4,11 @@ A component library for [gpui](https://github.com/zed-industries/zed), and the
 visual interface builder that draws with it.
 
 `guise` gives you a themed palette, sizing tokens, 130+ ready-made components,
-a Flutter-style flexbox layer, terse layout macros, an animation toolkit
-(easings, springs, exit transitions), typed drag & drop, and a lightweight
-React-style state layer (signals, two-way bindings, and a reactive form) —
-all on top of gpui's retained-mode renderer.
+a Flutter-style flexbox layer, terse macros for layout and motion, an
+animation system (keyframes, sequences, stagger, springs, and a playhead you
+can scrub), typed drag & drop, and a lightweight React-style state layer
+(signals, two-way bindings, and a reactive form) — all on top of gpui's
+retained-mode renderer.
 
 **[Tailor](tailor.md)** ships in the same repository: drag those components onto
 a canvas, wire the state and the actions, and export idiomatic Rust. Write the
@@ -18,6 +19,7 @@ interface or draw it — you end up with the same components either way.
 - [Getting started](gettingstarted.md) — add the crate, install a theme, render your first window.
 - [Tutorial](tutorial.md) — build a complete app step by step, from an empty window to bound data views.
 - [App walkthrough](appguide.md) — a project tracker wired the way a real guise app fits together: forms, overlays, reordering, motion.
+- [Motion tutorial](motiontutorial.md) — one animated panel, nine chapters: entrances, stagger, keyframes, a playhead, and exits.
 - [Theming](theming.md) — the palette, scales, semantic colors, JSON theme files, and prebuilt presets.
 - [Component model](components.md) — how components are built (`RenderOnce` builders vs. stateful entities), variants, sizes, and event handlers.
 
@@ -44,8 +46,8 @@ interface or draw it — you end up with the same components either way.
 ## Systems
 
 - [Flex layout](flex.md) — `guise::flex`: `Row`, `Column`, `Container`, `Expanded`, `Stack`, …
-- [Layout macros](macros.md) — `row!`, `col!`, `zstack!`, `wrap!`, `vstack!`, `hstack!`
-- [Transitions & animation](transitions.md) — `Easing` curves, `Spring` physics, `Transition`, `Collapse` (true height), `Presence` (exit animations)
+- [Macros](macros.md) — `row!`, `col!`, `zstack!`, `vstack!`, `hstack!`, plus `style!`, `color!`, `motion!` and `sequence!`
+- [Motion & transitions](transitions.md) — keyframed `Motion`, `Sequence`, `Stagger`, the `Animator` playhead, `Easing`/`Spring` curves, `Transition`, `Collapse` (true height), `Presence` (exit animations)
 - [Drag & drop](dnd.md) — `Draggable`, `DropTarget`, `SortableList` with typed payloads
 - [Reactive state](reactive.md) — `Signal`, `Binding` (two-way `.bind`), `provide`/`use_context`, `use_state`/`watch`/`use_memo`/`use_effect`, and the reactive `Form`
 - [Software update](update.md) — `Updater`, `UpdatePrompt`, `UpdateNotice`: release check, in-place install, and the prompt that runs it

@@ -155,7 +155,7 @@ impl RenderOnce for AreaChart {
                         grid,
                     ));
                 }
-                let zero = normalize_between(&vec![0.0; 2], lo, hi)[0];
+                let zero = normalize_between(&[0.0; 2], lo, hi)[0];
                 let mut below: Option<Vec<f32>> = None;
                 for (i, layer) in layers.iter().enumerate() {
                     let ys = normalize_between(layer, lo, hi);

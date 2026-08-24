@@ -5,6 +5,130 @@ follow [semver](https://semver.org): from 1.0 on, a breaking change means a
 major release, and is called out under **Breaking**. Releases before 1.0 landed
 breaking changes in minor versions.
 
+## 1.3.0 — 2026-08-24
+
+An animation system, in the shape of [anime.js](https://animejs.com), and
+Tailor learns to use it.
+
+### Motion
+
+`guise::anim` grew from "easing curves plus `Presence`" into the whole thing,
+and it splits in two.
+
+The **description** is pure. A `Motion` is keyframed tracks over a duration; a
+`Sequence` places motions on one clock (anime.js's timeline, with absolute,
+relative, alongside-the-previous and label positions); a `Stagger` maps an
+index to a delay, with `from`, grid distance, axis, easing and range spreading.
+`sample(t)` maps a millisecond offset to a `Frame` — the properties that have a
+value at that instant — with no state, no window, and nothing to tick, which is
+why all of it is unit-tested without a gpui app.
+
+The **clock** is a thin shell over it. `Animated::new(id).motion(..)` plays a
+clip once when its element mounts; `Motioned::animate(id, clip)` does the same
+straight onto anything already `Styled`, which is what a layout wants — a
+wrapper is a new flex item, and a `w_full` child would start measuring against
+it. `Animator` is an entity that owns a playhead: play, pause, reverse, seek,
+speed, with `Begin`/`Complete` events. It holds a clock *anchor* rather than
+ticking, so a paused animation costs nothing, seeking is one assignment, and
+sampling is pure enough to test.
+
+gpui has no transform matrix on an element, so `Prop` names what there actually
+is: opacity, the relative inset (an element moves, the layout does not), the
+box, and colours — plus `Rotate`, `Scale` and `Custom("name")`, which a frame
+carries for you to read back and apply yourself.
+
+`cargo run -p guise-ui --example motion` is all of it in one window, and
+`--example checklist` is the app the new [motion
+tutorial](docs/motiontutorial.md) builds over nine chapters.
+
+### Two macros, in the shape of the layout ones
+
+`motion!` is to an animation what `style!` is to a box — timing and tracks as
+one block instead of a chain of setters:
+
+```rust
+div().child(card).animate("card", motion! {
+    enter: slide_up 12;
+    duration: 420;
+    ease: out back;
+    opacity: 0 => 1;
+})
+```
+
+A track is `prop: from => to`, or `prop: from => [a, b]` for more than two
+states. Easing is a direction and a shape (`out back`, `in_out sine`), with
+`linear`, `spring` and `steps(n)` standing alone. `custom("name")` tweens a
+number that is not a style at all.
+
+`sequence!` is the variadic one — what `col!` does for children, for motions on
+a clock. A position in front of an entry places it: `rel(-120) => slide_up`
+overlaps the tail, `with(0) => tint` runs alongside the previous one.
+
+Both expand to the builder, so the two forms mix and anything the block does
+not cover still chains.
+
+Two smaller things fell out of writing the tutorial with them.
+`Motioned::animate_when(cond, id, clip)` exists because
+`.when(cond, |el| el.animate(..))` cannot compile — `animate` changes the
+element's type and `when` must return the type it was given. And a keyframe
+list now takes bare values *or* built `Keyframe`s, through a small
+`IntoKeyframe` trait.
+
+### Easing
+
+Sixteen curves became the full anime.js matrix without thirty enum variants: a
+direction and a shape. `Easing::In(Curve::Quad)`, `Easing::Out(Curve::Elastic)`,
+`Easing::InOut(Curve::Sine)`, over `Quad`, `Cubic`, `Quart`, `Quint`, `Sine`,
+`Expo`, `Circ`, `Back`, `Elastic` and `Bounce`. Plus `Easing::Steps(n)`.
+`Back`, `Elastic` and `Bounce` are defined as reflections of the existing
+`ease_out_*` functions, so the two spellings cannot drift apart.
+
+### Tailor animates
+
+A node carries an entrance, edited in the inspector's new **Motion** tab:
+entrance, easing, duration, delay, distance, repeat and alternate. It plays on
+the canvas the moment you change it, plays in the live window, and generates as
+`.animate(..)` on the box the node already had — the same `Motion`, from the
+same settings, so the preview is the export.
+
+**Stagger** moves the animation off a container and onto its children, one
+delay per index; a child with its own entrance keeps it and drops out of the
+wave. The MCP server takes the same settings as a `motion` object on `add_node`
+and `set_node`, merged rather than replaced, with `"enter": null` to take one
+away.
+
+### What it costs
+
+Sampling is pure and, in the common case, allocation-free: a `Frame` carries up
+to four properties inline and only spills to the heap for a sequence layering
+more than that. Measured on an M-series laptop, release build — a two-track
+motion samples in **19ns**, a three-entry sequence in **71ns**. Both roughly
+halved over the first cut of this release, which walked every track twice per
+sample and allocated for every one.
+
+What costs something is the repaint. gpui's `request_animation_frame` notifies
+the whole **view**, so a looping animation re-renders every component beside it,
+every frame. A settled one-shot asks for nothing: the two new examples idle at
+0.5% CPU, while the gallery — 130 components in one view, three of which loop
+by their nature — sits at 84%. [Size and
+performance](docs/performance.md#per-frame-work) has the numbers and what to do
+about them.
+
+### Also
+
+- Zero clippy warnings and zero rustdoc warnings across the workspace, for the
+  first time. Nine pre-existing lints went with them.
+- A `NaN` tweened into a layout property now lands as zero rather than reaching
+  taffy, where it would corrupt a layout silently and permanently.
+
+### Breaking
+
+`Easing` gained four variants (`In`, `Out`, `InOut`, `Steps`), so a downstream
+`match` on it without a `_` arm will stop compiling. Nothing in guise matched it
+exhaustively and nothing on crates.io depends on it that way, which is why this
+is a minor release and not a major one — but it is the one thing to know before
+upgrading.
+
 ## 1.2.1 — 2026-08-21
 
 Documentation and the website. The library's code is unchanged from 1.2.0 —

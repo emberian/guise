@@ -121,6 +121,99 @@ pub fn cubic_bezier(x1: f32, y1: f32, x2: f32, y2: f32, t: f32) -> f32 {
     sample(y1, y2, s)
 }
 
+/// A curve *shape*, without a direction. Pair it with [`Easing::In`](super::Easing::In),
+/// [`Easing::Out`](super::Easing::Out) or [`Easing::InOut`](super::Easing::InOut)
+/// to get anime.js's full
+/// `inQuad`/`outQuad`/`inOutQuad` matrix out of two small enums instead of
+/// thirty variants.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Curve {
+    Quad,
+    Cubic,
+    Quart,
+    Quint,
+    Sine,
+    Expo,
+    Circ,
+    /// Pulls back before it starts, overshoots at the end.
+    Back,
+    /// Rings around the target before settling.
+    Elastic,
+    /// Ball-drop.
+    Bounce,
+}
+
+impl Curve {
+    pub const ALL: &'static [Curve] = &[
+        Curve::Quad,
+        Curve::Cubic,
+        Curve::Quart,
+        Curve::Quint,
+        Curve::Sine,
+        Curve::Expo,
+        Curve::Circ,
+        Curve::Back,
+        Curve::Elastic,
+        Curve::Bounce,
+    ];
+}
+
+/// The accelerating half of a curve: slow at 0, fastest at 1.
+///
+/// `Back`, `Elastic` and `Bounce` are defined as the reflection of the
+/// hand-written `ease_out_*` above, so `curve_out` reproduces those exactly
+/// rather than drifting from them.
+pub fn curve_in(curve: Curve, t: f32) -> f32 {
+    match curve {
+        Curve::Quad => t * t,
+        Curve::Cubic => t * t * t,
+        Curve::Quart => t.powi(4),
+        Curve::Quint => t.powi(5),
+        Curve::Sine => 1.0 - (t * PI / 2.0).cos(),
+        Curve::Expo => {
+            if t <= 0.0 {
+                0.0
+            } else {
+                2.0_f32.powf(10.0 * t - 10.0)
+            }
+        }
+        Curve::Circ => 1.0 - (1.0 - t * t).max(0.0).sqrt(),
+        Curve::Back => {
+            const C1: f32 = 1.70158;
+            const C3: f32 = C1 + 1.0;
+            C3 * t * t * t - C1 * t * t
+        }
+        Curve::Elastic => 1.0 - ease_out_elastic(1.0 - t),
+        Curve::Bounce => 1.0 - ease_out_bounce(1.0 - t),
+    }
+}
+
+/// The decelerating half: fastest at 0, resting at 1. The mirror of
+/// [`curve_in`].
+pub fn curve_out(curve: Curve, t: f32) -> f32 {
+    1.0 - curve_in(curve, 1.0 - t)
+}
+
+/// Accelerate for the first half, decelerate for the second.
+pub fn curve_in_out(curve: Curve, t: f32) -> f32 {
+    if t < 0.5 {
+        curve_in(curve, t * 2.0) / 2.0
+    } else {
+        1.0 - curve_in(curve, 2.0 - t * 2.0) / 2.0
+    }
+}
+
+/// A staircase of `count` equal jumps (CSS `steps(n, end)`). Useful for
+/// sprite-style motion and for snapping a value to whole units.
+pub fn steps(count: u32, t: f32) -> f32 {
+    let n = count.max(1) as f32;
+    if t >= 1.0 {
+        1.0
+    } else {
+        (t * n).floor() / n
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

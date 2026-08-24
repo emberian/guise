@@ -26,11 +26,15 @@ use crate::devtools::Probed;
 /// Side (px) of a painted point marker.
 const MARKER: f32 = 6.0;
 
+/// One named series of `(x, y)` points. The name is what the legend shows,
+/// and is absent for a chart with nothing to distinguish.
+type Series = (Option<SharedString>, Vec<(f32, f32)>);
+
 /// A scatter plot over `(x, y)` pairs, one or more series. Axes are always
 /// on (a scatter without a scale reads as noise).
 #[derive(IntoElement)]
 pub struct ScatterChart {
-    series: Vec<(Option<SharedString>, Vec<(f32, f32)>)>,
+    series: Vec<Series>,
     colors: Vec<ColorValue>,
     hover: bool,
     width: Option<f32>,

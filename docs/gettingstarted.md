@@ -87,7 +87,7 @@ Two things make this work:
 ## The prelude
 
 `use guise::prelude::*;` brings in every component, the theme types
-(`Theme`, `Size`, `ColorName`, `Variant`, …), the layout macros, and the
+(`Theme`, `Size`, `ColorName`, `Variant`, …), the macros, and the
 reactive helpers. The one thing it intentionally leaves out is the
 [`guise::flex`](flex.md) module, whose names (`Row`, `Column`, `Stack`,
 `Center`) overlap with the themed layout components — import that explicitly:

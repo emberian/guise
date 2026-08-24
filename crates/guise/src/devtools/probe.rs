@@ -172,7 +172,7 @@ thread_local! {
 
 /// Turn recording on or off outright, ignoring how many inspectors are alive.
 /// For a host driving the recorder by hand, and for tests; an inspector uses
-/// [`retain`] and [`release`] instead.
+/// `retain` and `release` instead.
 pub fn set_enabled(enabled: bool) {
     REGISTRY.with(|registry| {
         let mut registry = registry.borrow_mut();

@@ -815,22 +815,48 @@ vstack![text!("Drag rows to reorder").dimmed()]; // + SortableList as above"#,
 };
 
 pub const MOTION: Snippet = Snippet {
-    plain: r#"Collapse::new("details")
-    .open(self.expanded)
-    .height(88.0)                       // real height animation, both ways
-    .easing(Easing::EaseInOutCubic)
-    .child(detail_panel());
+    plain: r#"// Keyframes on one element. Legs with no duration split what is left.
+Animated::new("swatch")
+    .motion(Motion::new()
+        .duration(900.0)
+        .ease(Easing::InOut(Curve::Quad))
+        .keyframes(Prop::Background, soft, [
+            Keyframe::to(accent),
+            Keyframe::to(soft).ease(Easing::Out(Curve::Expo)),
+        ])
+        .keyframes(Prop::Radius, 6.0, [Keyframe::to(26.0), Keyframe::to(6.0)]))
+    .child(div().w(px(44.0)).h(px(44.0)));
 
-Transition::new("hero")
-    .kind(TransitionKind::SlideUp)
-    .easing(Easing::Spring(Spring::default()))
-    .child(content);
+// Stagger is a delay per index — one clip per element, not one timeline.
+let rise = Stagger::new(70.0).from(StaggerFrom::First);
+Animated::new(("row", i))
+    .motion(Motion::enter(TransitionKind::SlideUp).delay(rise.at(i, rows)))
+    .child(row);
 
-// Exit animations for conditionals: Presence latches the element
-// through its exit, then emits PresenceEvent::Hidden."#,
-    macros: r#"// Easing curves compose with any layout style:
-// Easing::EaseOutBack, Easing::CubicBezier(0.25, 0.1, 0.25, 1.0),
-// Easing::Spring(Spring::wobbly()) …"#,
+// A playhead you own: play / pause / reverse / seek / speed.
+let player = cx.new(|cx| Animator::new(clip, cx).autoplay(cx));
+Animated::new("stage").animator(&player).child(box_);
+
+// Collapse and Transition are still the short path for reveal + entrance:
+Collapse::new("details").open(self.expanded).height(88.0).child(panel);"#,
+    macros: r#"// The same motions, as declaration blocks:
+motion! {
+    duration: 900;
+    ease: in_out quad;
+    bg: soft => [Keyframe::to(accent), Keyframe::to(soft)];
+    radius: 6 => [26, 6];
+}
+
+motion! { enter: slide_up 14; duration: 460; ease: out back; delay: rise.at(i, n); }
+
+// sequence! is to motions what col! is to children — a variadic list,
+// with a position in front of any entry that needs one:
+sequence![
+    motion! { duration: 620; ease: out cubic; x: 0 => 190; },
+    motion! { duration: 520; ease: out elastic; y: 0 => 26; },
+    rel(140) => motion! { duration: 720; ease: in_out sine; x: 190 => 0; },
+]
+.repeat_forever();"#,
 };
 
 pub const MISC: Snippet = Snippet {

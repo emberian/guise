@@ -11,8 +11,9 @@ interface builder for it**.
 
 `guise` gives gpui a batteries-included component layer: a themed palette,
 sizing tokens, 130+ composable components, a reactive state layer with two-way
-bindings, and the full [Lucide](https://lucide.dev) icon set embedded as the
-default icons — no asset pipeline needed.
+bindings, an animation system with keyframes and a scrubbable playhead, and the
+full [Lucide](https://lucide.dev) icon set embedded as the default icons — no
+asset pipeline needed.
 
 **[Tailor](docs/tailor.md)** is the other half: a drag-and-drop builder that
 lays those same components out on a canvas and exports idiomatic Rust. Write the
@@ -72,9 +73,10 @@ Full docs live in [`docs/`](docs/readme.md) (also rendered at
 
 - **[Tutorial](docs/tutorial.md)** — build a complete app step by step ([web version](https://wess.github.io/guise/tutorial.html))
 - **[App walkthrough](docs/appguide.md)** — a project tracker wired the way a real guise app fits together
+- **[Motion tutorial](docs/motiontutorial.md)** — one animated panel, nine chapters ([web version](https://wess.github.io/guise/motiontutorial.html))
 - [Getting started](docs/gettingstarted.md) · [Theming](docs/theming.md) · [Component model](docs/components.md)
 - Components: [Buttons](docs/buttons.md) · [Icons](docs/icons.md) · [Inputs](docs/inputs.md) · [Dates & times](docs/dates.md) · [File handling](docs/files.md) · [Typography](docs/typography.md) · [Layout](docs/layout.md) · [Panels](docs/panels.md) · [Feedback](docs/feedback.md) · [Data](docs/data.md) · [Charts](docs/charts.md) · [Editor](docs/editor.md) · [Markdown editor](docs/markdowneditor.md) · [AI](docs/ai.md) · [Overlays](docs/overlays.md) · [Navigation](docs/navigation.md)
-- Systems: [Flex layout](docs/flex.md) · [Macros](docs/macros.md) · [Transitions & animation](docs/transitions.md) · [Drag & drop](docs/dnd.md) · [Reactive state](docs/reactive.md) · [Software update](docs/update.md) · [Settings](docs/settings.md) · [DevTools](docs/devtools.md) · [Window menu & chrome](docs/windowmenu.md) · [Architecture](docs/architecture.md) · [Size & performance](docs/performance.md)
+- Systems: [Flex layout](docs/flex.md) · [Macros](docs/macros.md) · [Motion & transitions](docs/transitions.md) · [Drag & drop](docs/dnd.md) · [Reactive state](docs/reactive.md) · [Software update](docs/update.md) · [Settings](docs/settings.md) · [DevTools](docs/devtools.md) · [Window menu & chrome](docs/windowmenu.md) · [Architecture](docs/architecture.md) · [Size & performance](docs/performance.md)
 - **Tailor**: [Overview](docs/tailor.md) · [Tutorial](docs/tailortutorial.md) · [The canvas](docs/tailorcanvas.md) · [Components & slots](docs/tailorcomponents.md) · [State & actions](docs/tailorstate.md) · [Generated code](docs/tailorcodegen.md) · [MCP server](docs/tailormcp.md) · [Zed & other editors](docs/tailorzed.md)
 - [Releasing](docs/release.md) · [Changelog](CHANGELOG.md)
 
@@ -230,7 +232,7 @@ weights), `Spacer`, `SizedBox`, `Stack`/`Positioned`, and `Wrap`, with
 glob-exported (names overlap with `guise::layout`); import it as
 `use guise::flex::*`.
 
-## Layout macros
+## Macros
 
 Terse builders, available from the prelude:
 
@@ -243,9 +245,10 @@ col![
 ```
 
 `row!`/`col!`/`zstack!`/`wrap!` build `flex` containers; `vstack!`/`hstack!`
-build the themed `layout::Stack`/`Group`. There's also a CSS-like `style!`
-block for inline styling — see
-[Macros](docs/macros.md#style--css-like-style-blocks).
+build the themed `layout::Stack`/`Group`. Two more are declaration blocks
+rather than containers: `style!` for inline styling and `motion!` for
+animation, plus `sequence!` for motions on one clock. See
+[Macros](docs/macros.md).
 
 ## Reactive state (`guise::reactive`)
 
@@ -280,19 +283,36 @@ See [Reactive state](docs/reactive.md).
 
 ## Motion
 
-Easing curves (including a CSS `cubic-bezier` solver), closed-form `Spring`
-physics, `Transition` entrances, a `Collapse` that animates real height both
-directions, and `Presence` for exit animations on conditionals:
+An animation system in the shape of [anime.js](https://animejs.com), split in
+two. The **description** is pure — a `Motion` is keyframed tracks over a
+duration, a `Sequence` puts motions on one clock, a `Stagger` turns an index
+into a delay, and `sample(t)` maps a millisecond offset to a `Frame` with no
+state and nothing to tick. The **clock** is a thin shell: `.animate(id, clip)`
+plays a clip once when an element mounts, and `Animator` is an entity holding a
+playhead you can play, pause, reverse, scrub and re-speed.
 
 ```rust
-Collapse::new("details")
-    .open(self.expanded)
-    .height(120.0)
-    .easing(Easing::Spring(Spring::default()))
-    .child(detail_panel())
+div().child(card).animate("card", motion! {
+    duration: 420;
+    ease: out back;
+    opacity: 0 => 1;
+    y: 12 => 0;
+})
 ```
 
-See [Transitions & animation](docs/transitions.md).
+Full easing matrix (`in`/`out`/`in_out` × ten curves, plus `steps`, a CSS
+`cubic-bezier` solver and closed-form `Spring` physics), keyframes, stagger
+with grid distance, `Presence` for exit animations on conditionals, and the
+narrower `Transition`/`Collapse` wrappers when a fade or a real-height reveal
+is all you need.
+
+```sh
+cargo run -p guise-ui --example motion      # the API, in one window
+cargo run -p guise-ui --example checklist   # the motion tutorial's app
+```
+
+See [Motion & transitions](docs/transitions.md) and the
+[motion tutorial](docs/motiontutorial.md).
 
 ## AI chat
 

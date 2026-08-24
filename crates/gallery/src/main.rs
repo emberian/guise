@@ -164,6 +164,10 @@ struct Gallery {
     queue: Vec<SharedString>,
     // Motion
     collapse_open: bool,
+    /// Bumped to hand the one-shot demos fresh element ids, which is what
+    /// replays them — a mounted animation has already run.
+    motion_epoch: usize,
+    motion_player: Entity<Animator>,
     // Software update: the prompt and the "nothing to install" notice, rendered
     // inline rather than in their own windows so both are visible at once.
     update_prompt: Entity<UpdatePrompt>,
@@ -853,6 +857,33 @@ impl Gallery {
                 .step("Theming", "Toggle light/dark from the header button.")
         });
 
+        // --- motion -----------------------------------------------------
+        // A looping clip: slide out, drop and round off, then come back. The
+        // tracks are geometry only, so the same animator is correct in both
+        // themes — the colour half of the story is a one-shot built during
+        // render, where the theme is live.
+        let orbit = sequence![
+            motion! { duration: 620; ease: out cubic; x: 0 => 190; },
+            motion! {
+                duration: 520;
+                ease: out elastic;
+                y: 0 => 26;
+                radius: 10 => 28;
+            },
+            rel(140) => motion! {
+                duration: 720;
+                ease: in_out sine;
+                x: 190 => 0;
+                y: 26 => 0;
+                radius: 28 => 10;
+            },
+        ]
+        .repeat_forever();
+        // Deliberately not autoplaying: an endless clip asks for a frame
+        // forever, and a showcase that pins a core doing it off-screen is a
+        // bad neighbour. Press Play.
+        let motion_player = cx.new(|cx| Animator::new(orbit, cx));
+
         // The gallery runs from `target/`, which is neither an installed .app nor
         // an AppImage — so `detect()` reports `Unknown` and the prompt honestly
         // offers the download page instead of an install it can't perform. The
@@ -1076,6 +1107,8 @@ impl Gallery {
                 SharedString::new_static("Write changelog"),
             ],
             collapse_open: true,
+            motion_epoch: 0,
+            motion_player,
             update_prompt,
             update_notice,
             update_status: SharedString::new_static("idle"),
@@ -2180,6 +2213,16 @@ impl Gallery {
     }
 
     fn motion(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let t = theme(cx);
+        let card_bg = t.surface_hover().hsla();
+        let accent = t.color(ColorName::Blue, 5).hsla();
+        let accent_soft = t.color(ColorName::Grape, 5).hsla();
+        let dimmed = t.dimmed().hsla();
+        let epoch = self.motion_epoch;
+        let player = self.motion_player.read(cx);
+        let playing = player.is_playing();
+        let progress = player.progress();
+
         let toggle = Button::new(
             "motion-toggle",
             if self.collapse_open {
@@ -2193,6 +2236,98 @@ impl Gallery {
             this.collapse_open = !this.collapse_open;
             cx.notify();
         }));
+
+        // --- staggered entrance ------------------------------------------
+        // One clip per element, offset by index. Replaying is a matter of
+        // handing them new ids: a mounted animation has already played.
+        let words = ["Keyframes", "Springs", "Stagger", "Timelines"];
+        let rise = Stagger::new(70.0).from(StaggerFrom::First);
+        let stagger_row = Group::new().gap(Size::Xs).children(
+            words
+                .iter()
+                .enumerate()
+                .map(|(index, word)| {
+                    Animated::new(("motion-stagger", epoch * words.len() + index))
+                        .motion(motion! {
+                            enter: slide_up 14;
+                            duration: 460;
+                            ease: out back;
+                            delay: rise.at(index, words.len());
+                        })
+                        .child(Badge::new(*word).color(ColorName::Blue))
+                })
+                .collect::<Vec<_>>(),
+        );
+
+        // --- a keyframed one-shot, colours read live from the theme -------
+        let swatch = Animated::new(("motion-keyframes", epoch))
+            .motion(
+                Motion::new()
+                    .duration(900.0)
+                    .ease(Easing::InOut(Curve::Quad))
+                    .keyframes(
+                        Prop::Background,
+                        accent_soft,
+                        [
+                            Keyframe::to(accent),
+                            Keyframe::to(accent_soft).ease(Easing::Out(Curve::Expo)),
+                        ],
+                    )
+                    .keyframes(Prop::Radius, 6.0, [Keyframe::to(26.0), Keyframe::to(6.0)]),
+            )
+            .child(div().w(px(44.0)).h(px(44.0)));
+
+        let replay = Button::new("motion-replay", "Replay")
+            .variant(Variant::Light)
+            .on_click(cx.listener(|this, _ev, _window, cx| {
+                this.motion_epoch += 1;
+                cx.notify();
+            }));
+
+        // --- the controllable player --------------------------------------
+        let play_pause = Button::new("motion-play", if playing { "Pause" } else { "Play" })
+            .variant(Variant::Light)
+            .on_click(cx.listener(|this, _ev, _window, cx| {
+                this.motion_player
+                    .update(cx, |player, cx| player.toggle(cx));
+            }));
+        let reverse = Button::new("motion-reverse", "Reverse")
+            .variant(Variant::Light)
+            .on_click(cx.listener(|this, _ev, _window, cx| {
+                this.motion_player
+                    .update(cx, |player, cx| player.reverse(cx));
+            }));
+        let restart = Button::new("motion-restart", "Restart")
+            .variant(Variant::Light)
+            .on_click(cx.listener(|this, _ev, _window, cx| {
+                this.motion_player
+                    .update(cx, |player, cx| player.restart(cx));
+            }));
+        let slower = Button::new("motion-slow", "0.5x")
+            .variant(Variant::Subtle)
+            .on_click(cx.listener(|this, _ev, _window, cx| {
+                this.motion_player
+                    .update(cx, |player, cx| player.set_speed(0.5, cx));
+            }));
+        let normal = Button::new("motion-normal", "1x")
+            .variant(Variant::Subtle)
+            .on_click(cx.listener(|this, _ev, _window, cx| {
+                this.motion_player
+                    .update(cx, |player, cx| player.set_speed(1.0, cx));
+            }));
+
+        let stage = div()
+            .w_full()
+            .h(px(112.0))
+            .p(px(12.0))
+            .rounded(px(10.0))
+            .bg(card_bg)
+            .overflow_hidden()
+            .child(
+                Animated::new("motion-player")
+                    .animator(&self.motion_player)
+                    .child(div().w(px(52.0)).h(px(52.0)).bg(accent)),
+            );
 
         Stack::new()
             .gap(Size::Sm)
@@ -2214,6 +2349,36 @@ impl Gallery {
                     .kind(TransitionKind::SlideUp)
                     .easing(Easing::Spring(Spring::default()))
                     .child(Text::new("Spring-eased entrance").size(Size::Sm).dimmed()),
+            )
+            .child(Divider::new())
+            .child(
+                Text::new("Motion: keyframes, stagger, and a playhead you own")
+                    .size(Size::Sm)
+                    .dimmed(),
+            )
+            .child(
+                Group::new()
+                    .gap(Size::Sm)
+                    .align(Align::Center)
+                    .child(swatch)
+                    .child(stagger_row)
+                    .child(replay),
+            )
+            .child(stage)
+            .child(
+                Group::new()
+                    .gap(Size::Xs)
+                    .align(Align::Center)
+                    .child(play_pause)
+                    .child(reverse)
+                    .child(restart)
+                    .child(slower)
+                    .child(normal)
+                    .child(
+                        div()
+                            .text_color(dimmed)
+                            .child(SharedString::from(format!("{:.0}%", progress * 100.0))),
+                    ),
             )
     }
 

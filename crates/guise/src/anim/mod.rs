@@ -1,18 +1,67 @@
-//! Animation toolkit: easing curves, springs, and mount/unmount presence.
+//! Animation: easing curves, springs, keyframed motion, and the clocks that
+//! run them.
 //!
-//! gpui animates by replaying a render-time interpolation over a duration
-//! (`with_animation`); this module supplies the curves to drive it and the
-//! [`Presence`] entity that latches an element through its exit animation
-//! before unmounting. [`Transition`](crate::Transition) and
-//! [`Collapse`](crate::Collapse) build on it.
+//! Two layers, and the split is the point.
+//!
+//! The **description** is pure. A [`Motion`] is tracks of [`Keyframe`]s over
+//! a duration; a [`Sequence`] places motions on one clock; a [`Stagger`] maps
+//! an index to a delay. `sample(t)` turns any of them into a [`Frame`] — the
+//! properties that have a value at that millisecond — with no state, no
+//! window, and nothing to tick. That is what makes the whole model unit
+//! testable and a paused animation free.
+//!
+//! The **clock** is a thin shell over it. [`Animated`] plays a clip once when
+//! its element mounts (gpui's `with_animation` supplies the time);
+//! [`Animator`] is an entity that owns a playhead you can play, pause,
+//! reverse, scrub and re-speed. [`Presence`] is the special case worth its
+//! own type: it latches an element through an *exit* animation before
+//! unmounting, which a stateless conditional cannot do.
+//!
+//! [`Transition`](crate::Transition) and [`Collapse`](crate::Collapse) are the
+//! older, narrower wrappers over the same curves and still the shortest path
+//! to a fade or a reveal.
+//!
+//! ```ignore
+//! Animated::new("card")
+//!     .motion(
+//!         Motion::new()
+//!             .duration(420.0)
+//!             .ease(Easing::Out(Curve::Back))
+//!             .tween(Prop::Opacity, 0.0, 1.0)
+//!             .tween(Prop::Y, 12.0, 0.0),
+//!     )
+//!     .child(card)
+//! ```
 
 pub mod ease;
 
+mod animated;
+mod animator;
+mod clip;
+mod frame;
+mod macros;
+mod motion;
+mod motioned;
 mod presence;
+mod prop;
+mod sequence;
 mod spring;
+mod stagger;
+mod value;
 
+pub use animated::Animated;
+pub use animator::{Animator, AnimatorEvent};
+pub use clip::Clip;
+pub use ease::Curve;
+pub use frame::Frame;
+pub use motion::{IntoKeyframe, Keyframe, Loop, Motion, Track, SLIDE_DISTANCE};
+pub use motioned::Motioned;
 pub use presence::{Presence, PresenceEvent};
+pub use prop::Prop;
+pub use sequence::{At, Sequence};
 pub use spring::Spring;
+pub use stagger::{Stagger, StaggerAxis, StaggerFrom};
+pub use value::AnimValue;
 
 use std::time::Duration;
 
@@ -20,10 +69,11 @@ use gpui::Animation;
 
 /// A named easing curve, storable on builders (`Copy`). `apply` maps
 /// normalized time; `animation` builds a ready gpui [`Animation`].
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub enum Easing {
     Linear,
     EaseIn,
+    #[default]
     EaseOut,
     EaseInOut,
     EaseInCubic,
@@ -34,16 +84,19 @@ pub enum Easing {
     EaseOutBack,
     EaseOutElastic,
     EaseOutBounce,
+    /// A curve accelerating out of rest: `In(Curve::Quad)` is anime.js's
+    /// `inQuad`.
+    In(Curve),
+    /// A curve decelerating into rest — the one most UI motion wants.
+    Out(Curve),
+    /// Accelerate, then decelerate.
+    InOut(Curve),
+    /// `n` equal jumps instead of a smooth ramp (CSS `steps(n, end)`).
+    Steps(u32),
     /// CSS `cubic-bezier(x1, y1, x2, y2)`.
     CubicBezier(f32, f32, f32, f32),
     /// Physical spring; its duration comes from the spring itself.
     Spring(Spring),
-}
-
-impl Default for Easing {
-    fn default() -> Self {
-        Easing::EaseOut
-    }
 }
 
 impl Easing {
@@ -61,6 +114,10 @@ impl Easing {
             Easing::EaseOutBack => ease::ease_out_back(t),
             Easing::EaseOutElastic => ease::ease_out_elastic(t),
             Easing::EaseOutBounce => ease::ease_out_bounce(t),
+            Easing::In(curve) => ease::curve_in(curve, t),
+            Easing::Out(curve) => ease::curve_out(curve, t),
+            Easing::InOut(curve) => ease::curve_in_out(curve, t),
+            Easing::Steps(count) => ease::steps(count, t),
             Easing::CubicBezier(x1, y1, x2, y2) => ease::cubic_bezier(x1, y1, x2, y2, t),
             Easing::Spring(spring) => spring.easing()(t),
         }
@@ -122,7 +179,13 @@ mod tests {
             Easing::EaseOutBounce,
             Easing::CubicBezier(0.25, 0.1, 0.25, 1.0),
             Easing::Spring(Spring::default()),
+            Easing::Steps(4),
         ];
+        let variants = variants.into_iter().chain(
+            Curve::ALL
+                .iter()
+                .flat_map(|c| [Easing::In(*c), Easing::Out(*c), Easing::InOut(*c)]),
+        );
         for easing in variants {
             assert!(easing.apply(0.0).abs() < 1e-3, "{easing:?} at 0");
             assert!((easing.apply(1.0) - 1.0).abs() < 1e-3, "{easing:?} at 1");
@@ -138,6 +201,8 @@ mod tests {
             Easing::EaseOutBack,
             Easing::EaseOutElastic,
             Easing::Spring(Spring::default()),
+            Easing::Out(Curve::Back),
+            Easing::Out(Curve::Elastic),
         ];
         for easing in overshooters {
             let peak = (1..100)

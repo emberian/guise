@@ -159,17 +159,6 @@ fn snap(raw: f64, min: f64, max: f64, step: f64) -> f64 {
     stepped.clamp(min, max)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn step_grid_starts_at_minimum() {
-        assert_eq!(snap(6.8, 5.0, 15.0, 2.0), 7.0);
-        assert_eq!(snap(14.8, 5.0, 15.0, 2.0), 15.0);
-    }
-}
-
 impl Render for Slider {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let t = theme(cx);
@@ -267,5 +256,16 @@ impl Render for Slider {
         };
 
         element.probe("Slider")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn step_grid_starts_at_minimum() {
+        assert_eq!(snap(6.8, 5.0, 15.0, 2.0), 7.0);
+        assert_eq!(snap(14.8, 5.0, 15.0, 2.0), 15.0);
     }
 }

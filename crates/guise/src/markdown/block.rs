@@ -279,8 +279,12 @@ mod tests {
     use super::*;
 
     fn one(line: &str) -> Block {
-        let mut state = DocState::default();
-        state.line_no = 1; // pretend mid-document so `---` is a rule
+        // Pretend mid-document, so a `---` reads as a rule and not as front
+        // matter.
+        let mut state = DocState {
+            line_no: 1,
+            ..Default::default()
+        };
         classify(line, &mut state)
     }
 

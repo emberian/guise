@@ -64,7 +64,7 @@ the app knows which icons it uses.
 ## Per-frame work
 
 gpui rebuilds the element tree every frame, so anything a `render` does is on
-the frame budget. Two things in guise are shaped around that.
+the frame budget. Three things in guise are shaped around that.
 
 **Text fields shape once per frame, not per keystroke.** The single-line core
 ([`input/line.rs`](inputs.md#what-a-field-does)) builds one `SharedString` for
@@ -93,6 +93,36 @@ The spacer carries the *measured* height, so the scroll extent and every
 position in it are unchanged — a resize invalidates the measurements and
 everything is drawn again at the new width. Turn it off with
 `.virtualize(false)` if you need every turn's element tree live.
+
+**Animation costs frames, not ticks.** [`Motion`](transitions.md) sampling is
+pure: `sample(t)` walks a handful of tracks and allocates one small `Vec`, and
+nothing in the system holds a timer or mutates per frame. An `Animator` stores
+a clock *anchor* and derives the playhead from `Instant::now()`, so a paused
+animation costs exactly zero.
+
+What costs something is the repaint. An animation keeps the window redrawing by
+asking for the next frame, and gpui's `request_animation_frame` notifies the
+whole **view** — so one spinner re-renders every component in the view that
+holds it, every frame, for as long as it is mounted.
+
+Measured on an M-series laptop, release builds:
+
+| Window | Idle CPU |
+| --- | --- |
+| `--example checklist`, entrances settled | 0.6% |
+| `--example motion`, entrances settled | 0.5% |
+| `cargo run -p gallery` | 84% |
+
+A one-shot stops asking for frames the moment it settles, which is why the two
+examples cost nothing at rest. The gallery is the other end: 130 components in
+one view, three of which (`Loader`, `Skeleton`, and the streaming caret) loop
+forever by their nature, so every frame rebuilds all of it.
+
+The lesson is not "don't use a spinner" — it is that a looping animation is a
+**per-view** cost, not a per-element one. Keep the loop scoped to the thing it
+describes and drop it when that thing is done; `animate_when(condition, ..)` is
+there for exactly that. Splitting a busy screen so the looping part sits in its
+own entity keeps the repaint off everything else.
 
 ## Memory
 

@@ -2,19 +2,14 @@
 //! authored in px.
 
 /// A named size on the `xs..xl` scale. The library default is `Md`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum Size {
     Xs,
     Sm,
+    #[default]
     Md,
     Lg,
     Xl,
-}
-
-impl Default for Size {
-    fn default() -> Self {
-        Size::Md
-    }
 }
 
 impl Size {

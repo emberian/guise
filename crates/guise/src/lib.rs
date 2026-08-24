@@ -98,7 +98,11 @@ pub use ai::{
     AIToolCall, AIToolStatus, AITurn, AITurnTool, AIUsage,
 };
 pub use anchor::Anchor;
-pub use anim::{Easing, Presence, PresenceEvent, Spring};
+pub use anim::{
+    AnimValue, Animated, Animator, AnimatorEvent, At, Clip, Curve, Easing, Frame, IntoKeyframe,
+    Keyframe, Loop, Motion, Motioned, Presence, PresenceEvent, Prop, Sequence, Spring, Stagger,
+    StaggerAxis, StaggerFrom, Track,
+};
 pub use badge::Badge;
 pub use blockquote::Blockquote;
 pub use button::Button;
@@ -253,18 +257,22 @@ pub mod prelude {
     };
     pub use crate::{badge, button, code, kbd, text, title};
     pub use crate::{card, center, col, hstack, modal, paper, row, vstack, wrap, zstack};
-    pub use crate::{color, style};
+    pub use crate::{color, motion, sequence, style};
     pub use crate::{About, BuildKind, ResizeHandles, WindowControls};
     pub use crate::{
         ActionIcon, Anchor, Chip, CloseButton, Code, CopyButton, Glyph, Icon, IconName, Indicator,
         Kbd, ScrollArea, Skeleton, ThemeIcon,
     };
     pub use crate::{
+        AnimValue, Animated, Animator, AnimatorEvent, At, Clip, Curve, Easing, Frame, IntoKeyframe,
+        Keyframe, Loop, Motion, Motioned, Presence, PresenceEvent, Prop, Sequence, Spring, Stagger,
+        StaggerAxis, StaggerFrom, Track,
+    };
+    pub use crate::{
         Badge, Button, Card, Carousel, CarouselEvent, Divider, Panel, Paper, Text, Title,
     };
     pub use crate::{Blockquote, Image, Mark, ObjectFit, Spoiler};
     pub use crate::{Collapse, Transition, TransitionKind};
-    pub use crate::{Easing, Presence, PresenceEvent, Spring};
     pub use crate::{SplitDirection, SplitPanel, SplitPanelEvent};
     pub use crate::{WebView, WebViewEvent};
 }
