@@ -13,118 +13,118 @@ use crate::theme::{theme, Size};
 /// change handler via `cx.listener`, or two-way bind with [`Chip::bind`].
 #[derive(IntoElement)]
 pub struct Chip {
-    id: ElementId,
-    label: SharedString,
-    checked: bool,
-    color: ColorValue,
-    size: Size,
-    binding: Option<Binding<bool>>,
-    on_change: Option<ClickHandler>,
+  id: ElementId,
+  label: SharedString,
+  checked: bool,
+  color: ColorValue,
+  size: Size,
+  binding: Option<Binding<bool>>,
+  on_change: Option<ClickHandler>,
 }
 
 impl Chip {
-    pub fn new(id: impl Into<ElementId>, label: impl Into<SharedString>) -> Self {
-        Chip {
-            id: id.into(),
-            label: label.into(),
-            checked: false,
-            color: ColorValue::default(),
-            size: Size::Md,
-            binding: None,
-            on_change: None,
-        }
+  pub fn new(id: impl Into<ElementId>, label: impl Into<SharedString>) -> Self {
+    Chip {
+      id: id.into(),
+      label: label.into(),
+      checked: false,
+      color: ColorValue::default(),
+      size: Size::Md,
+      binding: None,
+      on_change: None,
     }
+  }
 
-    pub fn checked(mut self, checked: bool) -> Self {
-        self.checked = checked;
-        self
-    }
+  pub fn checked(mut self, checked: bool) -> Self {
+    self.checked = checked;
+    self
+  }
 
-    pub fn color(mut self, color: impl Into<ColorValue>) -> Self {
-        self.color = color.into();
-        self
-    }
+  pub fn color(mut self, color: impl Into<ColorValue>) -> Self {
+    self.color = color.into();
+    self
+  }
 
-    pub fn size(mut self, size: Size) -> Self {
-        self.size = size;
-        self
-    }
+  pub fn size(mut self, size: Size) -> Self {
+    self.size = size;
+    self
+  }
 
-    /// Two-way bind the checked state. Overrides `checked`; clicks write the
-    /// toggled value back through the binding, then run any `on_change`.
-    pub fn bind(mut self, binding: Binding<bool>) -> Self {
-        self.binding = Some(binding);
-        self
-    }
+  /// Two-way bind the checked state. Overrides `checked`; clicks write the
+  /// toggled value back through the binding, then run any `on_change`.
+  pub fn bind(mut self, binding: Binding<bool>) -> Self {
+    self.binding = Some(binding);
+    self
+  }
 
-    pub fn on_change(
-        mut self,
-        handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
-    ) -> Self {
-        self.on_change = Some(Box::new(handler));
-        self
-    }
+  pub fn on_change(
+    mut self,
+    handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+  ) -> Self {
+    self.on_change = Some(Box::new(handler));
+    self
+  }
 
-    fn metrics(&self) -> (f32, f32, f32) {
-        match self.size {
-            Size::Xs => (24.0, 10.0, 11.0),
-            Size::Sm => (28.0, 12.0, 12.0),
-            Size::Md => (32.0, 16.0, 14.0),
-            Size::Lg => (38.0, 20.0, 16.0),
-            Size::Xl => (44.0, 24.0, 18.0),
-        }
+  fn metrics(&self) -> (f32, f32, f32) {
+    match self.size {
+      Size::Xs => (24.0, 10.0, 11.0),
+      Size::Sm => (28.0, 12.0, 12.0),
+      Size::Md => (32.0, 16.0, 14.0),
+      Size::Lg => (38.0, 20.0, 16.0),
+      Size::Xl => (44.0, 24.0, 18.0),
     }
+  }
 }
 
 impl RenderOnce for Chip {
-    fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
-        let t = theme(cx);
-        let (height, pad_x, font) = self.metrics();
-        let accent = self.color.accent(t);
-        let checked = self.binding.as_ref().map_or(self.checked, |b| b.get(cx));
+  fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
+    let t = theme(cx);
+    let (height, pad_x, font) = self.metrics();
+    let accent = self.color.accent(t);
+    let checked = self.binding.as_ref().map_or(self.checked, |b| b.get(cx));
 
-        let (bg, fg, border) = if checked {
-            (self.color.soft(t), accent, accent)
-        } else {
-            (t.surface().hsla(), t.text().hsla(), t.border().hsla())
-        };
-        let hover_bg = t.surface_hover().hsla();
+    let (bg, fg, border) = if checked {
+      (self.color.soft(t), accent, accent)
+    } else {
+      (t.surface().hsla(), t.text().hsla(), t.border().hsla())
+    };
+    let hover_bg = t.surface_hover().hsla();
 
-        let mut el = div()
-            .id(self.id)
-            .flex()
-            .items_center()
-            .gap(px(6.0))
-            .h(px(height))
-            .px(px(pad_x))
-            .rounded(px(height))
-            .border_1()
-            .border_color(border)
-            .bg(bg)
-            .text_color(fg)
-            .text_size(px(font))
-            .font_weight(FontWeight::MEDIUM);
-        if checked {
-            el = el.child(SharedString::new_static("\u{2713}"));
-        } else {
-            el = el.hover(move |s| s.bg(hover_bg));
-        }
-        el = el.child(self.label);
-        if self.binding.is_some() || self.on_change.is_some() {
-            let binding = self.binding;
-            let handler = self.on_change;
-            let next = !checked;
-            el = el.on_click(move |ev, window, cx| {
-                if let Some(binding) = &binding {
-                    binding.set(cx, next);
-                }
-                if let Some(handler) = &handler {
-                    handler(ev, window, cx);
-                }
-            });
-        }
-        el.probe("Chip")
-            .attr("size", self.size.label())
-            .attr_if("checked", self.checked)
+    let mut el = div()
+      .id(self.id)
+      .flex()
+      .items_center()
+      .gap(px(6.0))
+      .h(px(height))
+      .px(px(pad_x))
+      .rounded(px(height))
+      .border_1()
+      .border_color(border)
+      .bg(bg)
+      .text_color(fg)
+      .text_size(px(font))
+      .font_weight(FontWeight::MEDIUM);
+    if checked {
+      el = el.child(SharedString::new_static("\u{2713}"));
+    } else {
+      el = el.hover(move |s| s.bg(hover_bg));
     }
+    el = el.child(self.label);
+    if self.binding.is_some() || self.on_change.is_some() {
+      let binding = self.binding;
+      let handler = self.on_change;
+      let next = !checked;
+      el = el.on_click(move |ev, window, cx| {
+        if let Some(binding) = &binding {
+          binding.set(cx, next);
+        }
+        if let Some(handler) = &handler {
+          handler(ev, window, cx);
+        }
+      });
+    }
+    el.probe("Chip")
+      .attr("size", self.size.label())
+      .attr_if("checked", self.checked)
+  }
 }

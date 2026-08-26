@@ -19,45 +19,45 @@ use crate::theme::{theme, Size};
 /// The axis a [`Space`] occupies.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum SpaceAxis {
-    Horizontal,
-    Vertical,
+  Horizontal,
+  Vertical,
 }
 
 /// A fixed gap between siblings.
 #[derive(IntoElement)]
 pub struct Space {
-    axis: SpaceAxis,
-    size: Size,
+  axis: SpaceAxis,
+  size: Size,
 }
 
 impl Space {
-    /// Horizontal space: a block `size` wide (for rows).
-    pub fn x(size: Size) -> Self {
-        Space {
-            axis: SpaceAxis::Horizontal,
-            size,
-        }
+  /// Horizontal space: a block `size` wide (for rows).
+  pub fn x(size: Size) -> Self {
+    Space {
+      axis: SpaceAxis::Horizontal,
+      size,
     }
+  }
 
-    /// Vertical space: a block `size` tall (for columns).
-    pub fn y(size: Size) -> Self {
-        Space {
-            axis: SpaceAxis::Vertical,
-            size,
-        }
+  /// Vertical space: a block `size` tall (for columns).
+  pub fn y(size: Size) -> Self {
+    Space {
+      axis: SpaceAxis::Vertical,
+      size,
     }
+  }
 }
 
 impl RenderOnce for Space {
-    fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
-        let gap = theme(cx).spacing(self.size);
-        let el = div().flex_none();
+  fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
+    let gap = theme(cx).spacing(self.size);
+    let el = div().flex_none();
 
-        let element = match self.axis {
-            SpaceAxis::Horizontal => el.w(px(gap)),
-            SpaceAxis::Vertical => el.h(px(gap)),
-        };
+    let element = match self.axis {
+      SpaceAxis::Horizontal => el.w(px(gap)),
+      SpaceAxis::Vertical => el.h(px(gap)),
+    };
 
-        element.probe("Space")
-    }
+    element.probe("Space")
+  }
 }

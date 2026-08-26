@@ -38,7 +38,7 @@ pub use cache::HighlightCache;
 pub use diagnostic::{Diagnostic, Severity};
 pub use editor::{Editor, EditorEvent, EditorStyle};
 pub use highlight::{
-    token_color, DocumentHighlighter, Highlighter, Language, LineState, TokenKind,
+  token_color, DocumentHighlighter, Highlighter, Language, LineState, TokenKind,
 };
 pub use model::{EditorModel, Pos};
 #[cfg(feature = "treesitter")]

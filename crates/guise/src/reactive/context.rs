@@ -14,21 +14,21 @@ impl<T: 'static> Global for ContextCell<T> {}
 /// Provide `value` to the whole app (React's `<Context.Provider>`). A later
 /// call with the same type replaces the previous value.
 pub fn provide<T: 'static>(cx: &mut App, value: T) {
-    cx.set_global(ContextCell(value));
+  cx.set_global(ContextCell(value));
 }
 
 /// Read a provided value by type, cloned (React's `useContext`). Returns
 /// `None` if nothing of type `T` was provided.
 pub fn use_context<T: 'static + Clone>(cx: &App) -> Option<T> {
-    cx.try_global::<ContextCell<T>>().map(|cell| cell.0.clone())
+  cx.try_global::<ContextCell<T>>().map(|cell| cell.0.clone())
 }
 
 /// Borrow a provided value by type, without cloning.
 pub fn use_context_ref<T: 'static>(cx: &App) -> Option<&T> {
-    cx.try_global::<ContextCell<T>>().map(|cell| &cell.0)
+  cx.try_global::<ContextCell<T>>().map(|cell| &cell.0)
 }
 
 /// Whether a value of type `T` has been provided.
 pub fn has_context<T: 'static>(cx: &App) -> bool {
-    cx.has_global::<ContextCell<T>>()
+  cx.has_global::<ContextCell<T>>()
 }

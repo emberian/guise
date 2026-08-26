@@ -32,85 +32,85 @@ use crate::theme::{theme, Size};
 /// `Path`/`PathBuf` (local file), or decoded/raw image data.
 #[derive(IntoElement)]
 pub struct Image {
-    source: ImageSource,
-    width: Option<f32>,
-    height: Option<f32>,
-    radius: Option<Size>,
-    circle: bool,
-    fit: ObjectFit,
-    fallback: Option<Box<dyn Fn() -> AnyElement + 'static>>,
+  source: ImageSource,
+  width: Option<f32>,
+  height: Option<f32>,
+  radius: Option<Size>,
+  circle: bool,
+  fit: ObjectFit,
+  fallback: Option<Box<dyn Fn() -> AnyElement + 'static>>,
 }
 
 impl Image {
-    pub fn new(source: impl Into<ImageSource>) -> Self {
-        Image {
-            source: source.into(),
-            width: None,
-            height: None,
-            radius: None,
-            circle: false,
-            fit: ObjectFit::Cover,
-            fallback: None,
-        }
+  pub fn new(source: impl Into<ImageSource>) -> Self {
+    Image {
+      source: source.into(),
+      width: None,
+      height: None,
+      radius: None,
+      circle: false,
+      fit: ObjectFit::Cover,
+      fallback: None,
     }
+  }
 
-    /// Fixed width in px. Give the element a size — an unsized image lays
-    /// out at zero.
-    pub fn width(mut self, width: f32) -> Self {
-        self.width = Some(width);
-        self
-    }
+  /// Fixed width in px. Give the element a size — an unsized image lays
+  /// out at zero.
+  pub fn width(mut self, width: f32) -> Self {
+    self.width = Some(width);
+    self
+  }
 
-    /// Fixed height in px.
-    pub fn height(mut self, height: f32) -> Self {
-        self.height = Some(height);
-        self
-    }
+  /// Fixed height in px.
+  pub fn height(mut self, height: f32) -> Self {
+    self.height = Some(height);
+    self
+  }
 
-    /// Corner radius from the theme scale (images are square-cornered by
-    /// default).
-    pub fn radius(mut self, radius: Size) -> Self {
-        self.radius = Some(radius);
-        self
-    }
+  /// Corner radius from the theme scale (images are square-cornered by
+  /// default).
+  pub fn radius(mut self, radius: Size) -> Self {
+    self.radius = Some(radius);
+    self
+  }
 
-    /// Clip to a circle (an avatar). Pair with equal `width`/`height`.
-    pub fn circle(mut self) -> Self {
-        self.circle = true;
-        self
-    }
+  /// Clip to a circle (an avatar). Pair with equal `width`/`height`.
+  pub fn circle(mut self) -> Self {
+    self.circle = true;
+    self
+  }
 
-    /// How the picture fills its box (default [`ObjectFit::Cover`]).
-    pub fn fit(mut self, fit: ObjectFit) -> Self {
-        self.fit = fit;
-        self
-    }
+  /// How the picture fills its box (default [`ObjectFit::Cover`]).
+  pub fn fit(mut self, fit: ObjectFit) -> Self {
+    self.fit = fit;
+    self
+  }
 
-    /// Element shown while the source is loading or failed to resolve.
-    pub fn fallback<E: IntoElement>(mut self, fallback: impl Fn() -> E + 'static) -> Self {
-        self.fallback = Some(Box::new(move || fallback().into_any_element()));
-        self
-    }
+  /// Element shown while the source is loading or failed to resolve.
+  pub fn fallback<E: IntoElement>(mut self, fallback: impl Fn() -> E + 'static) -> Self {
+    self.fallback = Some(Box::new(move || fallback().into_any_element()));
+    self
+  }
 }
 
 impl RenderOnce for Image {
-    fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
-        let t = theme(cx);
-        let mut el = img(self.source).object_fit(self.fit);
-        if let Some(fallback) = self.fallback {
-            el = el.with_fallback(fallback);
-        }
-        if let Some(width) = self.width {
-            el = el.w(px(width));
-        }
-        if let Some(height) = self.height {
-            el = el.h(px(height));
-        }
-        if self.circle {
-            el = el.rounded_full();
-        } else if let Some(radius) = self.radius {
-            el = el.rounded(px(t.radius(radius)));
-        }
-        el.probe("Image")
+  fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
+    let t = theme(cx);
+    let mut el = img(self.source).object_fit(self.fit);
+    if let Some(fallback) = self.fallback {
+      el = el.with_fallback(fallback);
     }
+    if let Some(width) = self.width {
+      el = el.w(px(width));
+    }
+    if let Some(height) = self.height {
+      el = el.h(px(height));
+    }
+    if self.circle {
+      el = el.rounded_full();
+    } else if let Some(radius) = self.radius {
+      el = el.rounded(px(t.radius(radius)));
+    }
+    el.probe("Image")
+  }
 }

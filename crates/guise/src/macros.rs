@@ -191,24 +191,24 @@ macro_rules! badge {
 /// anywhere a `ColorValue` is accepted (component `.color(..)`, `Theme::with_*`).
 #[macro_export]
 macro_rules! color {
-    (rgb($r:expr, $g:expr, $b:expr $(,)?)) => {
-        $crate::theme::rgb($r, $g, $b)
-    };
-    (rgba($r:expr, $g:expr, $b:expr, $a:expr $(,)?)) => {
-        $crate::theme::rgba($r, $g, $b, $a)
-    };
-    (hsl($h:expr, $s:expr, $l:expr $(,)?)) => {
-        $crate::theme::hsl($h as f32, $s as f32, $l as f32)
-    };
-    (hsla($h:expr, $s:expr, $l:expr, $a:expr $(,)?)) => {
-        $crate::theme::hsla($h as f32, $s as f32, $l as f32, $a)
-    };
-    ($css:literal) => {
-        $crate::theme::css($css).expect("guise: invalid CSS color literal")
-    };
-    ($name:ident) => {
-        $crate::theme::css(stringify!($name)).expect("guise: unknown CSS color name")
-    };
+  (rgb($r:expr, $g:expr, $b:expr $(,)?)) => {
+    $crate::theme::rgb($r, $g, $b)
+  };
+  (rgba($r:expr, $g:expr, $b:expr, $a:expr $(,)?)) => {
+    $crate::theme::rgba($r, $g, $b, $a)
+  };
+  (hsl($h:expr, $s:expr, $l:expr $(,)?)) => {
+    $crate::theme::hsl($h as f32, $s as f32, $l as f32)
+  };
+  (hsla($h:expr, $s:expr, $l:expr, $a:expr $(,)?)) => {
+    $crate::theme::hsla($h as f32, $s as f32, $l as f32, $a)
+  };
+  ($css:literal) => {
+    $crate::theme::css($css).expect("guise: invalid CSS color literal")
+  };
+  ($name:ident) => {
+    $crate::theme::css(stringify!($name)).expect("guise: unknown CSS color name")
+  };
 }
 
 /// A CSS-like style block. Expands to an element transform applied with
@@ -342,72 +342,72 @@ macro_rules! __style {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Button, ColorName, Text, Variant};
+  use crate::{Button, ColorName, Text, Variant};
 
-    /// Every macro must expand to a valid builder. Constructed (not rendered),
-    /// since `#[macro_export]` macros are only type-checked when invoked.
-    #[test]
-    fn macros_expand() {
-        let _ = row![Text::new("a"), Button::new("b", "B")];
-        let _ = col![Text::new("a")];
-        let _ = zstack![Text::new("a")];
-        let _ = wrap![Text::new("a")];
-        let _ = vstack![Text::new("a")];
-        let _ = hstack![Text::new("a")];
-        let _ = center![Text::new("a")];
-        let _ = paper![Text::new("a")];
-        let _ = card![Text::new("a")];
-        let _ = modal![Text::new("a")];
-        // Trailing comma and chaining still work.
-        let _ = card![Text::new("a"), Text::new("b"),].with_border(true);
-    }
+  /// Every macro must expand to a valid builder. Constructed (not rendered),
+  /// since `#[macro_export]` macros are only type-checked when invoked.
+  #[test]
+  fn macros_expand() {
+    let _ = row![Text::new("a"), Button::new("b", "B")];
+    let _ = col![Text::new("a")];
+    let _ = zstack![Text::new("a")];
+    let _ = wrap![Text::new("a")];
+    let _ = vstack![Text::new("a")];
+    let _ = hstack![Text::new("a")];
+    let _ = center![Text::new("a")];
+    let _ = paper![Text::new("a")];
+    let _ = card![Text::new("a")];
+    let _ = modal![Text::new("a")];
+    // Trailing comma and chaining still work.
+    let _ = card![Text::new("a"), Text::new("b"),].with_border(true);
+  }
 
-    #[test]
-    fn component_macros_expand() {
-        // Content macros: plain, and `format!`-style.
-        let name = "Ada";
-        let _ = text!("hello");
-        let _ = text!("hello {}", name);
-        let _ = title!("Heading").order(2);
-        let _ = code!("guise::Button");
-        let _ = kbd!("{}", "K");
-        // Forwarding macros, still chainable.
-        let _ = button!("save", "Save").variant(Variant::Filled);
-        let _ = badge!("New").color(ColorName::Blue);
-        let _ = Button::new("x", "y"); // sanity: still works directly
-    }
+  #[test]
+  fn component_macros_expand() {
+    // Content macros: plain, and `format!`-style.
+    let name = "Ada";
+    let _ = text!("hello");
+    let _ = text!("hello {}", name);
+    let _ = title!("Heading").order(2);
+    let _ = code!("guise::Button");
+    let _ = kbd!("{}", "K");
+    // Forwarding macros, still chainable.
+    let _ = button!("save", "Save").variant(Variant::Filled);
+    let _ = badge!("New").color(ColorName::Blue);
+    let _ = Button::new("x", "y"); // sanity: still works directly
+  }
 
-    #[test]
-    fn color_macro_matches_constructors() {
-        use crate::theme::{css, hsl, rgb, rgba};
-        assert_eq!(color!(rgb(34, 139, 230)), rgb(34, 139, 230));
-        assert_eq!(color!(rgba(34, 139, 230, 0.5)), rgba(34, 139, 230, 0.5));
-        assert_eq!(color!(hsl(210, 80, 52)), hsl(210.0, 80.0, 52.0));
-        assert_eq!(color!(teal), css("teal").unwrap());
-        assert_eq!(color!("#228be6"), css("#228be6").unwrap());
-        // Usable anywhere a ColorValue is accepted.
-        let _ = Button::new("x", "y").color(color!(rgba(112, 72, 232, 1.0)));
-    }
+  #[test]
+  fn color_macro_matches_constructors() {
+    use crate::theme::{css, hsl, rgb, rgba};
+    assert_eq!(color!(rgb(34, 139, 230)), rgb(34, 139, 230));
+    assert_eq!(color!(rgba(34, 139, 230, 0.5)), rgba(34, 139, 230, 0.5));
+    assert_eq!(color!(hsl(210, 80, 52)), hsl(210.0, 80.0, 52.0));
+    assert_eq!(color!(teal), css("teal").unwrap());
+    assert_eq!(color!("#228be6"), css("#228be6").unwrap());
+    // Usable anywhere a ColorValue is accepted.
+    let _ = Button::new("x", "y").color(color!(rgba(112, 72, 232, 1.0)));
+  }
 
-    #[test]
-    fn style_macro_builds() {
-        use crate::StyleExt;
-        let _ = gpui::div().apply(style! {
-            display: flex;
-            direction: column;
-            align: center;
-            justify: between;
-            gap: 8;
-            padding: 12;
-            width: full;
-            height: 200;
-            radius: 8;
-            background: "#11151c";
-            color: color!(rgb(230, 230, 230));
-            border: color!("#2a2f3a");
-            opacity: 0.95;
-            weight: semibold;
-            position: relative;
-        });
-    }
+  #[test]
+  fn style_macro_builds() {
+    use crate::StyleExt;
+    let _ = gpui::div().apply(style! {
+        display: flex;
+        direction: column;
+        align: center;
+        justify: between;
+        gap: 8;
+        padding: 12;
+        width: full;
+        height: 200;
+        radius: 8;
+        background: "#11151c";
+        color: color!(rgb(230, 230, 230));
+        border: color!("#2a2f3a");
+        opacity: 0.95;
+        weight: semibold;
+        position: relative;
+    });
+  }
 }

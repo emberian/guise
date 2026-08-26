@@ -8,70 +8,70 @@ use gpui::{App, AppContext, Entity};
 /// All clones share one backing entity, so passing a `Signal` around — or
 /// providing it as context — gives every holder the same live value.
 pub struct Signal<T> {
-    entity: Entity<T>,
+  entity: Entity<T>,
 }
 
 impl<T: 'static> Signal<T> {
-    /// Create a new signal holding `value`.
-    pub fn new(cx: &mut App, value: T) -> Self {
-        Signal {
-            entity: cx.new(|_cx| value),
-        }
+  /// Create a new signal holding `value`.
+  pub fn new(cx: &mut App, value: T) -> Self {
+    Signal {
+      entity: cx.new(|_cx| value),
     }
+  }
 
-    /// The backing entity — pass to `cx.observe(...)` or [`super::watch`].
-    pub fn entity(&self) -> &Entity<T> {
-        &self.entity
-    }
+  /// The backing entity — pass to `cx.observe(...)` or [`super::watch`].
+  pub fn entity(&self) -> &Entity<T> {
+    &self.entity
+  }
 
-    /// Borrow the current value.
-    pub fn read<'a>(&self, cx: &'a App) -> &'a T {
-        self.entity.read(cx)
-    }
+  /// Borrow the current value.
+  pub fn read<'a>(&self, cx: &'a App) -> &'a T {
+    self.entity.read(cx)
+  }
 
-    /// Clone out the current value.
-    pub fn get(&self, cx: &App) -> T
-    where
-        T: Clone,
-    {
-        self.entity.read(cx).clone()
-    }
+  /// Clone out the current value.
+  pub fn get(&self, cx: &App) -> T
+  where
+    T: Clone,
+  {
+    self.entity.read(cx).clone()
+  }
 
-    /// Replace the value and notify observers.
-    pub fn set(&self, cx: &mut App, value: T) {
-        self.entity.update(cx, |slot, cx| {
-            *slot = value;
-            cx.notify();
-        });
-    }
+  /// Replace the value and notify observers.
+  pub fn set(&self, cx: &mut App, value: T) {
+    self.entity.update(cx, |slot, cx| {
+      *slot = value;
+      cx.notify();
+    });
+  }
 
-    /// Replace the value and notify observers, unless the new value equals
-    /// the current one — then nothing happens (no notify).
-    pub fn set_if_changed(&self, cx: &mut App, value: T)
-    where
-        T: PartialEq,
-    {
-        self.entity.update(cx, |slot, cx| {
-            if *slot != value {
-                *slot = value;
-                cx.notify();
-            }
-        });
-    }
+  /// Replace the value and notify observers, unless the new value equals
+  /// the current one — then nothing happens (no notify).
+  pub fn set_if_changed(&self, cx: &mut App, value: T)
+  where
+    T: PartialEq,
+  {
+    self.entity.update(cx, |slot, cx| {
+      if *slot != value {
+        *slot = value;
+        cx.notify();
+      }
+    });
+  }
 
-    /// Mutate the value in place and notify observers.
-    pub fn update(&self, cx: &mut App, f: impl FnOnce(&mut T)) {
-        self.entity.update(cx, |slot, cx| {
-            f(slot);
-            cx.notify();
-        });
-    }
+  /// Mutate the value in place and notify observers.
+  pub fn update(&self, cx: &mut App, f: impl FnOnce(&mut T)) {
+    self.entity.update(cx, |slot, cx| {
+      f(slot);
+      cx.notify();
+    });
+  }
 }
 
 impl<T> Clone for Signal<T> {
-    fn clone(&self) -> Self {
-        Signal {
-            entity: self.entity.clone(),
-        }
+  fn clone(&self) -> Self {
+    Signal {
+      entity: self.entity.clone(),
     }
+  }
 }

@@ -18,17 +18,17 @@ pub struct ItemId(pub(crate) u64);
 pub struct ItemIds(u64);
 
 impl ItemIds {
-    pub fn new() -> Self {
-        Self::default()
-    }
+  pub fn new() -> Self {
+    Self::default()
+  }
 
-    // An allocator's `next`, not an iterator's: it never ends, so there is
-    // nothing for `Iterator` to return `None` for.
-    #[allow(clippy::should_implement_trait)]
-    pub fn next(&mut self) -> ItemId {
-        self.0 += 1;
-        ItemId(self.0)
-    }
+  // An allocator's `next`, not an iterator's: it never ends, so there is
+  // nothing for `Iterator` to return `None` for.
+  #[allow(clippy::should_implement_trait)]
+  pub fn next(&mut self) -> ItemId {
+    self.0 += 1;
+    ItemId(self.0)
+  }
 }
 
 /// Monotonic [`PaneId`] allocator. Owned by the caller; never reuses ids.
@@ -36,13 +36,13 @@ impl ItemIds {
 pub struct PaneIds(u64);
 
 impl PaneIds {
-    pub fn new() -> Self {
-        Self::default()
-    }
+  pub fn new() -> Self {
+    Self::default()
+  }
 
-    #[allow(clippy::should_implement_trait)]
-    pub fn next(&mut self) -> PaneId {
-        self.0 += 1;
-        PaneId(self.0)
-    }
+  #[allow(clippy::should_implement_trait)]
+  pub fn next(&mut self) -> PaneId {
+    self.0 += 1;
+    PaneId(self.0)
+  }
 }

@@ -222,364 +222,364 @@ macro_rules! __sequence {
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __kind {
-    (fade) => {
-        $crate::TransitionKind::Fade
-    };
-    (slide_up) => {
-        $crate::TransitionKind::SlideUp
-    };
-    (slide_down) => {
-        $crate::TransitionKind::SlideDown
-    };
-    (slide_left) => {
-        $crate::TransitionKind::SlideLeft
-    };
-    (slide_right) => {
-        $crate::TransitionKind::SlideRight
-    };
+  (fade) => {
+    $crate::TransitionKind::Fade
+  };
+  (slide_up) => {
+    $crate::TransitionKind::SlideUp
+  };
+  (slide_down) => {
+    $crate::TransitionKind::SlideDown
+  };
+  (slide_left) => {
+    $crate::TransitionKind::SlideLeft
+  };
+  (slide_right) => {
+    $crate::TransitionKind::SlideRight
+  };
 }
 
 /// The [`Curve`](crate::Curve) a shape word names.
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __curve {
-    (quad) => {
-        $crate::Curve::Quad
-    };
-    (cubic) => {
-        $crate::Curve::Cubic
-    };
-    (quart) => {
-        $crate::Curve::Quart
-    };
-    (quint) => {
-        $crate::Curve::Quint
-    };
-    (sine) => {
-        $crate::Curve::Sine
-    };
-    (expo) => {
-        $crate::Curve::Expo
-    };
-    (circ) => {
-        $crate::Curve::Circ
-    };
-    (back) => {
-        $crate::Curve::Back
-    };
-    (elastic) => {
-        $crate::Curve::Elastic
-    };
-    (bounce) => {
-        $crate::Curve::Bounce
-    };
+  (quad) => {
+    $crate::Curve::Quad
+  };
+  (cubic) => {
+    $crate::Curve::Cubic
+  };
+  (quart) => {
+    $crate::Curve::Quart
+  };
+  (quint) => {
+    $crate::Curve::Quint
+  };
+  (sine) => {
+    $crate::Curve::Sine
+  };
+  (expo) => {
+    $crate::Curve::Expo
+  };
+  (circ) => {
+    $crate::Curve::Circ
+  };
+  (back) => {
+    $crate::Curve::Back
+  };
+  (elastic) => {
+    $crate::Curve::Elastic
+  };
+  (bounce) => {
+    $crate::Curve::Bounce
+  };
 }
 
 /// The [`Prop`](crate::Prop) a declaration name refers to.
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __prop {
-    (opacity) => {
-        $crate::Prop::Opacity
-    };
-    (x) => {
-        $crate::Prop::X
-    };
-    (y) => {
-        $crate::Prop::Y
-    };
-    (w) => {
-        $crate::Prop::Width
-    };
-    (width) => {
-        $crate::Prop::Width
-    };
-    (h) => {
-        $crate::Prop::Height
-    };
-    (height) => {
-        $crate::Prop::Height
-    };
-    (mt) => {
-        $crate::Prop::MarginTop
-    };
-    (mr) => {
-        $crate::Prop::MarginRight
-    };
-    (mb) => {
-        $crate::Prop::MarginBottom
-    };
-    (ml) => {
-        $crate::Prop::MarginLeft
-    };
-    (pt) => {
-        $crate::Prop::PadTop
-    };
-    (pr) => {
-        $crate::Prop::PadRight
-    };
-    (pb) => {
-        $crate::Prop::PadBottom
-    };
-    (pl) => {
-        $crate::Prop::PadLeft
-    };
-    (radius) => {
-        $crate::Prop::Radius
-    };
-    (border_width) => {
-        $crate::Prop::BorderWidth
-    };
-    (gap) => {
-        $crate::Prop::Gap
-    };
-    (font_size) => {
-        $crate::Prop::FontSize
-    };
-    (bg) => {
-        $crate::Prop::Background
-    };
-    (background) => {
-        $crate::Prop::Background
-    };
-    (border_color) => {
-        $crate::Prop::BorderColor
-    };
-    (color) => {
-        $crate::Prop::TextColor
-    };
-    (rotate) => {
-        $crate::Prop::Rotate
-    };
-    (scale) => {
-        $crate::Prop::Scale
-    };
-    (custom($n:literal)) => {
-        $crate::Prop::Custom($n)
-    };
+  (opacity) => {
+    $crate::Prop::Opacity
+  };
+  (x) => {
+    $crate::Prop::X
+  };
+  (y) => {
+    $crate::Prop::Y
+  };
+  (w) => {
+    $crate::Prop::Width
+  };
+  (width) => {
+    $crate::Prop::Width
+  };
+  (h) => {
+    $crate::Prop::Height
+  };
+  (height) => {
+    $crate::Prop::Height
+  };
+  (mt) => {
+    $crate::Prop::MarginTop
+  };
+  (mr) => {
+    $crate::Prop::MarginRight
+  };
+  (mb) => {
+    $crate::Prop::MarginBottom
+  };
+  (ml) => {
+    $crate::Prop::MarginLeft
+  };
+  (pt) => {
+    $crate::Prop::PadTop
+  };
+  (pr) => {
+    $crate::Prop::PadRight
+  };
+  (pb) => {
+    $crate::Prop::PadBottom
+  };
+  (pl) => {
+    $crate::Prop::PadLeft
+  };
+  (radius) => {
+    $crate::Prop::Radius
+  };
+  (border_width) => {
+    $crate::Prop::BorderWidth
+  };
+  (gap) => {
+    $crate::Prop::Gap
+  };
+  (font_size) => {
+    $crate::Prop::FontSize
+  };
+  (bg) => {
+    $crate::Prop::Background
+  };
+  (background) => {
+    $crate::Prop::Background
+  };
+  (border_color) => {
+    $crate::Prop::BorderColor
+  };
+  (color) => {
+    $crate::Prop::TextColor
+  };
+  (rotate) => {
+    $crate::Prop::Rotate
+  };
+  (scale) => {
+    $crate::Prop::Scale
+  };
+  (custom($n:literal)) => {
+    $crate::Prop::Custom($n)
+  };
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::anim::{Loop, Motion, Prop, Sequence};
-    use crate::Easing;
+  use crate::anim::{Loop, Motion, Prop, Sequence};
+  use crate::Easing;
 
-    /// A `#[macro_export]` macro is only type-checked where it is invoked, so
-    /// every arm needs a call site somewhere.
-    #[test]
-    fn every_declaration_expands() {
-        let m = motion! {
-            duration: 420;
-            delay: 80;
-            end_delay: 120;
-            ease: out back;
-            repeat: 3;
-            alternate;
-            reversed;
-            margins;
-            opacity: 0 => 1;
-            radius: 6 => 24;
-        };
-        assert_eq!(m.duration, 420.0);
-        assert_eq!(m.delay, 80.0);
-        assert_eq!(m.end_delay, 120.0);
-        assert_eq!(m.ease, Easing::Out(crate::Curve::Back));
-        assert_eq!(m.loops, Loop::Times(3));
-        assert!(m.alternate && m.reversed);
-    }
+  /// A `#[macro_export]` macro is only type-checked where it is invoked, so
+  /// every arm needs a call site somewhere.
+  #[test]
+  fn every_declaration_expands() {
+    let m = motion! {
+        duration: 420;
+        delay: 80;
+        end_delay: 120;
+        ease: out back;
+        repeat: 3;
+        alternate;
+        reversed;
+        margins;
+        opacity: 0 => 1;
+        radius: 6 => 24;
+    };
+    assert_eq!(m.duration, 420.0);
+    assert_eq!(m.delay, 80.0);
+    assert_eq!(m.end_delay, 120.0);
+    assert_eq!(m.ease, Easing::Out(crate::Curve::Back));
+    assert_eq!(m.loops, Loop::Times(3));
+    assert!(m.alternate && m.reversed);
+  }
 
-    #[test]
-    fn every_easing_spelling_expands() {
-        let curves = [
-            motion! { ease: linear; },
-            motion! { ease: spring; },
-            motion! { ease: steps(4); },
-            motion! { ease: in quad; },
-            motion! { ease: out cubic; },
-            motion! { ease: in_out sine; },
-            motion! { ease: Easing::CubicBezier(0.25, 0.1, 0.25, 1.0); },
-            motion! { ease: in quart; },
-            motion! { ease: out quint; },
-            motion! { ease: in expo; },
-            motion! { ease: out circ; },
-            motion! { ease: out elastic; },
-            motion! { ease: out bounce; },
-        ];
-        assert_eq!(curves[0].ease, Easing::Linear);
-        assert_eq!(curves[2].ease, Easing::Steps(4));
-        assert_eq!(curves[4].ease, Easing::Out(crate::Curve::Cubic));
-    }
+  #[test]
+  fn every_easing_spelling_expands() {
+    let curves = [
+      motion! { ease: linear; },
+      motion! { ease: spring; },
+      motion! { ease: steps(4); },
+      motion! { ease: in quad; },
+      motion! { ease: out cubic; },
+      motion! { ease: in_out sine; },
+      motion! { ease: Easing::CubicBezier(0.25, 0.1, 0.25, 1.0); },
+      motion! { ease: in quart; },
+      motion! { ease: out quint; },
+      motion! { ease: in expo; },
+      motion! { ease: out circ; },
+      motion! { ease: out elastic; },
+      motion! { ease: out bounce; },
+    ];
+    assert_eq!(curves[0].ease, Easing::Linear);
+    assert_eq!(curves[2].ease, Easing::Steps(4));
+    assert_eq!(curves[4].ease, Easing::Out(crate::Curve::Cubic));
+  }
 
-    #[test]
-    fn presets_pick_the_constructor() {
-        let m = motion! { enter: slide_up; duration: 300; };
-        assert_eq!(m.duration, 300.0);
-        assert_eq!(m.sample(0.0).number(Prop::Opacity), Some(0.0));
-        assert_eq!(m.sample(300.0).number(Prop::Y), Some(0.0));
+  #[test]
+  fn presets_pick_the_constructor() {
+    let m = motion! { enter: slide_up; duration: 300; };
+    assert_eq!(m.duration, 300.0);
+    assert_eq!(m.sample(0.0).number(Prop::Opacity), Some(0.0));
+    assert_eq!(m.sample(300.0).number(Prop::Y), Some(0.0));
 
-        // With a distance, and the exit twin.
-        let far = motion! { enter: slide_left 24; };
-        assert_eq!(far.sample(0.0).number(Prop::X), Some(24.0));
-        let out = motion! { exit: fade; };
-        assert_eq!(out.sample(0.0).number(Prop::Opacity), Some(1.0));
-        let _ = motion! { exit: slide_down 12; };
-        let _ = motion! { enter: fade; };
-        let _ = motion! { enter: slide_right; };
-    }
+    // With a distance, and the exit twin.
+    let far = motion! { enter: slide_left 24; };
+    assert_eq!(far.sample(0.0).number(Prop::X), Some(24.0));
+    let out = motion! { exit: fade; };
+    assert_eq!(out.sample(0.0).number(Prop::Opacity), Some(1.0));
+    let _ = motion! { exit: slide_down 12; };
+    let _ = motion! { enter: fade; };
+    let _ = motion! { enter: slide_right; };
+  }
 
-    #[test]
-    fn a_leg_list_takes_values_or_keyframes() {
-        let plain = motion! {
-            duration: 300;
-            ease: linear;
-            y: 0 => [-30, 0];
-        };
-        assert_eq!(plain.iteration_ms(), 300.0);
-        assert_eq!(plain.sample(150.0).number(Prop::Y), Some(-30.0));
+  #[test]
+  fn a_leg_list_takes_values_or_keyframes() {
+    let plain = motion! {
+        duration: 300;
+        ease: linear;
+        y: 0 => [-30, 0];
+    };
+    assert_eq!(plain.iteration_ms(), 300.0);
+    assert_eq!(plain.sample(150.0).number(Prop::Y), Some(-30.0));
 
-        // The same track, with a leg that sets its own time.
-        let timed = motion! {
-            duration: 300;
-            ease: linear;
-            y: 0 => [crate::Keyframe::to(-30.0).duration(100.0), crate::Keyframe::to(0.0)];
-        };
-        assert_eq!(timed.sample(100.0).number(Prop::Y), Some(-30.0));
-    }
+    // The same track, with a leg that sets its own time.
+    let timed = motion! {
+        duration: 300;
+        ease: linear;
+        y: 0 => [crate::Keyframe::to(-30.0).duration(100.0), crate::Keyframe::to(0.0)];
+    };
+    assert_eq!(timed.sample(100.0).number(Prop::Y), Some(-30.0));
+  }
 
-    #[test]
-    fn colours_tween_through_the_macro() {
-        let m = motion! {
-            duration: 200;
-            bg: color!("#111111") => color!("#333333");
-            color: color!(teal) => color!(orchid);
-            border_color: color!("#000000") => color!("#ffffff");
-        };
-        assert!(m.sample(0.0).color(Prop::Background).is_some());
-        assert!(m.sample(200.0).color(Prop::TextColor).is_some());
-    }
+  #[test]
+  fn colours_tween_through_the_macro() {
+    let m = motion! {
+        duration: 200;
+        bg: color!("#111111") => color!("#333333");
+        color: color!(teal) => color!(orchid);
+        border_color: color!("#000000") => color!("#ffffff");
+    };
+    assert!(m.sample(0.0).color(Prop::Background).is_some());
+    assert!(m.sample(200.0).color(Prop::TextColor).is_some());
+  }
 
-    #[test]
-    fn every_prop_word_maps() {
-        let m = motion! {
-            opacity: 0 => 1;
-            x: 0 => 1;
-            y: 0 => 1;
-            w: 0 => 1;
-            width: 0 => 1;
-            h: 0 => 1;
-            height: 0 => 1;
-            mt: 0 => 1;
-            mr: 0 => 1;
-            mb: 0 => 1;
-            ml: 0 => 1;
-            pt: 0 => 1;
-            pr: 0 => 1;
-            pb: 0 => 1;
-            pl: 0 => 1;
-            radius: 0 => 1;
-            border_width: 0 => 1;
-            gap: 0 => 1;
-            font_size: 0 => 1;
-            rotate: 0 => 1;
-            scale: 0 => 1;
-            custom("progress"): 0 => 1;
-            custom("legs"): 0 => [2, 4];
-        };
-        // `w`/`width` and `h`/`height` are the same track written twice.
-        assert_eq!(m.tracks.len(), 23);
-        assert_eq!(m.sample(m.total_ms()).number(Prop::Rotate), Some(1.0));
-        assert_eq!(
-            m.sample(m.total_ms()).number(Prop::Custom("progress")),
-            Some(1.0)
-        );
-        assert_eq!(
-            m.sample(m.total_ms()).number(Prop::Custom("legs")),
-            Some(4.0)
-        );
-    }
+  #[test]
+  fn every_prop_word_maps() {
+    let m = motion! {
+        opacity: 0 => 1;
+        x: 0 => 1;
+        y: 0 => 1;
+        w: 0 => 1;
+        width: 0 => 1;
+        h: 0 => 1;
+        height: 0 => 1;
+        mt: 0 => 1;
+        mr: 0 => 1;
+        mb: 0 => 1;
+        ml: 0 => 1;
+        pt: 0 => 1;
+        pr: 0 => 1;
+        pb: 0 => 1;
+        pl: 0 => 1;
+        radius: 0 => 1;
+        border_width: 0 => 1;
+        gap: 0 => 1;
+        font_size: 0 => 1;
+        rotate: 0 => 1;
+        scale: 0 => 1;
+        custom("progress"): 0 => 1;
+        custom("legs"): 0 => [2, 4];
+    };
+    // `w`/`width` and `h`/`height` are the same track written twice.
+    assert_eq!(m.tracks.len(), 23);
+    assert_eq!(m.sample(m.total_ms()).number(Prop::Rotate), Some(1.0));
+    assert_eq!(
+      m.sample(m.total_ms()).number(Prop::Custom("progress")),
+      Some(1.0)
+    );
+    assert_eq!(
+      m.sample(m.total_ms()).number(Prop::Custom("legs")),
+      Some(4.0)
+    );
+  }
 
-    /// Tailor's macro flavour prints floats as `16.`, so that exact spelling
-    /// has to parse — the generator and the macro are one contract.
-    #[test]
-    fn the_spellings_tailor_generates_all_parse() {
-        let m = motion! {
-            enter: slide_up 16.;
-            duration: 400.;
-            delay: 60.;
-            ease: in_out sine;
-            repeat: forever;
-            alternate;
-            margins;
-        };
-        assert_eq!(m.duration, 400.0);
-        assert_eq!(m.delay, 60.0);
-        assert_eq!(m.loops, Loop::Forever);
-        // `margins` moved the slide off the inset.
-        assert_eq!(m.sample(0.0).number(Prop::MarginTop), Some(16.0));
-        let _ = motion! { enter: fade; duration: 260.; ease: out cubic; };
-    }
+  /// Tailor's macro flavour prints floats as `16.`, so that exact spelling
+  /// has to parse — the generator and the macro are one contract.
+  #[test]
+  fn the_spellings_tailor_generates_all_parse() {
+    let m = motion! {
+        enter: slide_up 16.;
+        duration: 400.;
+        delay: 60.;
+        ease: in_out sine;
+        repeat: forever;
+        alternate;
+        margins;
+    };
+    assert_eq!(m.duration, 400.0);
+    assert_eq!(m.delay, 60.0);
+    assert_eq!(m.loops, Loop::Forever);
+    // `margins` moved the slide off the inset.
+    assert_eq!(m.sample(0.0).number(Prop::MarginTop), Some(16.0));
+    let _ = motion! { enter: fade; duration: 260.; ease: out cubic; };
+  }
 
-    #[test]
-    fn repeat_words_and_counts() {
-        assert_eq!(motion! { repeat: once; }.loops, Loop::Times(1));
-        assert_eq!(motion! { repeat: forever; }.loops, Loop::Forever);
-        assert_eq!(motion! { repeat: 5; }.loops, Loop::Times(5));
-    }
+  #[test]
+  fn repeat_words_and_counts() {
+    assert_eq!(motion! { repeat: once; }.loops, Loop::Times(1));
+    assert_eq!(motion! { repeat: forever; }.loops, Loop::Forever);
+    assert_eq!(motion! { repeat: 5; }.loops, Loop::Times(5));
+  }
 
-    #[test]
-    fn an_empty_block_is_a_default_motion() {
-        assert_eq!(motion! {}, Motion::new());
-    }
+  #[test]
+  fn an_empty_block_is_a_default_motion() {
+    assert_eq!(motion! {}, Motion::new());
+  }
 
-    #[test]
-    fn the_block_still_chains() {
-        // Timing with no track to spend it on is a zero-length motion, so the
-        // chained setters go on something that actually moves.
-        let m = motion! { duration: 100; opacity: 0 => 1; }
-            .repeat(2)
-            .alternate(true);
-        assert_eq!(m.total_ms(), 200.0);
-    }
+  #[test]
+  fn the_block_still_chains() {
+    // Timing with no track to spend it on is a zero-length motion, so the
+    // chained setters go on something that actually moves.
+    let m = motion! { duration: 100; opacity: 0 => 1; }
+      .repeat(2)
+      .alternate(true);
+    assert_eq!(m.total_ms(), 200.0);
+  }
 
-    fn leg(from: f32, to: f32) -> Motion {
-        motion! { duration: 100; ease: linear; x: from => to; }
-    }
+  fn leg(from: f32, to: f32) -> Motion {
+    motion! { duration: 100; ease: linear; x: from => to; }
+  }
 
-    #[test]
-    fn sequences_queue_and_place() {
-        let s = sequence![leg(0.0, 10.0), leg(10.0, 20.0)];
-        assert_eq!(s.len(), 2);
-        assert_eq!(s.iteration_ms(), 200.0);
+  #[test]
+  fn sequences_queue_and_place() {
+    let s = sequence![leg(0.0, 10.0), leg(10.0, 20.0)];
+    assert_eq!(s.len(), 2);
+    assert_eq!(s.iteration_ms(), 200.0);
 
-        let overlapped = sequence![
-            leg(0.0, 10.0),
-            rel(-50) => leg(10.0, 20.0),
-            with(0) => leg(20.0, 30.0),
-            abs(400) => leg(30.0, 40.0),
-        ];
-        assert_eq!(overlapped.len(), 4);
-        assert_eq!(overlapped.iteration_ms(), 500.0);
-    }
+    let overlapped = sequence![
+        leg(0.0, 10.0),
+        rel(-50) => leg(10.0, 20.0),
+        with(0) => leg(20.0, 30.0),
+        abs(400) => leg(30.0, 40.0),
+    ];
+    assert_eq!(overlapped.len(), 4);
+    assert_eq!(overlapped.iteration_ms(), 500.0);
+  }
 
-    #[test]
-    fn a_label_anchors_a_sequence_entry() {
-        let placed = Sequence::new()
-            .add(leg(0.0, 10.0))
-            .label("settled", crate::At::End);
-        let s = sequence![label("settled", 50) => leg(10.0, 20.0)];
-        // The macro can only read labels a builder placed, so the two halves
-        // meet here rather than inside one block.
-        assert_eq!(s.len(), 1);
-        assert_eq!(
-            placed.resolve(&crate::At::Label("settled".into(), 0.0)),
-            100.0
-        );
-    }
+  #[test]
+  fn a_label_anchors_a_sequence_entry() {
+    let placed = Sequence::new()
+      .add(leg(0.0, 10.0))
+      .label("settled", crate::At::End);
+    let s = sequence![label("settled", 50) => leg(10.0, 20.0)];
+    // The macro can only read labels a builder placed, so the two halves
+    // meet here rather than inside one block.
+    assert_eq!(s.len(), 1);
+    assert_eq!(
+      placed.resolve(&crate::At::Label("settled".into(), 0.0)),
+      100.0
+    );
+  }
 
-    #[test]
-    fn a_trailing_comma_is_fine_either_way() {
-        assert_eq!(sequence![leg(0.0, 1.0)].len(), 1);
-        assert_eq!(sequence![leg(0.0, 1.0),].len(), 1);
-        assert_eq!(sequence![].len(), 0);
-    }
+  #[test]
+  fn a_trailing_comma_is_fine_either_way() {
+    assert_eq!(sequence![leg(0.0, 1.0)].len(), 1);
+    assert_eq!(sequence![leg(0.0, 1.0),].len(), 1);
+    assert_eq!(sequence![].len(), 0);
+  }
 }

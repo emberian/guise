@@ -96,6 +96,7 @@ SettingsView::new(cx)
     .searchable(true)
     .active("editor")                     // open on a page; unknown ids are ignored
     .sidebar_width(190.0)
+    .sidebar_matches_body(true)            // use the content background in the sidebar
     .content(|page, query, window, cx| { … })
     .footer(|window, cx| Button::new("done", "Done"))
 ```
@@ -122,6 +123,7 @@ cx.subscribe(&settings, |this, _view, event: &SettingsViewEvent, cx| match event
 | `set_page(id, cx)` | Select by id. An unknown id is ignored rather than panicking — a stale id from a restored session is not a crash. |
 | `query()` | The current search text. |
 | `clear_search(cx)` | Empty the field and report it. |
+| `sidebar_matches_body(bool)` | Use the content background for the page list instead of the raised surface. |
 
 ## A whole page
 

@@ -5,6 +5,17 @@ follow [semver](https://semver.org): from 1.0 on, a breaking change means a
 major release, and is called out under **Breaking**. Releases before 1.0 landed
 breaking changes in minor versions.
 
+## 1.5.2 — 2026-08-26
+
+### Settings sidebar
+
+`SettingsView::sidebar_matches_body(true)` lets an app use the content background
+for the page list instead of the raised surface. Sidebar pages now participate in
+the tab order and show a theme-derived focus border.
+
+The workspace now checks in its two-space `rustfmt.toml`, making the existing
+formatting convention reproducible instead of editor-specific.
+
 ## 1.5.1 — 2026-08-26
 
 ### Text overflow

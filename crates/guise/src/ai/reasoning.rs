@@ -29,118 +29,118 @@ use crate::theme::{theme, ColorName, Size};
 /// A collapsible block of the model's reasoning.
 #[derive(IntoElement)]
 pub struct AIReasoning {
-    id: ElementId,
-    text: SharedString,
-    label: Option<SharedString>,
-    open: bool,
-    streaming: bool,
-    size: Size,
-    on_toggle: Option<ClickHandler>,
+  id: ElementId,
+  text: SharedString,
+  label: Option<SharedString>,
+  open: bool,
+  streaming: bool,
+  size: Size,
+  on_toggle: Option<ClickHandler>,
 }
 
 impl AIReasoning {
-    pub fn new(id: impl Into<ElementId>, text: impl Into<SharedString>) -> Self {
-        AIReasoning {
-            id: id.into(),
-            text: text.into(),
-            label: None,
-            open: false,
-            streaming: false,
-            size: Size::Sm,
-            on_toggle: None,
-        }
+  pub fn new(id: impl Into<ElementId>, text: impl Into<SharedString>) -> Self {
+    AIReasoning {
+      id: id.into(),
+      text: text.into(),
+      label: None,
+      open: false,
+      streaming: false,
+      size: Size::Sm,
+      on_toggle: None,
     }
+  }
 
-    /// Override the header text. The default names the state.
-    pub fn label(mut self, label: impl Into<SharedString>) -> Self {
-        self.label = Some(label.into());
-        self
-    }
+  /// Override the header text. The default names the state.
+  pub fn label(mut self, label: impl Into<SharedString>) -> Self {
+    self.label = Some(label.into());
+    self
+  }
 
-    pub fn open(mut self, open: bool) -> Self {
-        self.open = open;
-        self
-    }
+  pub fn open(mut self, open: bool) -> Self {
+    self.open = open;
+    self
+  }
 
-    /// Still arriving, so the header says so even while collapsed.
-    pub fn streaming(mut self, streaming: bool) -> Self {
-        self.streaming = streaming;
-        self
-    }
+  /// Still arriving, so the header says so even while collapsed.
+  pub fn streaming(mut self, streaming: bool) -> Self {
+    self.streaming = streaming;
+    self
+  }
 
-    pub fn size(mut self, size: Size) -> Self {
-        self.size = size;
-        self
-    }
+  pub fn size(mut self, size: Size) -> Self {
+    self.size = size;
+    self
+  }
 
-    pub fn on_toggle(
-        mut self,
-        handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
-    ) -> Self {
-        self.on_toggle = Some(Box::new(handler));
-        self
-    }
+  pub fn on_toggle(
+    mut self,
+    handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+  ) -> Self {
+    self.on_toggle = Some(Box::new(handler));
+    self
+  }
 }
 
 impl RenderOnce for AIReasoning {
-    fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
-        let t = theme(cx);
-        let dimmed = t.dimmed().hsla();
-        let border = t.border().hsla();
-        let font_xs = t.font_size(Size::Xs);
+  fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
+    let t = theme(cx);
+    let dimmed = t.dimmed().hsla();
+    let border = t.border().hsla();
+    let font_xs = t.font_size(Size::Xs);
 
-        let label = self.label.unwrap_or_else(|| {
-            if self.streaming {
-                SharedString::new_static("Thinking\u{2026}")
-            } else {
-                SharedString::new_static("Reasoning")
-            }
-        });
+    let label = self.label.unwrap_or_else(|| {
+      if self.streaming {
+        SharedString::new_static("Thinking\u{2026}")
+      } else {
+        SharedString::new_static("Reasoning")
+      }
+    });
 
-        let header = div()
-            .id(self.id)
-            .flex()
-            .items_center()
-            .gap(px(6.0))
-            .cursor_pointer()
-            .text_size(px(font_xs))
-            .text_color(dimmed)
-            .child(
-                Icon::new(if self.open {
-                    IconName::ChevronDown
-                } else {
-                    IconName::ChevronRight
-                })
-                .size(Size::Xs)
-                .color(ColorName::Gray),
-            )
-            .child(
-                Icon::new(IconName::Brain)
-                    .size(Size::Xs)
-                    .color(ColorName::Gray),
-            )
-            .child(label)
-            .when_some(self.on_toggle, |header, handler| {
-                header.on_click(move |event, window, cx| handler(event, window, cx))
-            });
+    let header = div()
+      .id(self.id)
+      .flex()
+      .items_center()
+      .gap(px(6.0))
+      .cursor_pointer()
+      .text_size(px(font_xs))
+      .text_color(dimmed)
+      .child(
+        Icon::new(if self.open {
+          IconName::ChevronDown
+        } else {
+          IconName::ChevronRight
+        })
+        .size(Size::Xs)
+        .color(ColorName::Gray),
+      )
+      .child(
+        Icon::new(IconName::Brain)
+          .size(Size::Xs)
+          .color(ColorName::Gray),
+      )
+      .child(label)
+      .when_some(self.on_toggle, |header, handler| {
+        header.on_click(move |event, window, cx| handler(event, window, cx))
+      });
 
-        div()
-            .flex()
-            .flex_col()
-            .gap(px(6.0))
+    div()
+      .flex()
+      .flex_col()
+      .gap(px(6.0))
+      .w_full()
+      .child(header)
+      .when(self.open, |column| {
+        column.child(
+          div()
             .w_full()
-            .child(header)
-            .when(self.open, |column| {
-                column.child(
-                    div()
-                        .w_full()
-                        .pl(px(10.0))
-                        .border_l_2()
-                        .border_color(border)
-                        .text_color(dimmed)
-                        .child(Markdown::new(self.text).size(self.size)),
-                )
-            })
-            .probe("AIReasoning")
-    }
+            .pl(px(10.0))
+            .border_l_2()
+            .border_color(border)
+            .text_color(dimmed)
+            .child(Markdown::new(self.text).size(self.size)),
+        )
+      })
+      .probe("AIReasoning")
+  }
 }

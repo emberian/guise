@@ -6,27 +6,27 @@
 /// A pair of equivalent snippets for one section.
 #[derive(Clone, Copy)]
 pub struct Snippet {
-    pub plain: &'static str,
-    pub macros: &'static str,
+  pub plain: &'static str,
+  pub macros: &'static str,
 }
 
 impl Snippet {
-    pub fn pick(self, macros: bool) -> &'static str {
-        if macros {
-            self.macros
-        } else {
-            self.plain
-        }
+  pub fn pick(self, macros: bool) -> &'static str {
+    if macros {
+      self.macros
+    } else {
+      self.plain
     }
+  }
 }
 
 pub const BUTTONS: Snippet = Snippet {
-    plain: r#"Group::new().children([
+  plain: r#"Group::new().children([
     Button::new("filled", "Filled").variant(Variant::Filled),
     Button::new("light", "Light").variant(Variant::Light),
     Button::new("outline", "Outline").variant(Variant::Outline),
 ]);"#,
-    macros: r#"hstack![
+  macros: r#"hstack![
     button!("filled", "Filled").variant(Variant::Filled),
     button!("light", "Light").variant(Variant::Light),
     button!("outline", "Outline").variant(Variant::Outline),
@@ -34,7 +34,7 @@ pub const BUTTONS: Snippet = Snippet {
 };
 
 pub const ICONS: Snippet = Snippet {
-    plain: r#"// Lucide is the built-in icon set: every icon on lucide.dev is an
+  plain: r#"// Lucide is the built-in icon set: every icon on lucide.dev is an
 // IconName variant, rendered from the font embedded in guise.
 Group::new().children([
     Icon::new(IconName::Rocket).size(Size::Lg),
@@ -44,7 +44,7 @@ Group::new().children([
 
 // The full set is iterable: IconName::all(), name() gives "arrow-right".
 "#,
-    macros: r#"hstack![
+  macros: r#"hstack![
     Icon::new(IconName::Rocket).size(Size::Lg),
     Icon::new(IconName::Heart).color(ColorName::Red),
     Icon::new(IconName::Star).color(ColorName::Yellow),
@@ -52,7 +52,7 @@ Group::new().children([
 };
 
 pub const WEBVIEW: Snippet = Snippet {
-    plain: r#"// Stateful entity — owns a native OS web view via `wry`.
+  plain: r#"// Stateful entity — owns a native OS web view via `wry`.
 let view = cx.new(|cx| {
     WebView::new(cx)
         .url("https://example.com")
@@ -65,7 +65,7 @@ cx.subscribe(&view, |_this, _view, event: &WebViewEvent, _cx| {
         println!("title: {title}");
     }
 }).detach();"#,
-    macros: r#"let view = cx.new(|cx| {
+  macros: r#"let view = cx.new(|cx| {
     WebView::new(cx)
         .url("https://example.com")
         .height(360.0)
@@ -73,12 +73,12 @@ cx.subscribe(&view, |_this, _view, event: &WebViewEvent, _cx| {
 };
 
 pub const BADGES: Snippet = Snippet {
-    plain: r#"Group::new().children([
+  plain: r#"Group::new().children([
     Badge::new("Blue").color(ColorName::Blue),
     Badge::new("Light").variant(Variant::Light),
     Badge::new("Outline").variant(Variant::Outline),
 ]);"#,
-    macros: r#"hstack![
+  macros: r#"hstack![
     badge!("Blue").color(ColorName::Blue),
     badge!("Light").variant(Variant::Light),
     badge!("Outline").variant(Variant::Outline),
@@ -86,7 +86,7 @@ pub const BADGES: Snippet = Snippet {
 };
 
 pub const INPUTS: Snippet = Snippet {
-    plain: r#"// Stateful entities — create with cx.new, keep the handle.
+  plain: r#"// Stateful entities — create with cx.new, keep the handle.
 let name = cx.new(|cx| TextInput::new(cx).label("Name"));
 
 Stack::new()
@@ -100,7 +100,7 @@ Stack::new()
                 cx.notify();
             })),
     );"#,
-    macros: r#"// Stateful entities — create with cx.new, keep the handle.
+  macros: r#"// Stateful entities — create with cx.new, keep the handle.
 let name = cx.new(|cx| TextInput::new(cx).label("Name"));
 
 vstack![
@@ -116,17 +116,17 @@ vstack![
 };
 
 pub const OVERLAYS: Snippet = Snippet {
-    // Mixed child types (Button, Menu entity, div) can't go in a homogeneous
-    // `.children([...])` — chain `.child()` instead...
-    plain: r#"Group::new()
+  // Mixed child types (Button, Menu entity, div) can't go in a homogeneous
+  // `.children([...])` — chain `.child()` instead...
+  plain: r#"Group::new()
     .child(Button::new("open-modal", "Open modal").on_click(
         cx.listener(|this, _, _, cx| { this.modal_open = true; cx.notify(); }),
     ))
     .child(menu.clone())
     .child(div().id("tip").child("Hover me")
         .tooltip(guise::tooltip("A themed tooltip")));"#,
-    // ...or let the macro flatten them (it expands to `.child()` calls).
-    macros: r#"hstack![
+  // ...or let the macro flatten them (it expands to `.child()` calls).
+  macros: r#"hstack![
     Button::new("open-modal", "Open modal").on_click(
         cx.listener(|this, _, _, cx| { this.modal_open = true; cx.notify(); }),
     ),
@@ -137,11 +137,11 @@ pub const OVERLAYS: Snippet = Snippet {
 };
 
 pub const FEEDBACK: Snippet = Snippet {
-    plain: r#"Stack::new()
+  plain: r#"Stack::new()
     .gap(Size::Md)
     .child(Alert::new("Saved.").title("Success").color(ColorName::Teal).icon("✓"))
     .child(Progress::new(60.0).color(ColorName::Teal));"#,
-    macros: r#"vstack![
+  macros: r#"vstack![
     Alert::new("Saved.").title("Success").color(ColorName::Teal).icon("✓"),
     Progress::new(60.0).color(ColorName::Teal),
 ]
@@ -149,7 +149,7 @@ pub const FEEDBACK: Snippet = Snippet {
 };
 
 pub const DATA: Snippet = Snippet {
-    plain: r#"Stack::new()
+  plain: r#"Stack::new()
     .gap(Size::Md)
     .child(AvatarGroup::new().avatars(["AL", "GH", "LT"]).limit(2))
     .child(tabs.clone())
@@ -158,7 +158,7 @@ pub const DATA: Snippet = Snippet {
             .head(["Name", "Role"])
             .row(["Ada", "Admin"]),
     );"#,
-    macros: r#"vstack![
+  macros: r#"vstack![
     AvatarGroup::new().avatars(["AL", "GH", "LT"]).limit(2),
     tabs.clone(),
     Table::new()
@@ -169,12 +169,12 @@ pub const DATA: Snippet = Snippet {
 };
 
 pub const NAVIGATION: Snippet = Snippet {
-    plain: r#"Stack::new()
+  plain: r#"Stack::new()
     .gap(Size::Md)
     .child(Breadcrumbs::new().items(["Home", "Projects", "guise"]))
     .child(Stepper::new().step("Account").step("Profile").active(1))
     .child(pagination.clone());"#,
-    macros: r#"vstack![
+  macros: r#"vstack![
     Breadcrumbs::new().items(["Home", "Projects", "guise"]),
     Stepper::new().step("Account").step("Profile").active(1),
     pagination.clone(),
@@ -183,11 +183,11 @@ pub const NAVIGATION: Snippet = Snippet {
 };
 
 pub const POLISH: Snippet = Snippet {
-    plain: r#"Group::new()
+  plain: r#"Group::new()
     .child(ActionIcon::new("edit", IconName::Pencil).label("Edit").variant(Variant::Light))
     .child(ThemeIcon::new(IconName::Star).color(ColorName::Yellow))
     .child(Chip::new("chip", "Notifications").checked(self.chip_on));"#,
-    macros: r#"hstack![
+  macros: r#"hstack![
     ActionIcon::new("edit", IconName::Pencil).label("Edit").variant(Variant::Light),
     ThemeIcon::new(IconName::Star).color(ColorName::Yellow),
     Chip::new("chip", "Notifications").checked(self.chip_on),
@@ -195,7 +195,7 @@ pub const POLISH: Snippet = Snippet {
 };
 
 pub const LAYOUT: Snippet = Snippet {
-    plain: r#"use guise::flex::*;
+  plain: r#"use guise::flex::*;
 
 Row::new()
     .gap(8.0)
@@ -206,7 +206,7 @@ Row::new()
 Row::new()
     .child(Expanded::new(left).flex(2.0))
     .child(Expanded::new(right).flex(1.0));"#,
-    macros: r#"use guise::prelude::*; // brings row!, col!, ...
+  macros: r#"use guise::prelude::*; // brings row!, col!, ...
 
 row![tile, Spacer::new(), Badge::new("right")];
 
@@ -218,7 +218,7 @@ col![
 
 // No containers here — the two variants are identical.
 pub const REACTIVE: Snippet = Snippet {
-    plain: r#"// Create shared state and provide it via context.
+  plain: r#"// Create shared state and provide it via context.
 let count = use_state(cx, 0i32);
 provide(cx, count.clone());
 
@@ -228,7 +228,7 @@ watch(cx, &count);
 
 // Mutate anywhere — every watcher re-renders.
 count.update(cx, |n| *n += 1);"#,
-    macros: r#"// Create shared state and provide it via context.
+  macros: r#"// Create shared state and provide it via context.
 let count = use_state(cx, 0i32);
 provide(cx, count.clone());
 
@@ -241,14 +241,14 @@ count.update(cx, |n| *n += 1);"#,
 };
 
 pub const CARDS: Snippet = Snippet {
-    plain: r#"Card::new().child(
+  plain: r#"Card::new().child(
     Stack::new()
         .gap(Size::Sm)
         .child(Text::new("Overview").bold())
         .child(Text::new("Cards compose Paper, Stack, Group, Text.").dimmed())
         .child(Button::new("open", "Open").variant(Variant::Light).full_width(true)),
 );"#,
-    macros: r#"card![vstack![
+  macros: r#"card![vstack![
     text!("Overview").bold(),
     text!("Cards compose Paper, Stack, Group, Text.").dimmed(),
     button!("open", "Open").variant(Variant::Light).full_width(true),
@@ -257,12 +257,12 @@ pub const CARDS: Snippet = Snippet {
 };
 
 pub const TYPOGRAPHY: Snippet = Snippet {
-    plain: r#"Stack::new()
+  plain: r#"Stack::new()
     .gap(Size::Sm)
     .child(Title::new("Heading order 1").order(1))
     .child(Text::new("Body text at the default size."))
     .child(Text::new("Dimmed secondary text.").dimmed());"#,
-    macros: r#"vstack![
+  macros: r#"vstack![
     title!("Heading order 1").order(1),
     text!("Body text at the default size."),
     text!("Dimmed secondary text.").dimmed(),
@@ -272,7 +272,7 @@ pub const TYPOGRAPHY: Snippet = Snippet {
 
 // TableView is entity-only; no macro form.
 pub const TABLEVIEW: Snippet = Snippet {
-    plain: r#"#[derive(Clone)]
+  plain: r#"#[derive(Clone)]
 struct Employee { name: &'static str, role: &'static str, tenure: u32 }
 
 let table = cx.new(|cx| {
@@ -300,7 +300,7 @@ cx.subscribe(&table, |_, _, event: &TableViewEvent, _| match event {
     TableViewEvent::Sorted(sort) => { /* Some((column, dir)) or None */ }
 })
 .detach();"#,
-    macros: r#"#[derive(Clone)]
+  macros: r#"#[derive(Clone)]
 struct Employee { name: &'static str, role: &'static str, tenure: u32 }
 
 let table = cx.new(|cx| {
@@ -319,7 +319,7 @@ let table = cx.new(|cx| {
 
 // Signal plumbing is identical in both styles.
 pub const DATAVIEW: Snippet = Snippet {
-    plain: r#"// One Signal<Vec<T>> is the source of truth; everything binds to it.
+  plain: r#"// One Signal<Vec<T>> is the source of truth; everything binds to it.
 let items = use_state(cx, vec!["gpui".to_string(), "SwiftUI".to_string()]);
 
 // A TextInput two-way bound to a query Signal drives the filter. The
@@ -354,7 +354,7 @@ cx.observe(query.entity(), move |_this, query, cx| {
 
 // Any write repaints every bound view — no manual wiring:
 items.update(cx, |list| list.push("SwiftUI".into()));"#,
-    macros: r#"// One Signal<Vec<T>> is the source of truth; everything binds to it.
+  macros: r#"// One Signal<Vec<T>> is the source of truth; everything binds to it.
 let items = use_state(cx, vec!["gpui".to_string(), "SwiftUI".to_string()]);
 
 // A TextInput two-way bound to a query Signal drives the filter. The
@@ -389,7 +389,7 @@ items.update(cx, |list| list.push("SwiftUI".into()));"#,
 
 // TreeView is entity-only; no macro form.
 pub const TREE: Snippet = Snippet {
-    plain: r#"let tree = cx.new(|cx| {
+  plain: r#"let tree = cx.new(|cx| {
     TreeView::new(cx)
         .nodes(vec![
             TreeNode::new("src", "src")
@@ -408,7 +408,7 @@ cx.subscribe(&tree, |_this, _tree, event: &TreeViewEvent, _cx| {
     }
 })
 .detach();"#,
-    macros: r#"let tree = cx.new(|cx| {
+  macros: r#"let tree = cx.new(|cx| {
     TreeView::new(cx)
         .nodes(vec![
             TreeNode::new("src", "src")
@@ -422,7 +422,7 @@ cx.subscribe(&tree, |_this, _tree, event: &TreeViewEvent, _cx| {
 
 // Editor is entity-only; no macro form.
 pub const EDITOR: Snippet = Snippet {
-    plain: r#"// A syntax-highlighted code editor. Cmd+Enter emits EditorEvent::Run.
+  plain: r#"// A syntax-highlighted code editor. Cmd+Enter emits EditorEvent::Run.
 let editor = cx.new(|cx| {
     Editor::new(cx)
         .language(Language::Rust)      // None | Rust | Sql | Json
@@ -442,7 +442,7 @@ cx.subscribe(&editor, |_this, _editor, event: &EditorEvent, _cx| {
 // Two-way binding to a Signal<String>:
 let source = use_state(cx, String::new());
 Editor::bind(&editor, &source, cx);"#,
-    macros: r#"let editor = cx.new(|cx| {
+  macros: r#"let editor = cx.new(|cx| {
     Editor::new(cx)
         .language(Language::Rust)
         .rows(8)
@@ -452,7 +452,7 @@ Editor::bind(&editor, &source, cx);"#,
 
 // Panel is a builder, SplitPanel an entity; neither has a macro form.
 pub const PANELS: Snippet = Snippet {
-    plain: r#"// Panel — Card chrome + header/footer, controlled collapse.
+  plain: r#"// Panel — Card chrome + header/footer, controlled collapse.
 Panel::new()
     .id("status")
     .title("Project status")
@@ -485,7 +485,7 @@ cx.subscribe(&split, |_this, _split, event: &SplitPanelEvent, _cx| {
     let SplitPanelEvent::Resized(ratio) = event;
 })
 .detach();"#,
-    macros: r#"// Panel — Card chrome + header/footer, controlled collapse.
+  macros: r#"// Panel — Card chrome + header/footer, controlled collapse.
 Panel::new()
     .id("status")
     .title("Project status")
@@ -508,7 +508,7 @@ let split = cx.new(|cx| {
 };
 
 pub const INPUTS2: Snippet = Snippet {
-    plain: r#"// Entities own their state; create them once with cx.new.
+  plain: r#"// Entities own their state; create them once with cx.new.
 let password = cx.new(|cx| PasswordInput::new(cx).label("Password"));
 let brand = cx.new(|cx| ColorInput::new(cx).value(rgb(34, 139, 230)));
 let topics = cx.new(|cx| TagsInput::new(cx).tags(["rust", "gpui"]).max_tags(6));
@@ -533,7 +533,7 @@ Rating::new("stars")
 // Or skip the handlers and two-way bind to signals:
 let secret = use_state(cx, String::new());
 PasswordInput::bind(&password, &secret, cx);"#,
-    macros: r#"// Entities own their state; create them once with cx.new.
+  macros: r#"// Entities own their state; create them once with cx.new.
 let password = cx.new(|cx| PasswordInput::new(cx).label("Password"));
 let brand = cx.new(|cx| ColorInput::new(cx).value(rgb(34, 139, 230)));
 let topics = cx.new(|cx| TagsInput::new(cx).tags(["rust", "gpui"]).max_tags(6));
@@ -555,7 +555,7 @@ vstack![
 };
 
 pub const OVERLAYS2: Snippet = Snippet {
-    plain: r#"// ContextMenu: show at the pointer from a right-click.
+  plain: r#"// ContextMenu: show at the pointer from a right-click.
 let menu = cx.new(|cx| {
     ContextMenu::new(cx)
         .item_icon(IconName::Copy, "Copy path", |_, _| {})
@@ -600,7 +600,7 @@ if self.confirm_open {
             .on_cancel(cx.listener(|this, _, _, cx| { this.confirm_open = false; cx.notify(); })),
     );
 }"#,
-    macros: r#"// ContextMenu: show at the pointer from a right-click.
+  macros: r#"// ContextMenu: show at the pointer from a right-click.
 let menu = cx.new(|cx| {
     ContextMenu::new(cx)
         .item_icon(IconName::Copy, "Copy path", |_, _| {})
@@ -616,7 +616,7 @@ zstack![
 };
 
 pub const SHELL: Snippet = Snippet {
-    plain: r#"// TabBar (entity): a document tab strip that emits Select / Close / Add.
+  plain: r#"// TabBar (entity): a document tab strip that emits Select / Close / Add.
 let bar = cx.new(|cx| TabBar::new(cx).tabs(["main.rs", "lib.rs", "theme.rs"]));
 cx.subscribe(&bar, |_this, bar, event: &TabBarEvent, cx| match event {
     TabBarEvent::Close(i) => {
@@ -641,7 +641,7 @@ AppShell::new()
             .child(Space::y(Size::Sm))  // fixed theme-scale gap
             .child(Text::new("Centered, capped, scrollable.")),
     );"#,
-    macros: r#"// AppShell: fixed-size live regions around a scrollable main area.
+  macros: r#"// AppShell: fixed-size live regions around a scrollable main area.
 AppShell::new()
     .header(44.0, |_, _| Text::new("Header"))
     .navbar(160.0, |_, _| Text::new("Navbar"))
@@ -658,7 +658,7 @@ AppShell::new()
 
 // Image is a plain builder; no macro form.
 pub const MEDIA: Snippet = Snippet {
-    plain: r#"// Image — wraps gpui's img(); URI, asset path, or file path.
+  plain: r#"// Image — wraps gpui's img(); URI, asset path, or file path.
 Image::new("https://example.com/cat.png")
     .width(240.0)
     .height(160.0)
@@ -672,7 +672,7 @@ Image::new("https://example.com/me.png")
     .height(96.0)
     .circle()
     .fallback(|| Text::new("…").dimmed());"#,
-    macros: r#"// Image — wraps gpui's img(); URI, asset path, or file path.
+  macros: r#"// Image — wraps gpui's img(); URI, asset path, or file path.
 Image::new("https://example.com/cat.png")
     .width(240.0)
     .height(160.0)
@@ -689,7 +689,7 @@ Image::new("https://example.com/me.png")
 };
 
 pub const TYPEEXTRAS: Snippet = Snippet {
-    plain: r#"// Mark — inline highlighter pen.
+  plain: r#"// Mark — inline highlighter pen.
 Group::new()
     .gap(Size::Xs)
     .child(Text::new("Highlight the"))
@@ -711,7 +711,7 @@ Spoiler::new("bio-spoiler")
         cx.notify();
     }))
     .child(Text::new(LONG_BIO).size(Size::Sm));"#,
-    macros: r#"// Mark — inline highlighter pen.
+  macros: r#"// Mark — inline highlighter pen.
 hstack![
     text!("Highlight the"),
     Mark::new("important part"),
@@ -728,7 +728,7 @@ Blockquote::new()
 
 // Charts are plain builders; no macro forms.
 pub const CHARTS: Snippet = Snippet {
-    plain: r#"// Inline trend line, filled to the baseline.
+  plain: r#"// Inline trend line, filled to the baseline.
 Sparkline::new([3.0, 5.0, 2.0, 8.0, 6.0]).fill();
 
 // Bars from (label, value) pairs; labels render under the bars.
@@ -740,7 +740,7 @@ LineChart::new([12.0, 18.0, 9.0, 24.0, 31.0]).fill().height(120.0);
 // Proportional slices with a donut hole and a legend.
 PieChart::entries([("Rust", 62.0), ("TOML", 25.0), ("Other", 13.0)])
     .donut(0.6);"#,
-    macros: r#"// Inline trend line, filled to the baseline.
+  macros: r#"// Inline trend line, filled to the baseline.
 Sparkline::new([3.0, 5.0, 2.0, 8.0, 6.0]).fill();
 
 // Bars from (label, value) pairs; labels render under the bars.
@@ -755,7 +755,7 @@ PieChart::entries([("Rust", 62.0), ("TOML", 25.0), ("Other", 13.0)])
 };
 
 pub const GPU_VIEW: Snippet = Snippet {
-    plain: r#"let texture = GpuTexture::png(include_bytes!("floor.png").to_vec());
+  plain: r#"let texture = GpuTexture::png(include_bytes!("floor.png").to_vec());
 let workers = GpuTexture::png(include_bytes!("workers.png").to_vec());
 let scene = GpuScene::new(1536.0, 1024.0)
     .background(texture)
@@ -776,7 +776,7 @@ GpuView::new(scene)
     .fit(GpuFit::Cover)
     .height(360.0)
     .pixelated();"#,
-    macros: r#"let scene = GpuScene::new(320.0, 180.0)
+  macros: r#"let scene = GpuScene::new(320.0, 180.0)
     .rect(GpuRect::new(0.0, 0.0, 320.0, 180.0), theme(cx).surface().hsla())
     .rounded_rect(GpuRect::new(80.0, 60.0, 24.0, 24.0), theme(cx).primary().hsla(), 4.0);
 
@@ -785,7 +785,7 @@ GpuView::new(scene).height(260.0).pixelated();"#,
 
 // The swatch grid is a data-driven loop; no macro form.
 pub const PALETTE: Snippet = Snippet {
-    plain: r#"for name in ColorName::ALL {
+  plain: r#"for name in ColorName::ALL {
     Group::new()
         .wrap(false)
         .children((0..10).map(|shade| {
@@ -794,7 +794,7 @@ pub const PALETTE: Snippet = Snippet {
                 .bg(theme(cx).color(name, shade).hsla())
         }));
 }"#,
-    macros: r#"for name in ColorName::ALL {
+  macros: r#"for name in ColorName::ALL {
     Group::new()
         .wrap(false)
         .children((0..10).map(|shade| {
@@ -806,7 +806,7 @@ pub const PALETTE: Snippet = Snippet {
 };
 
 pub const DATES: Snippet = Snippet {
-    plain: r#"let picker = cx.new(|cx| DatePicker::new(cx).label("Ship date"));
+  plain: r#"let picker = cx.new(|cx| DatePicker::new(cx).label("Ship date"));
 cx.subscribe(&picker, |_, event: &DatePickerEvent, _| match event {
     DatePickerEvent::Selected(date) => { /* date.format("MMM D, YYYY") */ }
     DatePickerEvent::Range(start, end) => { /* range_mode() */ }
@@ -818,7 +818,7 @@ let file = cx.new(|cx| FileInput::new(cx).accept(["png", "jpg"]));
 Dropzone::new("uploads")
     .label("Drop files here")
     .on_files(|paths, _cx| { /* Vec<PathBuf> */ });"#,
-    macros: r#"// Same wiring — pickers are entities, so the builder/macro split
+  macros: r#"// Same wiring — pickers are entities, so the builder/macro split
 // only affects the surrounding layout:
 vstack![
     // cx.new(|cx| DatePicker::new(cx)), cx.new(|cx| TimePicker::new(cx)) …
@@ -826,7 +826,7 @@ vstack![
 };
 
 pub const DND: Snippet = Snippet {
-    plain: r#"SortableList::new("queue", items.len(), move |i, _w, _cx| {
+  plain: r#"SortableList::new("queue", items.len(), move |i, _w, _cx| {
     Text::new(items[i].clone()).into_any_element()
 })
 .on_reorder(move |from, to, _w, cx| {
@@ -839,12 +839,12 @@ pub const DND: Snippet = Snippet {
 // Typed payloads between arbitrary elements:
 Draggable::new("card", CardId(3)).label("Q3 report").child(card);
 DropTarget::<CardId>::new("done").on_drop(|id, _w, _cx| { /* … */ });"#,
-    macros: r#"// dnd wiring is identical in macro layouts — wrap the list:
+  macros: r#"// dnd wiring is identical in macro layouts — wrap the list:
 vstack![text!("Drag rows to reorder").dimmed()]; // + SortableList as above"#,
 };
 
 pub const MOTION: Snippet = Snippet {
-    plain: r#"// Keyframes on one element. Legs with no duration split what is left.
+  plain: r#"// Keyframes on one element. Legs with no duration split what is left.
 Animated::new("swatch")
     .motion(Motion::new()
         .duration(900.0)
@@ -868,7 +868,7 @@ Animated::new("stage").animator(&player).child(box_);
 
 // Collapse and Transition are still the short path for reveal + entrance:
 Collapse::new("details").open(self.expanded).height(88.0).child(panel);"#,
-    macros: r#"// The same motions, as declaration blocks:
+  macros: r#"// The same motions, as declaration blocks:
 motion! {
     duration: 900;
     ease: in_out quad;
@@ -889,7 +889,7 @@ sequence![
 };
 
 pub const MISC: Snippet = Snippet {
-    plain: r#"let nav = cx.new(|cx| NavigationMenu::new(cx)
+  plain: r#"let nav = cx.new(|cx| NavigationMenu::new(cx)
     .item("home", "Home")
     .menu("docs", "Docs", [("tutorial", "Tutorial"), ("api", "API")])
     .active("home"));
@@ -906,12 +906,12 @@ let transfer = cx.new(|cx| Transfer::new(cx)
 let tour = cx.new(|cx| Tour::new(cx)
     .step("Welcome", "…").step("Panels", "…"));
 tour.update(cx, |t, cx| t.start(cx));"#,
-    macros: r#"// Entities are created with cx.new either way; macros wrap layout:
+  macros: r#"// Entities are created with cx.new either way; macros wrap layout:
 vstack![ /* nav, deck, field … */ ];"#,
 };
 
 pub const UPDATE: Snippet = Snippet {
-    plain: r#"// One updater, built at startup: where releases live, what verifies
+  plain: r#"// One updater, built at startup: where releases live, what verifies
 // them, and what to do just before the app restarts into the new one.
 let updater = Updater::github("Acme", env!("CARGO_PKG_VERSION"), "acme/acme")
     .codesign_requirement("anchor apple generic and certificate leaf[subject.OU] = TEAMID")
@@ -927,13 +927,13 @@ cx.subscribe(&prompt, |_this, _prompt, event: &UpdatePromptEvent, _cx| {
     if let UpdatePromptEvent::Failed(why) = event { eprintln!("{why}"); }
 })
 .detach();"#,
-    macros: r#"// The update windows are opened, not laid out, so there is no macro
+  macros: r#"// The update windows are opened, not laid out, so there is no macro
 // form. Embedded, the panel is just another child:
 vstack![prompt.clone()];"#,
 };
 
 pub const AI: Snippet = Snippet {
-    plain: r#"// The transcript owns the conversation; the host owns the request.
+  plain: r#"// The transcript owns the conversation; the host owns the request.
 let chat = cx.new(|cx| AIChatView::new(cx).max_width(680.0));
 let composer = cx.new(|cx| {
     AIComposer::new(cx).hint("Enter sends · Shift+Enter for a new line")
@@ -960,7 +960,7 @@ AICost::new(usage, AIPricing::new(3.0, 15.0)).breakdown(true);
 AIToolCall::new("t", "run_tests")
     .status(AIToolStatus::Error)
     .result("3 failed, 415 passed");"#,
-    macros: r#"// The transcript owns the conversation; the host owns the request.
+  macros: r#"// The transcript owns the conversation; the host owns the request.
 let chat = cx.new(|cx| AIChatView::new(cx).max_width(680.0));
 let composer = cx.new(|cx| AIComposer::new(cx).attachments(true));
 
@@ -975,7 +975,7 @@ hstack![
 };
 
 pub const DEVTOOLS: Snippet = Snippet {
-    plain: r#"// Once at startup: the store every panel reads from.
+  plain: r#"// Once at startup: the store every panel reads from.
 DevToolsState::new().init(cx);
 
 // The inspector itself. Put it anywhere — a pane, a drawer, its own window.
@@ -1019,7 +1019,7 @@ cx.subscribe(&devtools, |this, _devtools, event: &DevToolsEvent, cx| {
     }
 })
 .detach();"#,
-    macros: r#"DevToolsState::new().init(cx);
+  macros: r#"DevToolsState::new().init(cx);
 let devtools = cx.new(DevTools::new);
 
 vstack![
@@ -1045,7 +1045,7 @@ impl RenderOnce for Button {
 };
 
 pub const SETTINGS: Snippet = Snippet {
-    plain: r#"// The shell: pages down the left, the active page on the right.
+  plain: r#"// The shell: pages down the left, the active page on the right.
 let settings = cx.new(|cx| {
     SettingsView::new(cx)
         .page_icon("appearance", "Appearance", IconName::Palette)
@@ -1079,7 +1079,7 @@ cx.subscribe(&settings, |this, _view, event: &SettingsViewEvent, cx| {
     }
 })
 .detach();"#,
-    macros: r#"let settings = cx.new(|cx| {
+  macros: r#"let settings = cx.new(|cx| {
     SettingsView::new(cx)
         .page("appearance", "Appearance")
         .page("editor", "Editor")
