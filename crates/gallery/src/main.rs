@@ -7,8 +7,9 @@ use std::rc::Rc;
 
 use gpui::prelude::*;
 use gpui::{
-    div, px, size, AnyElement, App, Bounds, Context, Entity, IntoElement, MouseButton,
-    MouseDownEvent, SharedString, TitlebarOptions, Window, WindowBounds, WindowOptions,
+    div, list, px, size, AnyElement, App, Bounds, Context, Entity, IntoElement, ListAlignment,
+    ListState, MouseButton, MouseDownEvent, SharedString, TitlebarOptions, Window, WindowBounds,
+    WindowOptions,
 };
 
 use guise::flex::{Container, EdgeInsets, Expanded, Row, SizedBox, Spacer};
@@ -193,6 +194,7 @@ struct Gallery {
     /// The "Builder | Macros" control + the chosen style.
     code_style: Entity<SegmentedControl>,
     use_macros: bool,
+    sections: ListState,
 }
 
 /// Every section's `(key, snippet)` — drives the copy buttons and code panels.
@@ -211,6 +213,7 @@ const SECTION_SOURCES: &[(&str, code::Snippet)] = &[
     ("tableview", code::TABLEVIEW),
     ("tree", code::TREE),
     ("charts", code::CHARTS),
+    ("gpuview", code::GPU_VIEW),
     ("dates", code::DATES),
     ("dnd", code::DND),
     ("motion", code::MOTION),
@@ -475,6 +478,16 @@ impl Gallery {
             }
         })
         .detach();
+
+        let sections = ListState::new(SECTION_SOURCES.len() + 1, ListAlignment::Top, px(240.0));
+        let native_webview = webview.downgrade();
+        sections.set_scroll_handler(move |event, _window, cx| {
+            native_webview
+                .update(cx, |webview, _| {
+                    webview.set_visible(event.visible_range.contains(&3));
+                })
+                .ok();
+        });
 
         // TableView over typed rows: sortable columns, multi-selection, and a
         // virtualized body (fixed height). Events carry source-row indices.
@@ -1126,6 +1139,7 @@ impl Gallery {
             copy_buttons,
             code_style,
             use_macros: false,
+            sections,
         }
     }
 
@@ -1396,6 +1410,7 @@ impl Gallery {
     ) -> impl IntoElement {
         let open = self.code_open.contains(key);
         let toggle = ActionIcon::new(SharedString::from(format!("code-{key}")), IconName::CodeXml)
+            .label(if open { "Hide code" } else { "Show code" })
             .variant(if open {
                 Variant::Light
             } else {
@@ -1437,15 +1452,199 @@ impl Gallery {
         stack
     }
 
+    fn gallery_item(&mut self, index: usize, cx: &mut Context<Self>) -> AnyElement {
+        let gap = cx.global::<Theme>().spacing(Size::Xl);
+        let content = match index {
+            0 => Stack::new()
+                .gap(Size::Xl)
+                .child(sections::header())
+                .child(
+                    Group::new()
+                        .align(Align::Center)
+                        .child(Text::new("Code examples:").size(Size::Sm).dimmed())
+                        .child(self.code_style.clone()),
+                )
+                .into_any_element(),
+            1 => self
+                .section(cx, "buttons", "Buttons", sections::buttons())
+                .into_any_element(),
+            2 => self
+                .section(cx, "icons", "Icons", sections::icons())
+                .into_any_element(),
+            3 => {
+                let body = self.webview_demo(cx);
+                self.section(cx, "webview", "WebView (native)", body)
+                    .into_any_element()
+            }
+            4 => self
+                .section(cx, "badges", "Badges", sections::badges())
+                .into_any_element(),
+            5 => {
+                let body = self.inputs(cx);
+                self.section(cx, "inputs", "Inputs", body)
+                    .into_any_element()
+            }
+            6 => {
+                let body = self.inputs2(cx);
+                self.section(cx, "inputs2", "More inputs", body)
+                    .into_any_element()
+            }
+            7 => {
+                let body = self.dates(cx);
+                self.section(cx, "dates", "Dates & files", body)
+                    .into_any_element()
+            }
+            8 => {
+                let body = self.overlays(cx);
+                self.section(cx, "overlays", "Overlays", body)
+                    .into_any_element()
+            }
+            9 => {
+                let body = self.floating_overlays(cx);
+                self.section(cx, "overlays2", "Context menu, hover card & confirm", body)
+                    .into_any_element()
+            }
+            10 => self
+                .section(cx, "feedback", "Feedback", sections::feedback())
+                .into_any_element(),
+            11 => {
+                let body = self.data_display();
+                self.section(cx, "data", "Data display", body)
+                    .into_any_element()
+            }
+            12 => {
+                let body = self.tableview_demo();
+                self.section(cx, "tableview", "TableView", body)
+                    .into_any_element()
+            }
+            13 => {
+                let body = self.tree_demo();
+                self.section(cx, "tree", "TreeView", body)
+                    .into_any_element()
+            }
+            14 => self
+                .section(cx, "charts", "Charts", sections::charts())
+                .into_any_element(),
+            15 => {
+                let body = sections::gpu_view(cx);
+                self.section(cx, "gpuview", "GPU View", body)
+                    .into_any_element()
+            }
+            16 => {
+                let body = self.dnd(cx);
+                self.section(cx, "dnd", "Drag & drop", body)
+                    .into_any_element()
+            }
+            17 => {
+                let body = self.motion(cx);
+                self.section(cx, "motion", "Motion", body)
+                    .into_any_element()
+            }
+            18 => {
+                let body = self.editor_demo();
+                self.section(cx, "editor", "Editor", body)
+                    .into_any_element()
+            }
+            19 => {
+                let body = self.ai_demo(cx);
+                self.section(cx, "ai", "AI", body).into_any_element()
+            }
+            20 => {
+                let body = self.settings_demo(cx);
+                self.section(cx, "settings", "Settings screen", body)
+                    .into_any_element()
+            }
+            21 => {
+                let body = self.devtools_demo(cx);
+                self.section(cx, "devtools", "DevTools (inspector)", body)
+                    .into_any_element()
+            }
+            22 => {
+                let body = self.navigation(cx);
+                self.section(cx, "navigation", "Navigation", body)
+                    .into_any_element()
+            }
+            23 => {
+                let body = self.misc(cx);
+                self.section(cx, "misc", "Carousel & more", body)
+                    .into_any_element()
+            }
+            24 => {
+                let body = self.update_demo(cx);
+                self.section(cx, "update", "Software update", body)
+                    .into_any_element()
+            }
+            25 => {
+                let body = self.shell_demo(cx);
+                self.section(cx, "shell", "App structure", body)
+                    .into_any_element()
+            }
+            26 => {
+                let body = self.panels_demo(cx);
+                self.section(cx, "panels", "Panels & SplitPanel", body)
+                    .into_any_element()
+            }
+            27 => {
+                let body = self.polish(cx);
+                self.section(cx, "polish", "Polish", body)
+                    .into_any_element()
+            }
+            28 => {
+                let body = self.layout_demo(cx);
+                self.section(cx, "layout", "Flex layout & macros", body)
+                    .into_any_element()
+            }
+            29 => {
+                let body = self.reactive_demo(cx);
+                self.section(cx, "reactive", "Reactive state (Context / Signal)", body)
+                    .into_any_element()
+            }
+            30 => {
+                let body = self.dataview_demo(cx);
+                self.section(cx, "dataview", "DataView (collection bindings)", body)
+                    .into_any_element()
+            }
+            31 => self
+                .section(cx, "cards", "Cards", sections::cards())
+                .into_any_element(),
+            32 => self
+                .section(cx, "typography", "Typography", sections::typography())
+                .into_any_element(),
+            33 => {
+                let body = self.typeextras(cx);
+                self.section(cx, "typeextras", "Typography extras", body)
+                    .into_any_element()
+            }
+            34 => self
+                .section(cx, "media", "Image", sections::media())
+                .into_any_element(),
+            35 => {
+                let body = sections::palette(cx);
+                self.section(cx, "palette", "Palette", body)
+                    .into_any_element()
+            }
+            _ => unreachable!("gallery list requested an unknown item"),
+        };
+
+        div()
+            .id(("gallery-item", index))
+            .w_full()
+            .pb(px(gap))
+            .child(content)
+            .into_any_element()
+    }
+
     fn polish(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let icons = Group::new()
             .child(
                 ActionIcon::new("ai-edit", IconName::Pencil)
+                    .label("Edit")
                     .variant(Variant::Light)
                     .color(ColorName::Blue),
             )
             .child(
                 ActionIcon::new("ai-del", IconName::Trash2)
+                    .label("Delete")
                     .variant(Variant::Light)
                     .color(ColorName::Red),
             )
@@ -1766,7 +1965,11 @@ impl Gallery {
             .title("Project status")
             .description("Weekly summary")
             .icon(ThemeIcon::new(IconName::LayoutGrid).color(ColorName::Blue))
-            .action(ActionIcon::new("panel-more", IconName::Ellipsis).size(Size::Sm))
+            .action(
+                ActionIcon::new("panel-more", IconName::Ellipsis)
+                    .label("More")
+                    .size(Size::Sm),
+            )
             .collapsible()
             .collapsed(self.panel_collapsed)
             .on_toggle(cx.listener(|this, _, _, cx| {
@@ -2444,136 +2647,16 @@ impl Render for Gallery {
         let font = t.font_family.clone();
         let is_dark = t.scheme.is_dark();
 
-        // Build each section (body + "view source" toggle). Bodies that need
-        // `cx` are bound first so `self.section(cx, …)` doesn't double-borrow it.
-        let buttons = self.section(cx, "buttons", "Buttons", sections::buttons());
-        let icons = self.section(cx, "icons", "Icons", sections::icons());
-        let webview_body = self.webview_demo(cx);
-        let webview = self.section(cx, "webview", "WebView (native)", webview_body);
-        let badges = self.section(cx, "badges", "Badges", sections::badges());
-        let inputs_body = self.inputs(cx);
-        let inputs = self.section(cx, "inputs", "Inputs", inputs_body);
-        let inputs2_body = self.inputs2(cx);
-        let inputs2 = self.section(cx, "inputs2", "More inputs", inputs2_body);
-        let overlays_body = self.overlays(cx);
-        let overlays = self.section(cx, "overlays", "Overlays", overlays_body);
-        let overlays2_body = self.floating_overlays(cx);
-        let overlays2 = self.section(
-            cx,
-            "overlays2",
-            "Context menu, hover card & confirm",
-            overlays2_body,
-        );
-        let feedback = self.section(cx, "feedback", "Feedback", sections::feedback());
-        let data_body = self.data_display();
-        let data = self.section(cx, "data", "Data display", data_body);
-        let tableview_body = self.tableview_demo();
-        let tableview = self.section(cx, "tableview", "TableView", tableview_body);
-        let tree_body = self.tree_demo();
-        let tree = self.section(cx, "tree", "TreeView", tree_body);
-        let charts = self.section(cx, "charts", "Charts", sections::charts());
-        let dates_body = self.dates(cx);
-        let dates = self.section(cx, "dates", "Dates & files", dates_body);
-        let dnd_body = self.dnd(cx);
-        let dnd = self.section(cx, "dnd", "Drag & drop", dnd_body);
-        let motion_body = self.motion(cx);
-        let motion = self.section(cx, "motion", "Motion", motion_body);
-        let misc_body = self.misc(cx);
-        let misc = self.section(cx, "misc", "Carousel & more", misc_body);
-        let update_body = self.update_demo(cx);
-        let update = self.section(cx, "update", "Software update", update_body);
-        let editor_body = self.editor_demo();
-        let editor = self.section(cx, "editor", "Editor", editor_body);
-        let settings_body = self.settings_demo(cx);
-        let settings = self.section(cx, "settings", "Settings screen", settings_body);
-        let devtools_body = self.devtools_demo(cx);
-        let devtools = self.section(cx, "devtools", "DevTools (inspector)", devtools_body);
-        let ai_body = self.ai_demo(cx);
-        let ai = self.section(cx, "ai", "AI", ai_body);
-        let nav_body = self.navigation(cx);
-        let navigation = self.section(cx, "navigation", "Navigation", nav_body);
-        let shell_body = self.shell_demo(cx);
-        let shell = self.section(cx, "shell", "App structure", shell_body);
-        let panels_body = self.panels_demo(cx);
-        let panels = self.section(cx, "panels", "Panels & SplitPanel", panels_body);
-        let polish_body = self.polish(cx);
-        let polish = self.section(cx, "polish", "Polish", polish_body);
-        let layout_body = self.layout_demo(cx);
-        let layout = self.section(cx, "layout", "Flex layout & macros", layout_body);
-        let reactive_body = self.reactive_demo(cx);
-        let reactive = self.section(
-            cx,
-            "reactive",
-            "Reactive state (Context / Signal)",
-            reactive_body,
-        );
-        let dataview_body = self.dataview_demo(cx);
-        let dataview = self.section(
-            cx,
-            "dataview",
-            "DataView (collection bindings)",
-            dataview_body,
-        );
-        let cards = self.section(cx, "cards", "Cards", sections::cards());
-        let typography = self.section(cx, "typography", "Typography", sections::typography());
-        let typeextras_body = self.typeextras(cx);
-        let typeextras = self.section(cx, "typeextras", "Typography extras", typeextras_body);
-        let media = self.section(cx, "media", "Image", sections::media());
-        let palette_body = sections::palette(cx);
-        let palette = self.section(cx, "palette", "Palette", palette_body);
-
-        let main = div()
-            .id("scroll")
-            .flex_1()
-            .min_h(px(0.0))
-            .overflow_y_scroll()
-            .px(px(48.0))
-            .py(px(40.0))
-            .child(
-                Stack::new()
-                    .gap(Size::Xl)
-                    .child(sections::header())
-                    .child(
-                        Group::new()
-                            .align(Align::Center)
-                            .child(Text::new("Code examples:").size(Size::Sm).dimmed())
-                            .child(self.code_style.clone()),
-                    )
-                    .child(buttons)
-                    .child(icons)
-                    .child(webview)
-                    .child(badges)
-                    .child(inputs)
-                    .child(inputs2)
-                    .child(dates)
-                    .child(overlays)
-                    .child(overlays2)
-                    .child(feedback)
-                    .child(data)
-                    .child(tableview)
-                    .child(tree)
-                    .child(charts)
-                    .child(dnd)
-                    .child(motion)
-                    .child(editor)
-                    .child(ai)
-                    .child(settings)
-                    .child(devtools)
-                    .child(navigation)
-                    .child(misc)
-                    .child(update)
-                    .child(shell)
-                    .child(panels)
-                    .child(polish)
-                    .child(layout)
-                    .child(reactive)
-                    .child(dataview)
-                    .child(cards)
-                    .child(typography)
-                    .child(typeextras)
-                    .child(media)
-                    .child(palette),
-            );
+        let gallery = cx.weak_entity();
+        let main = list(self.sections.clone(), move |index, _window, cx| {
+            gallery
+                .update(cx, |gallery, cx| gallery.gallery_item(index, cx))
+                .unwrap_or_else(|_| div().into_any_element())
+        })
+        .flex_1()
+        .min_h(px(0.0))
+        .px(px(48.0))
+        .pt(px(40.0));
 
         let status = StatusBar::new()
             .left(Text::new("guise gallery").size(Size::Xs))

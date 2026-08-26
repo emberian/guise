@@ -239,6 +239,7 @@ impl Render for TabBar {
             bar = bar.child(
                 div().flex_none().px(px(4.0)).child(
                     ActionIcon::new("guise-tabbar-add", "+")
+                        .label("Add tab")
                         .size(Size::Sm)
                         .on_click(cx.listener(|_this, _ev, _window, cx| cx.emit(TabBarEvent::Add))),
                 ),

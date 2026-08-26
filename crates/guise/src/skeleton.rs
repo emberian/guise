@@ -1,12 +1,29 @@
 //! `Skeleton` — an animated loading placeholder.
 
-use std::time::Duration;
+use std::sync::OnceLock;
+use std::time::{Duration, Instant};
 
 use gpui::prelude::*;
-use gpui::{div, pulsating_between, px, Animation, AnimationExt, App, IntoElement, Window};
+use gpui::{
+    canvas, pulsating_between, px, quad, transparent_black, App, BorderStyle, Bounds, IntoElement,
+    Pixels, Window,
+};
 
-use crate::devtools::ProbedAny;
+use crate::devtools::Probed;
+use crate::frameclock::{request_frame, FrameKind};
 use crate::theme::{theme, ColorName, Size};
+
+const FRAME_INTERVAL: Duration = Duration::from_millis(60);
+const CYCLE_SECONDS: f32 = 1.1;
+
+fn animation_start() -> Instant {
+    static START: OnceLock<Instant> = OnceLock::new();
+    *START.get_or_init(Instant::now)
+}
+
+fn request_next_frame(window: &mut Window, cx: &mut App) {
+    request_frame(FrameKind::Continuous, FRAME_INTERVAL, window, cx);
+}
 
 /// A pulsing placeholder block.
 #[derive(IntoElement)]
@@ -69,21 +86,30 @@ impl RenderOnce for Skeleton {
             t.radius(self.radius)
         };
 
-        let mut block = div().h(px(self.height)).rounded(px(radius)).bg(color);
+        let mut block = canvas(
+            |_, _, _| (),
+            move |bounds: Bounds<Pixels>, _, window, cx| {
+                if !bounds.intersects(&window.content_mask().bounds) {
+                    return;
+                }
+                let cycle = (animation_start().elapsed().as_secs_f32() / CYCLE_SECONDS) % 1.0;
+                let pulse = pulsating_between(0.4, 1.0);
+                window.paint_quad(quad(
+                    bounds,
+                    px(radius),
+                    color.opacity(pulse(cycle)),
+                    px(0.0),
+                    transparent_black(),
+                    BorderStyle::default(),
+                ));
+                request_next_frame(window, cx);
+            },
+        )
+        .h(px(self.height));
         block = match self.width {
-            Some(w) => block.w(px(w)),
+            Some(width) => block.w(px(width)),
             None => block.w_full(),
         };
-
-        let pulse = pulsating_between(0.4, 1.0);
-        block
-            .with_animation(
-                "guise-skeleton",
-                Animation::new(Duration::from_millis(1100))
-                    .repeat()
-                    .with_easing(pulse),
-                |block, delta| block.opacity(delta),
-            )
-            .probe_any("Skeleton")
+        block.probe("Skeleton")
     }
 }

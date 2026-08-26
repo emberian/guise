@@ -23,7 +23,7 @@ use crate::update::{
     is_installing, Release, UpdateNotice, UpdateNoticeEvent, UpdateOutcome, UpdatePrompt,
     UpdatePromptEvent, UpdateStage, Updater,
 };
-use crate::{Carousel, CarouselEvent, TransitionKind};
+use crate::{ActionIcon, Button, Carousel, CarouselEvent, IconName, TransitionKind};
 
 #[gpui::test]
 fn signal_binding_and_lens_round_trip(cx: &mut TestAppContext) {
@@ -288,6 +288,41 @@ fn theme_presets_install_and_resolve(cx: &mut TestAppContext) {
         assert!(!t.scheme.is_dark());
         assert_eq!(t.primary(), Color::hex("#268bd2"));
     });
+}
+
+struct KeyboardActions {
+    field: Entity<TextInput>,
+}
+
+impl Render for KeyboardActions {
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        div()
+            .flex()
+            .child(Button::new("keyboard-button", "Save"))
+            .child(Button::new("keyboard-disabled", "Disabled").disabled(true))
+            .child(ActionIcon::new("keyboard-icon", IconName::Pencil).label("Edit"))
+            .child(self.field.clone())
+    }
+}
+
+#[gpui::test]
+fn buttons_move_through_the_tab_order(cx: &mut TestAppContext) {
+    cx.update(|cx| Theme::light().init(cx));
+    let (view, cx) = cx.add_window_view(|_window, cx| KeyboardActions {
+        field: cx.new(TextInput::new),
+    });
+    cx.run_until_parked();
+
+    cx.update(|window, _| window.focus_next());
+    cx.run_until_parked();
+    cx.simulate_keystrokes("tab tab");
+    let field = view.read_with(cx, |view, _| view.field.clone());
+    let handle = field.read_with(cx, |field, _| field.focus_handle());
+    assert!(cx.update(|window, _| handle.is_focused(window)));
+
+    cx.simulate_keystrokes("shift-tab shift-tab tab tab");
+    cx.run_until_parked();
+    assert!(cx.update(|window, _| handle.is_focused(window)));
 }
 
 // --- single-line fields -----------------------------------------------------

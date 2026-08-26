@@ -1,7 +1,7 @@
 //! `ActionIcon` — a square icon-only button.
 
 use gpui::prelude::*;
-use gpui::{div, px, App, ClickEvent, ElementId, IntoElement, Window};
+use gpui::{div, px, App, ClickEvent, ElementId, IntoElement, SharedString, Window};
 
 use crate::devtools::Probed;
 use crate::icon::Glyph;
@@ -14,6 +14,7 @@ use crate::theme::{theme, ColorName, Size};
 pub struct ActionIcon {
     id: ElementId,
     icon: Glyph,
+    label: Option<SharedString>,
     variant: Variant,
     color: ColorValue,
     size: Size,
@@ -27,6 +28,7 @@ impl ActionIcon {
         ActionIcon {
             id: id.into(),
             icon: icon.into(),
+            label: None,
             variant: Variant::Subtle,
             color: ColorValue::Named(ColorName::Gray),
             size: Size::Md,
@@ -34,6 +36,12 @@ impl ActionIcon {
             disabled: false,
             on_click: None,
         }
+    }
+
+    /// Give the icon-only control a human-readable name and hover tooltip.
+    pub fn label(mut self, label: impl Into<SharedString>) -> Self {
+        self.label = Some(label.into());
+        self
     }
 
     pub fn variant(mut self, variant: Variant) -> Self {
@@ -76,6 +84,7 @@ impl RenderOnce for ActionIcon {
         let s = surface(t, self.color, self.variant);
         let dim = icon_size(self.size);
         let radius = t.radius(self.radius.unwrap_or(t.default_radius));
+        let focus = t.primary().hsla();
 
         let mut el = div()
             .id(self.id)
@@ -88,13 +97,17 @@ impl RenderOnce for ActionIcon {
             .bg(s.bg)
             .text_color(s.fg)
             .text_size(px(dim * 0.5))
-            .child(self.icon);
+            .child(self.icon)
+            .tab_index(0)
+            .focus(move |style| style.border_2().border_color(focus))
+            .on_key_down(crate::input::handle_tab);
         if let Some(border) = s.border {
             el = el.border_1().border_color(border);
         }
 
+        let label = self.label;
         let element = if self.disabled {
-            el.opacity(0.5)
+            el.tab_stop(false).opacity(0.5)
         } else {
             let hover_bg = s.bg_hover;
             el = el.hover(move |st| st.bg(hover_bg));
@@ -104,10 +117,15 @@ impl RenderOnce for ActionIcon {
             el
         };
 
+        let element = element.when_some(label.clone(), |element, label| {
+            element.tooltip(crate::overlay::tooltip(label))
+        });
+
         element
             .probe("ActionIcon")
             .attr("variant", self.variant.label())
             .attr("size", self.size.label())
+            .attr_opt("label", label)
             .attr_if("disabled", self.disabled)
     }
 }

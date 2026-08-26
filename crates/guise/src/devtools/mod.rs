@@ -42,6 +42,8 @@
 //! left in components, and those are a single boolean check while the
 //! inspector is closed.
 
+use std::time::Duration;
+
 mod audit;
 mod elements;
 mod logs;
@@ -62,7 +64,9 @@ pub use state::*;
 pub use styles::{box_model, declarations, hex, BoxModel, Declaration};
 
 use gpui::prelude::*;
-use gpui::{div, px, App, Context, EventEmitter, FocusHandle, Focusable, SharedString, Window};
+use gpui::{
+    div, px, App, Context, EventEmitter, FocusHandle, Focusable, SharedString, Task, Window,
+};
 
 use audit::AuditPanel;
 use elements::ElementsPanel;
@@ -75,6 +79,8 @@ use storage::StoragePanel;
 use timelines::TimelinesPanel;
 
 use crate::icon::IconName;
+
+const RECORDER_IDLE_AFTER: Duration = Duration::from_millis(250);
 
 /// The tools along the top, in Safari's order.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
@@ -167,6 +173,9 @@ pub struct DevTools {
     /// The logs drawer, which Safari drops over any non-Logs tool.
     drawer_open: bool,
     picking: bool,
+    recorder_active: bool,
+    recorder_heartbeat: u64,
+    recorder_watchdog: Option<Task<()>>,
     pub(crate) elements: ElementsPanel,
     pub(crate) logs: LogsPanel,
     pub(crate) network: NetworkPanel,
@@ -186,18 +195,16 @@ impl Focusable for DevTools {
 
 impl DevTools {
     pub fn new(cx: &mut Context<Self>) -> Self {
-        // Recording is a property of the inspector being open, not of the
-        // panel being visible: the Elements tree has to be there the moment the
-        // user switches to it.
-        probe::retain();
-
-        DevTools {
+        let mut inspector = DevTools {
             focus: cx.focus_handle(),
             tab: DevToolsTab::default(),
             dock: Dock::default(),
             tree: Tree::default(),
             drawer_open: false,
             picking: false,
+            recorder_active: false,
+            recorder_heartbeat: 0,
+            recorder_watchdog: None,
             elements: ElementsPanel::default(),
             logs: LogsPanel::new(cx),
             network: NetworkPanel::new(cx),
@@ -205,7 +212,39 @@ impl DevTools {
             timelines: TimelinesPanel::default(),
             sources: SourcesPanel::default(),
             audit: AuditPanel::default(),
+        };
+        inspector.activate_recorder(cx);
+        inspector
+    }
+
+    fn activate_recorder(&mut self, cx: &mut Context<Self>) {
+        self.recorder_heartbeat = self.recorder_heartbeat.wrapping_add(1);
+        if self.recorder_active {
+            return;
         }
+
+        probe::retain();
+        self.recorder_active = true;
+        let mut last_heartbeat = self.recorder_heartbeat;
+        self.recorder_watchdog = Some(cx.spawn(async move |this, cx| loop {
+            cx.background_executor().timer(RECORDER_IDLE_AFTER).await;
+            let stop = this
+                .update(cx, |inspector, _cx| {
+                    if inspector.recorder_heartbeat != last_heartbeat {
+                        last_heartbeat = inspector.recorder_heartbeat;
+                        return false;
+                    }
+                    if inspector.recorder_active {
+                        probe::release();
+                        inspector.recorder_active = false;
+                    }
+                    true
+                })
+                .unwrap_or(true);
+            if stop {
+                break;
+            }
+        }));
     }
 
     /// Open on a particular tool.
@@ -525,6 +564,15 @@ impl DevTools {
 
 impl Render for DevTools {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let was_idle = !self.recorder_active;
+        self.activate_recorder(cx);
+        if was_idle {
+            // The first frame turns probes back on; the follow-up captures the
+            // complete tree so reopening an inspector never needs a second
+            // user interaction.
+            cx.notify();
+        }
+
         // Rotate the recorder before anything prepaints this frame, then read
         // the tree the previous frame finished. Doing it here — rather than in
         // the Elements panel — keeps every panel on the same snapshot.
@@ -600,7 +648,9 @@ impl Drop for DevTools {
     fn drop(&mut self) {
         // The last inspector to close stops the recording, and with it the
         // per-frame cost every probe in the app would otherwise keep paying.
-        probe::release();
+        if self.recorder_active {
+            probe::release();
+        }
     }
 }
 
@@ -686,4 +736,34 @@ pub fn clear(cx: &mut App) {
 /// own instrumentation while the inspector is closed.
 pub fn is_recording() -> bool {
     probe::is_enabled()
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+
+    use gpui::{AppContext, TestAppContext};
+
+    use super::{probe, DevTools, RECORDER_IDLE_AFTER};
+
+    #[gpui::test]
+    fn recorder_stops_after_the_inspector_stops_rendering(cx: &mut TestAppContext) {
+        probe::set_enabled(false);
+        let inspector = cx.update(|cx| cx.new(DevTools::new));
+        assert!(probe::is_enabled());
+
+        cx.executor()
+            .advance_clock(RECORDER_IDLE_AFTER - Duration::from_millis(1));
+        inspector.update(cx, |inspector, cx| inspector.activate_recorder(cx));
+        cx.executor().advance_clock(Duration::from_millis(1));
+        cx.run_until_parked();
+        assert!(probe::is_enabled(), "a recent render should keep recording");
+
+        cx.executor().advance_clock(RECORDER_IDLE_AFTER);
+        cx.run_until_parked();
+        assert!(
+            !probe::is_enabled(),
+            "an idle inspector should release its tree"
+        );
+    }
 }

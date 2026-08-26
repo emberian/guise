@@ -109,6 +109,7 @@ impl RenderOnce for SettingsRow {
             name = match self.on_reset {
                 Some(handler) => name.child(
                     ActionIcon::new(self.id.clone(), IconName::RotateCcw)
+                        .label("Reset")
                         .size(Size::Xs)
                         .variant(crate::style::Variant::Subtle)
                         .on_click(handler),

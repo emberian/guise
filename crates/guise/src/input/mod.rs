@@ -74,12 +74,25 @@ pub use time::Time;
 pub use timepicker::{TimePicker, TimePickerEvent};
 pub use transfer::{Transfer, TransferEvent};
 
-use gpui::{App, ClickEvent, Window};
+use gpui::{App, ClickEvent, KeyDownEvent, Window};
 
 use crate::theme::Size;
 
 /// Boxed click handler shared by the controlled inputs.
 pub(crate) type ClickHandler = Box<dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static>;
+
+/// Move a stateless control through the window's tab order.
+pub(crate) fn handle_tab(event: &KeyDownEvent, window: &mut Window, cx: &mut App) {
+    let modifiers = &event.keystroke.modifiers;
+    if event.keystroke.key == "tab" && !modifiers.platform && !modifiers.control {
+        if modifiers.shift {
+            window.focus_prev();
+        } else {
+            window.focus_next();
+        }
+        cx.stop_propagation();
+    }
+}
 
 /// Box dimension (px) for square toggle controls (Checkbox, Radio).
 pub(crate) fn control_box_size(size: Size) -> f32 {

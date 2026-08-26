@@ -14,17 +14,33 @@
 //! AIStreamingText::new(&partial_reply)
 //! ```
 
-use std::time::Duration;
+use std::sync::OnceLock;
+use std::time::{Duration, Instant};
 
 use gpui::prelude::*;
-use gpui::{div, px, Animation, AnimationExt, App, IntoElement, SharedString, Window};
+use gpui::{canvas, div, fill, px, App, Bounds, IntoElement, Pixels, SharedString, Window};
 
 use crate::devtools::Probed;
+use crate::frameclock::{request_frame, FrameKind};
 use crate::markdown::Markdown;
 use crate::theme::{theme, Size};
 
 /// How long the caret takes to go from solid to clear and back.
 const BLINK_MS: u64 = 900;
+
+fn animation_start() -> Instant {
+    static START: OnceLock<Instant> = OnceLock::new();
+    *START.get_or_init(Instant::now)
+}
+
+fn request_next_toggle(window: &mut Window, cx: &mut App, after_ms: u64) {
+    request_frame(
+        FrameKind::Caret,
+        Duration::from_millis(after_ms.max(1)),
+        window,
+        cx,
+    );
+}
 
 /// Streaming markdown with a trailing caret.
 #[derive(IntoElement)]
@@ -65,17 +81,24 @@ impl RenderOnce for AIStreamingText {
         // The caret sits on its own row under the text rather than inline:
         // the markdown body is a column of laid-out lines, and threading a
         // caret into the last one would mean shaping the text twice.
-        let caret = div()
-            .w(px(font * 0.5))
-            .h(px(font * 1.1))
-            .bg(caret_color)
-            .with_animation(
-                "guise-ai-caret",
-                Animation::new(Duration::from_millis(BLINK_MS)).repeat(),
-                // A square wave, not a fade: a caret that dims looks like a
-                // rendering artifact, one that switches looks deliberate.
-                |caret, delta| caret.opacity(if delta < 0.5 { 1.0 } else { 0.0 }),
-            );
+        let caret = canvas(
+            |_, _, _| (),
+            move |bounds: Bounds<Pixels>, _, window, cx| {
+                if !bounds.intersects(&window.content_mask().bounds) {
+                    return;
+                }
+                let elapsed = animation_start().elapsed().as_millis() as u64 % BLINK_MS;
+                let half = BLINK_MS / 2;
+                if elapsed < half {
+                    window.paint_quad(fill(bounds, caret_color));
+                    request_next_toggle(window, cx, half - elapsed);
+                } else {
+                    request_next_toggle(window, cx, BLINK_MS - elapsed);
+                }
+            },
+        )
+        .w(px(font * 0.5))
+        .h(px(font * 1.1));
 
         div()
             .flex()

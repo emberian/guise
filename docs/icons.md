@@ -53,10 +53,15 @@ Components with an icon slot (`ActionIcon`, `ThemeIcon`, `Alert`,
 implicitly:
 
 ```rust
-ActionIcon::new("edit", IconName::Pencil)   // Lucide icon
-ActionIcon::new("party", "🎉")              // plain text still works
+ActionIcon::new("edit", IconName::Pencil).label("Edit")
+ActionIcon::new("party", "🎉").label("Celebrate")
 Alert::new("Saved.").icon(IconName::Check)
 ```
+
+`ActionIcon::label` supplies the name shown in its hover tooltip and recorded by
+Guise's component probe. `ActionIcon` and `Button` are tab stops with a visible focus
+border; Enter and Space use GPUI's keyboard-click path. Always label an icon-only
+action with the verb it performs.
 
 ## Regenerating
 

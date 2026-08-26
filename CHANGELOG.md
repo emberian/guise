@@ -5,6 +5,37 @@ follow [semver](https://semver.org): from 1.0 on, a breaking change means a
 major release, and is called out under **Breaking**. Releases before 1.0 landed
 breaking changes in minor versions.
 
+## 1.5.0 — 2026-08-26
+
+### GPU View
+
+`GpuView` adds a small retained-scene API for maps, simulations, diagrams, and
+sprite-heavy status surfaces. `GpuScene` submits ordered quads and encoded
+textures through gpui's native GPU paint pipeline, with contain/cover/stretch
+fitting, full-parent sizing, pixel-boundary snapping, and normalized sprite-atlas
+cropping. It embeds no browser or web canvas and leaves simulation time, frame
+selection, pause behavior, and reduced-motion policy with the caller.
+
+### Keyboard and icon-action names
+
+`Button` and `ActionIcon` now participate in GPUI's tab order, show a primary-color
+focus border, and activate through GPUI's Enter/Space keyboard-click path.
+`ActionIcon::label` gives icon-only actions a descriptive tooltip and probe attribute.
+
+### Rendering performance
+
+The gallery now virtualizes its variable-height sections, so layout and paint work
+stay proportional to the visible demos instead of the full component catalog.
+Native web views are hidden as soon as their section leaves the viewport.
+
+`Loader`, `Skeleton`, and the streaming-text caret now schedule coalesced frames only
+while visible. Idle DevTools instances also release their retained probe tree instead
+of recording frames they cannot display. Together these changes remove persistent
+offscreen animation work and prevent the recorder from growing between snapshots.
+
+The release lockfile also updates `crossbeam-epoch`, `h2`, `quick-xml`, XCB, and
+Wayland scanner dependencies to clear the current RustSec vulnerability set.
+
 ## 1.4.0 — 2026-08-24
 
 ### ScrollArea fills

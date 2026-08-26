@@ -39,6 +39,7 @@ A compact, square icon-only button. Same variant/color/size surface as `Button`.
 
 ```rust
 ActionIcon::new("edit", IconName::Pencil)
+    .label("Edit")
     .variant(Variant::Light)
     .color(ColorName::Blue)
     .on_click(cx.listener(|this, _, _, cx| { /* ... */ }))
@@ -47,6 +48,7 @@ ActionIcon::new("edit", IconName::Pencil)
 | Method | Default |
 | --- | --- |
 | `new(id, icon)` | — (`impl Into<Glyph>`: an `IconName` or text — see [icons](icons.md)) |
+| `label(text)` | — (tooltip and component-probe name; always set this) |
 | `variant(Variant)` | `Subtle` |
 | `color(ColorName)` | `Gray` |
 | `size(Size)` | `Md` (square: xs 18 … xl 44) |

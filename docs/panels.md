@@ -18,7 +18,7 @@ Panel::new()
     .title("Project status")
     .description("Weekly summary")
     .icon(ThemeIcon::new("▦").color(ColorName::Blue))
-    .action(ActionIcon::new("status-more", "…").size(Size::Sm))
+    .action(ActionIcon::new("status-more", "…").label("More").size(Size::Sm))
     .collapsible()
     .collapsed(self.collapsed)
     .on_toggle(cx.listener(|this, _ev, _window, cx| {

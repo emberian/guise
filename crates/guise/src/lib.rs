@@ -48,6 +48,7 @@ pub mod dnd;
 pub mod editor;
 pub mod feedback;
 pub mod flex;
+pub mod gpuview;
 pub mod input;
 pub mod layout;
 pub mod markdown;
@@ -70,6 +71,7 @@ mod closebutton;
 mod code;
 mod copybutton;
 mod divider;
+mod frameclock;
 mod icon;
 mod image;
 mod indicator;
@@ -148,6 +150,7 @@ pub use editor::{
 pub use feedback::{
     Alert, Loader, LoaderVariant, Notification, Progress, RingProgress, ToastStack,
 };
+pub use gpuview::{GpuFit, GpuRect, GpuScene, GpuTexture, GpuView};
 pub use input::{
     apply_key, days_in_month, is_leap_year, month_grid, Autocomplete, AutocompleteEvent, Calendar,
     Checkbox, CheckboxGroup, ColorInput, ColorInputEvent, Combobox, ComboboxEvent, Date,
@@ -215,6 +218,7 @@ pub mod prelude {
     pub use crate::feedback::{
         Alert, Loader, LoaderVariant, Notification, Progress, RingProgress, ToastStack,
     };
+    pub use crate::gpuview::{GpuFit, GpuRect, GpuScene, GpuTexture, GpuView};
     pub use crate::input::{
         apply_key, apply_nav, Autocomplete, AutocompleteEvent, Calendar, Checkbox, CheckboxGroup,
         ColorInput, ColorInputEvent, Combobox, ComboboxEvent, Date, DatePicker, DatePickerEvent,

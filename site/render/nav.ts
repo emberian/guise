@@ -39,6 +39,7 @@ export const groups: DocGroup[] = [
       { slug: "feedback", title: "Feedback" },
       { slug: "data", title: "Data display" },
       { slug: "charts", title: "Charts" },
+      { slug: "gpuview", title: "GPU View" },
       { slug: "overlays", title: "Overlays" },
       { slug: "navigation", title: "Navigation" },
       { slug: "webview", title: "WebView" },

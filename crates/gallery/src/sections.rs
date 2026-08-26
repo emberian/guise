@@ -343,6 +343,54 @@ pub fn charts() -> impl IntoElement {
         .child(pies)
 }
 
+pub fn gpu_view(cx: &App) -> impl IntoElement {
+    let t = theme(cx);
+    let wall = t.border().hsla();
+    let floor = t.surface().hsla();
+    let room = t.surface_hover().hsla();
+    let accent = t.primary().hsla();
+    let active = t.color(ColorName::Teal, 5).hsla();
+    let review = t.color(ColorName::Grape, 5).hsla();
+
+    let mut scene = GpuScene::new(320.0, 180.0)
+        .rect(GpuRect::new(0.0, 0.0, 320.0, 180.0), wall)
+        .rect(GpuRect::new(5.0, 5.0, 150.0, 82.0), floor)
+        .rect(GpuRect::new(160.0, 5.0, 155.0, 82.0), room)
+        .rect(GpuRect::new(5.0, 92.0, 205.0, 83.0), room)
+        .rect(GpuRect::new(215.0, 92.0, 100.0, 83.0), floor);
+
+    for (x, y) in [(28.0, 24.0), (82.0, 24.0), (188.0, 24.0), (242.0, 24.0)] {
+        scene = scene
+            .bordered_rect(GpuRect::new(x, y, 35.0, 20.0), floor, wall, 2.0, 2.0)
+            .rounded_rect(GpuRect::new(x + 13.0, y + 25.0, 10.0, 12.0), wall, 2.0);
+    }
+    scene = scene
+        .bordered_rect(
+            GpuRect::new(30.0, 116.0, 110.0, 34.0),
+            floor,
+            wall,
+            2.0,
+            3.0,
+        )
+        .rounded_rect(GpuRect::new(177.0, 112.0, 16.0, 16.0), active, 3.0)
+        .rounded_rect(GpuRect::new(250.0, 122.0, 18.0, 18.0), review, 3.0)
+        .rounded_rect(GpuRect::new(112.0, 57.0, 16.0, 16.0), accent, 3.0);
+
+    Stack::new()
+        .gap(Size::Sm)
+        .child(
+            Text::new("A retained scene submitted through gpui's native GPU paint pipeline.")
+                .size(Size::Sm)
+                .dimmed(),
+        )
+        .child(
+            GpuView::new(scene)
+                .fit(GpuFit::Contain)
+                .height(260.0)
+                .pixelated(),
+        )
+}
+
 pub fn palette(cx: &App) -> impl IntoElement {
     let t = theme(cx);
     let mut rows = Stack::new().gap(Size::Xs);

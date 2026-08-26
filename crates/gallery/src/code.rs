@@ -184,11 +184,11 @@ pub const NAVIGATION: Snippet = Snippet {
 
 pub const POLISH: Snippet = Snippet {
     plain: r#"Group::new()
-    .child(ActionIcon::new("edit", IconName::Pencil).variant(Variant::Light))
+    .child(ActionIcon::new("edit", IconName::Pencil).label("Edit").variant(Variant::Light))
     .child(ThemeIcon::new(IconName::Star).color(ColorName::Yellow))
     .child(Chip::new("chip", "Notifications").checked(self.chip_on));"#,
     macros: r#"hstack![
-    ActionIcon::new("edit", IconName::Pencil).variant(Variant::Light),
+    ActionIcon::new("edit", IconName::Pencil).label("Edit").variant(Variant::Light),
     ThemeIcon::new(IconName::Star).color(ColorName::Yellow),
     Chip::new("chip", "Notifications").checked(self.chip_on),
 ];"#,
@@ -752,6 +752,35 @@ LineChart::new([12.0, 18.0, 9.0, 24.0, 31.0]).fill().height(120.0);
 // Proportional slices with a donut hole and a legend.
 PieChart::entries([("Rust", 62.0), ("TOML", 25.0), ("Other", 13.0)])
     .donut(0.6);"#,
+};
+
+pub const GPU_VIEW: Snippet = Snippet {
+    plain: r#"let texture = GpuTexture::png(include_bytes!("floor.png").to_vec());
+let workers = GpuTexture::png(include_bytes!("workers.png").to_vec());
+let scene = GpuScene::new(1536.0, 1024.0)
+    .background(texture)
+    .sprite(
+        workers,
+        GpuRect::new(frame as f32 * 0.25, row as f32 * 0.25, 0.25, 0.25),
+        GpuRect::new(x - 54.0, y - 96.0, 108.0, 108.0),
+    )
+    .bordered_rect(
+        GpuRect::new(120.0, 160.0, 24.0, 24.0),
+        theme(cx).primary().hsla(),
+        theme(cx).border().hsla(),
+        3.0,
+        4.0,
+    );
+
+GpuView::new(scene)
+    .fit(GpuFit::Cover)
+    .height(360.0)
+    .pixelated();"#,
+    macros: r#"let scene = GpuScene::new(320.0, 180.0)
+    .rect(GpuRect::new(0.0, 0.0, 320.0, 180.0), theme(cx).surface().hsla())
+    .rounded_rect(GpuRect::new(80.0, 60.0, 24.0, 24.0), theme(cx).primary().hsla(), 4.0);
+
+GpuView::new(scene).height(260.0).pixelated();"#,
 };
 
 // The swatch grid is a data-driven loop; no macro form.

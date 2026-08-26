@@ -112,6 +112,7 @@ impl RenderOnce for Button {
         let s = surface(t, self.color, self.variant);
         let (height, pad_x, font) = self.metrics();
         let radius = t.radius(self.radius.unwrap_or(t.default_radius));
+        let focus = t.primary().hsla();
 
         let mut el = div()
             .id(self.id)
@@ -125,7 +126,10 @@ impl RenderOnce for Button {
             .bg(s.bg)
             .text_color(s.fg)
             .text_size(px(font))
-            .font_weight(FontWeight::SEMIBOLD);
+            .font_weight(FontWeight::SEMIBOLD)
+            .tab_index(0)
+            .focus(move |style| style.border_2().border_color(focus))
+            .on_key_down(crate::input::handle_tab);
 
         if let Some(border) = s.border {
             el = el.border_1().border_color(border);
@@ -142,7 +146,7 @@ impl RenderOnce for Button {
         }
 
         let element = if self.disabled {
-            el.opacity(0.6)
+            el.tab_stop(false).opacity(0.6)
         } else {
             let hover_bg = s.bg_hover;
             el = el.hover(move |st| st.bg(hover_bg));

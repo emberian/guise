@@ -7,7 +7,7 @@
 //!     .id("status")
 //!     .title("Project status")
 //!     .description("Weekly summary")
-//!     .action(ActionIcon::new("status-more", "…"))
+//!     .action(ActionIcon::new("status-more", "…").label("More"))
 //!     .collapsible()
 //!     .collapsed(self.collapsed)
 //!     .on_toggle(cx.listener(|this, _ev, _window, cx| {
@@ -213,7 +213,10 @@ impl RenderOnce for Panel {
                 } else {
                     IconName::ChevronDown
                 };
-                let mut toggle = ActionIcon::new("guise-panel-toggle", chevron).size(Size::Sm);
+                let label = if self.collapsed { "Expand" } else { "Collapse" };
+                let mut toggle = ActionIcon::new("guise-panel-toggle", chevron)
+                    .label(label)
+                    .size(Size::Sm);
                 if let Some(handler) = self.on_toggle.clone() {
                     toggle = toggle.on_click(move |ev, window, cx| handler(ev, window, cx));
                 }

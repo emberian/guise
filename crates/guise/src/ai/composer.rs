@@ -174,6 +174,7 @@ impl Render for AIComposer {
 
         let action = if self.busy {
             ActionIcon::new("guise-ai-stop", IconName::Square)
+                .label("Stop")
                 .variant(Variant::Filled)
                 .color(ColorName::Red)
                 .size(self.size)
@@ -182,6 +183,7 @@ impl Render for AIComposer {
                 }))
         } else {
             ActionIcon::new("guise-ai-send", IconName::ArrowUp)
+                .label("Send")
                 .variant(Variant::Filled)
                 .size(self.size)
                 // Nothing to send is a disabled button, not a silent no-op:
@@ -209,6 +211,7 @@ impl Render for AIComposer {
                     .when(self.attachments, |row| {
                         row.child(
                             ActionIcon::new("guise-ai-attach", IconName::Paperclip)
+                                .label("Attach")
                                 .variant(Variant::Subtle)
                                 .color(ColorName::Gray)
                                 .size(self.size)

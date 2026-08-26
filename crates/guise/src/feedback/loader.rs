@@ -1,13 +1,30 @@
 //! `Loader` — an animated busy indicator (pulsing dots or bars).
 
-use std::time::Duration;
+use std::sync::OnceLock;
+use std::time::{Duration, Instant};
 
 use gpui::prelude::*;
-use gpui::{div, pulsating_between, px, Animation, AnimationExt, App, IntoElement, Window};
+use gpui::{
+    canvas, point, pulsating_between, px, quad, size, transparent_black, App, BorderStyle, Bounds,
+    IntoElement, Pixels, Window,
+};
 
 use crate::devtools::Probed;
+use crate::frameclock::{request_frame, FrameKind};
 use crate::style::ColorValue;
 use crate::theme::{theme, ColorName, Size};
+
+const FRAME_INTERVAL: Duration = Duration::from_millis(60);
+const CYCLE_SECONDS: f32 = 0.9;
+
+fn animation_start() -> Instant {
+    static START: OnceLock<Instant> = OnceLock::new();
+    *START.get_or_init(Instant::now)
+}
+
+fn request_next_frame(window: &mut Window, cx: &mut App) {
+    request_frame(FrameKind::Continuous, FRAME_INTERVAL, window, cx);
+}
 
 /// The loader's visual style.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -73,34 +90,43 @@ impl RenderOnce for Loader {
         let color = crate::style::solid(t, self.color);
         let unit = self.unit();
         let bars = self.variant == LoaderVariant::Bars;
+        let width = if bars { unit * 0.6 } else { unit };
+        let height = if bars { unit * 2.4 } else { unit };
+        let gap = unit * 0.6;
+        let total_width = width * 3.0 + gap * 2.0;
+        let radius = if bars { unit * 0.3 } else { unit };
 
-        let dots = (0..3usize).map(move |i| {
-            let phase = i as f32 / 3.0;
-            let pulse = pulsating_between(0.25, 1.0);
-            let animation = Animation::new(Duration::from_millis(900))
-                .repeat()
-                .with_easing(move |delta| pulse((delta + phase) % 1.0));
-
-            let dot = if bars {
-                div()
-                    .w(px(unit * 0.6))
-                    .h(px(unit * 2.4))
-                    .rounded(px(unit * 0.3))
-            } else {
-                div().w(px(unit)).h(px(unit)).rounded(px(unit))
-            }
-            .bg(color);
-
-            dot.with_animation(("guise-loader-unit", i), animation, |dot, delta| {
-                dot.opacity(delta)
-            })
-        });
-
-        div()
-            .flex()
-            .items_center()
-            .gap(px(unit * 0.6))
-            .children(dots)
-            .probe("Loader")
+        canvas(
+            |_, _, _| (),
+            move |bounds: Bounds<Pixels>, _, window, cx| {
+                if !bounds.intersects(&window.content_mask().bounds) {
+                    return;
+                }
+                let cycle = animation_start().elapsed().as_secs_f32() / CYCLE_SECONDS;
+                let pulse = pulsating_between(0.25, 1.0);
+                for index in 0..3 {
+                    let delta = (cycle + index as f32 / 3.0) % 1.0;
+                    let item = Bounds {
+                        origin: point(
+                            bounds.origin.x + px(index as f32 * (width + gap)),
+                            bounds.origin.y,
+                        ),
+                        size: size(px(width), px(height)),
+                    };
+                    window.paint_quad(quad(
+                        item,
+                        px(radius),
+                        color.opacity(pulse(delta)),
+                        px(0.0),
+                        transparent_black(),
+                        BorderStyle::default(),
+                    ));
+                }
+                request_next_frame(window, cx);
+            },
+        )
+        .w(px(total_width))
+        .h(px(height))
+        .probe("Loader")
     }
 }
