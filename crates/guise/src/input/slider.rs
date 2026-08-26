@@ -8,8 +8,8 @@
 
 use gpui::prelude::*;
 use gpui::{
-    div, px, relative, App, Context, Entity, EventEmitter, FocusHandle, IntoElement, KeyDownEvent,
-    SharedString, Window,
+  div, px, relative, App, Context, Entity, EventEmitter, FocusHandle, IntoElement, KeyDownEvent,
+  SharedString, Window,
 };
 
 use crate::devtools::Probed;
@@ -22,250 +22,250 @@ pub struct SliderEvent(pub f64);
 
 /// A horizontal slider. Create with `cx.new(|cx| Slider::new(cx))`.
 pub struct Slider {
-    value: f64,
-    min: f64,
-    max: f64,
-    step: f64,
-    color: ColorName,
-    focus: FocusHandle,
-    disabled: bool,
+  value: f64,
+  min: f64,
+  max: f64,
+  step: f64,
+  color: ColorName,
+  focus: FocusHandle,
+  disabled: bool,
 }
 
 impl EventEmitter<SliderEvent> for Slider {}
 
 impl Slider {
-    pub fn new(cx: &mut Context<Self>) -> Self {
-        Slider {
-            value: 0.0,
-            min: 0.0,
-            max: 100.0,
-            step: 1.0,
-            color: ColorName::Blue,
-            focus: cx.focus_handle(),
-            disabled: false,
-        }
+  pub fn new(cx: &mut Context<Self>) -> Self {
+    Slider {
+      value: 0.0,
+      min: 0.0,
+      max: 100.0,
+      step: 1.0,
+      color: ColorName::Blue,
+      focus: cx.focus_handle(),
+      disabled: false,
     }
+  }
 
-    pub fn value(mut self, value: f64) -> Self {
-        self.value = value;
-        self
-    }
+  pub fn value(mut self, value: f64) -> Self {
+    self.value = value;
+    self
+  }
 
-    pub fn min(mut self, min: f64) -> Self {
-        self.min = min;
-        self
-    }
+  pub fn min(mut self, min: f64) -> Self {
+    self.min = min;
+    self
+  }
 
-    pub fn max(mut self, max: f64) -> Self {
-        self.max = max;
-        self
-    }
+  pub fn max(mut self, max: f64) -> Self {
+    self.max = max;
+    self
+  }
 
-    pub fn step(mut self, step: f64) -> Self {
-        self.step = step.max(f64::EPSILON);
-        self
-    }
+  pub fn step(mut self, step: f64) -> Self {
+    self.step = step.max(f64::EPSILON);
+    self
+  }
 
-    pub fn color(mut self, color: ColorName) -> Self {
-        self.color = color;
-        self
-    }
+  pub fn color(mut self, color: ColorName) -> Self {
+    self.color = color;
+    self
+  }
 
-    pub fn disabled(mut self, disabled: bool) -> Self {
-        self.disabled = disabled;
-        self
-    }
+  pub fn disabled(mut self, disabled: bool) -> Self {
+    self.disabled = disabled;
+    self
+  }
 
-    pub fn value_f64(&self) -> f64 {
-        self.value
-    }
+  pub fn value_f64(&self) -> f64 {
+    self.value
+  }
 
-    /// Two-way bind this slider's value to a `Signal<f64>`. The signal is the
-    /// source of truth: the slider adopts its value now (snapped to `step`),
-    /// drags write back through [`Signal::set_if_changed`], and signal writes
-    /// move the knob without emitting [`SliderEvent`]. Equality guards on both
-    /// directions prevent update loops.
-    pub fn bind(entity: &Entity<Slider>, signal: &Signal<f64>, cx: &mut App) {
-        let initial = signal.get(cx);
-        entity.update(cx, |this, cx| this.sync_value(initial, cx));
-        let sink = signal.clone();
-        cx.subscribe(entity, move |_slider, event: &SliderEvent, cx| {
-            sink.set_if_changed(cx, event.0);
-        })
-        .detach();
-        let slider = entity.downgrade();
-        cx.observe(signal.entity(), move |observed, cx| {
-            let value = *observed.read(cx);
-            slider
-                .update(cx, |this, cx| this.sync_value(value, cx))
-                .ok();
-        })
-        .detach();
-    }
+  /// Two-way bind this slider's value to a `Signal<f64>`. The signal is the
+  /// source of truth: the slider adopts its value now (snapped to `step`),
+  /// drags write back through [`Signal::set_if_changed`], and signal writes
+  /// move the knob without emitting [`SliderEvent`]. Equality guards on both
+  /// directions prevent update loops.
+  pub fn bind(entity: &Entity<Slider>, signal: &Signal<f64>, cx: &mut App) {
+    let initial = signal.get(cx);
+    entity.update(cx, |this, cx| this.sync_value(initial, cx));
+    let sink = signal.clone();
+    cx.subscribe(entity, move |_slider, event: &SliderEvent, cx| {
+      sink.set_if_changed(cx, event.0);
+    })
+    .detach();
+    let slider = entity.downgrade();
+    cx.observe(signal.entity(), move |observed, cx| {
+      let value = *observed.read(cx);
+      slider
+        .update(cx, |this, cx| this.sync_value(value, cx))
+        .ok();
+    })
+    .detach();
+  }
 
-    /// Programmatic set: snap and repaint without emitting an event.
-    fn sync_value(&mut self, raw: f64, cx: &mut Context<Self>) {
-        let next = self.snap(raw);
-        if next != self.value {
-            self.value = next;
-            cx.notify();
-        }
+  /// Programmatic set: snap and repaint without emitting an event.
+  fn sync_value(&mut self, raw: f64, cx: &mut Context<Self>) {
+    let next = self.snap(raw);
+    if next != self.value {
+      self.value = next;
+      cx.notify();
     }
+  }
 
-    fn fraction(&self) -> f32 {
-        if self.max <= self.min {
-            0.0
-        } else {
-            (((self.value - self.min) / (self.max - self.min)) as f32).clamp(0.0, 1.0)
-        }
+  fn fraction(&self) -> f32 {
+    if self.max <= self.min {
+      0.0
+    } else {
+      (((self.value - self.min) / (self.max - self.min)) as f32).clamp(0.0, 1.0)
     }
+  }
 
-    fn snap(&self, raw: f64) -> f64 {
-        snap(raw, self.min, self.max, self.step)
-    }
+  fn snap(&self, raw: f64) -> f64 {
+    snap(raw, self.min, self.max, self.step)
+  }
 
-    /// Move the handle programmatically. The value is clamped to the track
-    /// and snapped to the step, so a caller can pass a raw number.
-    pub fn set_value(&mut self, raw: f64, cx: &mut Context<Self>) {
-        if self.disabled {
-            return;
-        }
-        let next = self.snap(raw);
-        if next != self.value {
-            self.value = next;
-            cx.emit(SliderEvent(next));
-            cx.notify();
-        }
+  /// Move the handle programmatically. The value is clamped to the track
+  /// and snapped to the step, so a caller can pass a raw number.
+  pub fn set_value(&mut self, raw: f64, cx: &mut Context<Self>) {
+    if self.disabled {
+      return;
     }
+    let next = self.snap(raw);
+    if next != self.value {
+      self.value = next;
+      cx.emit(SliderEvent(next));
+      cx.notify();
+    }
+  }
 
-    fn segment_count(&self) -> usize {
-        (((self.max - self.min) / self.step).round() as usize).clamp(1, 200)
-    }
+  fn segment_count(&self) -> usize {
+    (((self.max - self.min) / self.step).round() as usize).clamp(1, 200)
+  }
 
-    fn on_key(&mut self, event: &KeyDownEvent, _window: &mut Window, cx: &mut Context<Self>) {
-        match event.keystroke.key.as_str() {
-            "left" | "down" => self.set_value(self.value - self.step, cx),
-            "right" | "up" => self.set_value(self.value + self.step, cx),
-            "home" => self.set_value(self.min, cx),
-            "end" => self.set_value(self.max, cx),
-            _ => return,
-        }
-        cx.stop_propagation();
+  fn on_key(&mut self, event: &KeyDownEvent, _window: &mut Window, cx: &mut Context<Self>) {
+    match event.keystroke.key.as_str() {
+      "left" | "down" => self.set_value(self.value - self.step, cx),
+      "right" | "up" => self.set_value(self.value + self.step, cx),
+      "home" => self.set_value(self.min, cx),
+      "end" => self.set_value(self.max, cx),
+      _ => return,
     }
+    cx.stop_propagation();
+  }
 }
 
 fn snap(raw: f64, min: f64, max: f64, step: f64) -> f64 {
-    let stepped = min + ((raw - min) / step).round() * step;
-    stepped.clamp(min, max)
+  let stepped = min + ((raw - min) / step).round() * step;
+  stepped.clamp(min, max)
 }
 
 impl Render for Slider {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let t = theme(cx);
-        let accent = t.color(self.color, t.primary_shade()).hsla();
-        let track_color = if t.scheme.is_dark() {
-            t.color(ColorName::Dark, 4)
-        } else {
-            t.color(ColorName::Gray, 2)
-        }
-        .hsla();
-        let knob_bg = t.surface().hsla();
-        let frac = self.fraction();
-
-        let knob = div()
-            .w(px(16.0))
-            .h(px(16.0))
-            .rounded(px(8.0))
-            .bg(knob_bg)
-            .border_2()
-            .border_color(accent);
-
-        let fill = div()
-            .h_full()
-            .w(relative(frac))
-            .rounded(px(3.0))
-            .bg(accent)
-            .flex()
-            .items_center()
-            .justify_end()
-            .child(knob);
-
-        let track = div()
-            .relative()
-            .w_full()
-            .h(px(6.0))
-            .rounded(px(3.0))
-            .bg(track_color)
-            .flex()
-            .items_center()
-            .child(fill);
-
-        let count = self.segment_count();
-        let min = self.min;
-        let span = self.max - self.min;
-        let mut overlay = div()
-            .absolute()
-            .top(px(0.0))
-            .left(px(0.0))
-            .right(px(0.0))
-            .bottom(px(0.0))
-            .flex()
-            .flex_row()
-            .items_center();
-        for i in 0..count {
-            let raw = min + (i as f64) / ((count - 1).max(1) as f64) * span;
-            overlay = overlay.child(
-                div()
-                    .id(("guise-slider-seg", i))
-                    .flex_grow(1.0)
-                    .flex_basis(relative(0.0))
-                    .h_full()
-                    .on_click(cx.listener(move |this, _ev, _window, cx| this.set_value(raw, cx))),
-            );
-        }
-
-        let slider = div()
-            .id("guise-slider")
-            .track_focus(&self.focus)
-            .on_key_down(cx.listener(Self::on_key))
-            .relative()
-            .w_full()
-            .h(px(20.0))
-            .flex()
-            .items_center()
-            .child(track)
-            .child(overlay);
-
-        // A label keeps the value visible while dragging via clicks.
-        let value_label = div()
-            .text_size(px(t.font_size(Size::Xs)))
-            .text_color(t.dimmed().hsla())
-            .child(SharedString::from(format!("{}", self.value)));
-
-        let column = div()
-            .flex()
-            .flex_col()
-            .gap(px(4.0))
-            .child(slider)
-            .child(value_label);
-
-        let element = if self.disabled {
-            column.opacity(0.5)
-        } else {
-            column
-        };
-
-        element.probe("Slider")
+  fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    let t = theme(cx);
+    let accent = t.color(self.color, t.primary_shade()).hsla();
+    let track_color = if t.scheme.is_dark() {
+      t.color(ColorName::Dark, 4)
+    } else {
+      t.color(ColorName::Gray, 2)
     }
+    .hsla();
+    let knob_bg = t.surface().hsla();
+    let frac = self.fraction();
+
+    let knob = div()
+      .w(px(16.0))
+      .h(px(16.0))
+      .rounded(px(8.0))
+      .bg(knob_bg)
+      .border_2()
+      .border_color(accent);
+
+    let fill = div()
+      .h_full()
+      .w(relative(frac))
+      .rounded(px(3.0))
+      .bg(accent)
+      .flex()
+      .items_center()
+      .justify_end()
+      .child(knob);
+
+    let track = div()
+      .relative()
+      .w_full()
+      .h(px(6.0))
+      .rounded(px(3.0))
+      .bg(track_color)
+      .flex()
+      .items_center()
+      .child(fill);
+
+    let count = self.segment_count();
+    let min = self.min;
+    let span = self.max - self.min;
+    let mut overlay = div()
+      .absolute()
+      .top(px(0.0))
+      .left(px(0.0))
+      .right(px(0.0))
+      .bottom(px(0.0))
+      .flex()
+      .flex_row()
+      .items_center();
+    for i in 0..count {
+      let raw = min + (i as f64) / ((count - 1).max(1) as f64) * span;
+      overlay = overlay.child(
+        div()
+          .id(("guise-slider-seg", i))
+          .flex_grow(1.0)
+          .flex_basis(relative(0.0))
+          .h_full()
+          .on_click(cx.listener(move |this, _ev, _window, cx| this.set_value(raw, cx))),
+      );
+    }
+
+    let slider = div()
+      .id("guise-slider")
+      .track_focus(&self.focus)
+      .on_key_down(cx.listener(Self::on_key))
+      .relative()
+      .w_full()
+      .h(px(20.0))
+      .flex()
+      .items_center()
+      .child(track)
+      .child(overlay);
+
+    // A label keeps the value visible while dragging via clicks.
+    let value_label = div()
+      .text_size(px(t.font_size(Size::Xs)))
+      .text_color(t.dimmed().hsla())
+      .child(SharedString::from(format!("{}", self.value)));
+
+    let column = div()
+      .flex()
+      .flex_col()
+      .gap(px(4.0))
+      .child(slider)
+      .child(value_label);
+
+    let element = if self.disabled {
+      column.opacity(0.5)
+    } else {
+      column
+    };
+
+    element.probe("Slider")
+  }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+  use super::*;
 
-    #[test]
-    fn step_grid_starts_at_minimum() {
-        assert_eq!(snap(6.8, 5.0, 15.0, 2.0), 7.0);
-        assert_eq!(snap(14.8, 5.0, 15.0, 2.0), 15.0);
-    }
+  #[test]
+  fn step_grid_starts_at_minimum() {
+    assert_eq!(snap(6.8, 5.0, 15.0, 2.0), 7.0);
+    assert_eq!(snap(14.8, 5.0, 15.0, 2.0), 15.0);
+  }
 }
