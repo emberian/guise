@@ -20,7 +20,7 @@ use super::shell::{empty_state, glyph, Ink, LABEL_SIZE, MONO_SIZE, NAV_WIDTH, RO
 use super::state::SourceRef;
 use super::DevTools;
 use crate::icon::IconName;
-use crate::style::MONO_FAMILY;
+use crate::style::{TextOverflowExt, MONO_FAMILY};
 
 /// Files past this size are listed but not opened. A source file is never this
 /// big, so hitting it means the location pointed at something else.
@@ -212,13 +212,13 @@ impl SourcesPanel {
                         .w_full()
                         .px(px(8.0))
                         .text_color(ink.dim)
-                        .overflow_hidden()
-                        .whitespace_nowrap()
-                        .child(SharedString::from(if parent.is_empty() {
-                            "/".to_string()
-                        } else {
-                            parent.to_string()
-                        })),
+                        .child(div().flex_1().truncate_text().child(SharedString::from(
+                            if parent.is_empty() {
+                                "/".to_string()
+                            } else {
+                                parent.to_string()
+                            },
+                        ))),
                 );
             }
 
@@ -252,8 +252,7 @@ impl SourcesPanel {
                     .child(
                         div()
                             .flex_1()
-                            .overflow_hidden()
-                            .whitespace_nowrap()
+                            .truncate_text()
                             .child(SharedString::from(name.to_string())),
                     )
                     .on_click(

@@ -16,7 +16,7 @@ use super::shell::{
 use super::state::{format_bytes, DevToolsState, StorageDomain, StorageKind};
 use super::DevTools;
 use crate::icon::IconName;
-use crate::style::MONO_FAMILY;
+use crate::style::{TextOverflowExt, MONO_FAMILY};
 
 #[derive(Default)]
 pub struct StoragePanel {
@@ -154,13 +154,7 @@ impl StoragePanel {
                         .when(is_selected, |el| el.bg(ink.selected))
                         .when(!is_selected, |el| el.hover(move |st| st.bg(hover_bg)))
                         .child(glyph(Self::icon(domain.kind), 11.0, fg, cx))
-                        .child(
-                            div()
-                                .flex_1()
-                                .overflow_hidden()
-                                .whitespace_nowrap()
-                                .child(domain.name.clone()),
-                        )
+                        .child(div().flex_1().truncate_text().child(domain.name.clone()))
                         .child(
                             div()
                                 .flex_none()

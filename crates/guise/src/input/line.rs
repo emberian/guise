@@ -915,9 +915,16 @@ impl<V: LineEditor> Element for Line<V> {
 
         let shaped = prepaint.shaped.take().unwrap_or_default();
         let origin = point(bounds.origin.x - prepaint.scroll, bounds.origin.y);
-        // Clip to the field: scrolled text would otherwise paint over the
-        // border and whatever sits beside it.
-        window.with_content_mask(Some(gpui::ContentMask { bounds }), |window| {
+        // Keep the horizontal viewport tight without using the line box as a
+        // vertical mask. Fallback glyphs, accents, and emoji can paint outside
+        // that box even when their advance metrics fit it; the surrounding
+        // control (or window) already supplies the correct vertical clip.
+        let parent_mask = window.content_mask().bounds;
+        let mask = Bounds::from_corners(
+            point(bounds.left(), parent_mask.top()),
+            point(bounds.right(), parent_mask.bottom()),
+        );
+        window.with_content_mask(Some(gpui::ContentMask { bounds: mask }), |window| {
             if let Some(selection) = prepaint.selection.take() {
                 window.paint_quad(selection);
             }

@@ -66,9 +66,15 @@ impl RenderOnce for Field {
         let font_sm = t.font_size(Size::Sm);
         let font_xs = t.font_size(Size::Xs);
 
-        let mut column = div().flex().flex_col().gap(px(4.0));
+        let mut column = div().flex().flex_col().min_w(px(0.0)).gap(px(4.0));
         if let Some(label) = self.label {
-            column = column.child(div().text_size(px(font_sm)).text_color(text).child(label));
+            column = column.child(
+                div()
+                    .min_w(px(0.0))
+                    .text_size(px(font_sm))
+                    .text_color(text)
+                    .child(label),
+            );
         }
         if let Some(child) = self.child {
             column = column.child(child);
@@ -76,6 +82,7 @@ impl RenderOnce for Field {
         if let Some(error) = self.error {
             column = column.child(
                 div()
+                    .min_w(px(0.0))
                     .text_size(px(font_xs))
                     .text_color(error_color)
                     .child(error),
@@ -83,6 +90,7 @@ impl RenderOnce for Field {
         } else if let Some(description) = self.description {
             column = column.child(
                 div()
+                    .min_w(px(0.0))
                     .text_size(px(font_xs))
                     .text_color(dimmed)
                     .child(description),

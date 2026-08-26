@@ -7,7 +7,7 @@
 use gpui::prelude::*;
 use gpui::{
     div, px, App, ClipboardItem, Context, Entity, EventEmitter, FocusHandle, IntoElement,
-    KeyDownEvent, MouseButton, SharedString, Window,
+    KeyDownEvent, MouseButton, ScrollHandle, SharedString, Window,
 };
 
 use super::{control_metrics, Field, TextEdit};
@@ -30,6 +30,7 @@ pub struct TextAreaSubmit(pub String);
 pub struct TextArea {
     edit: TextEdit,
     focus: FocusHandle,
+    scroll: ScrollHandle,
     placeholder: SharedString,
     label: Option<SharedString>,
     description: Option<SharedString>,
@@ -58,6 +59,7 @@ impl TextArea {
         TextArea {
             edit: TextEdit::new(""),
             focus: cx.focus_handle().tab_stop(true),
+            scroll: ScrollHandle::new(),
             placeholder: SharedString::default(),
             label: None,
             description: None,
@@ -423,10 +425,18 @@ impl Render for TextArea {
             body = body.child(
                 div()
                     .flex()
+                    .flex_wrap()
                     .items_center()
-                    .h(px(line_h))
+                    .w_full()
+                    .min_h(px(line_h))
                     .child(div().w(px(1.0)).h(px(font * 1.15)).bg(caret))
-                    .child(div().text_color(dimmed).child(self.placeholder.clone())),
+                    .child(
+                        div()
+                            .flex_1()
+                            .min_w(px(0.0))
+                            .text_color(dimmed)
+                            .child(self.placeholder.clone()),
+                    ),
             );
         } else if focused {
             if let Some((before, selected, after)) = self.edit.split_selection() {
@@ -435,15 +445,17 @@ impl Render for TextArea {
                 let after_lines: Vec<&str> = after.split('\n').collect();
                 let before_last = before_lines.len() - 1;
                 for text in &before_lines[..before_last] {
-                    body = body.child(div().h(px(line_h)).child(line(text)));
+                    body = body.child(div().w_full().min_h(px(line_h)).child(line(text)));
                 }
                 let selected_part =
                     |text: &str| div().bg(selection_bg).rounded(px(2.0)).child(line(text));
                 body = body.child(
                     div()
                         .flex()
+                        .flex_wrap()
                         .items_center()
-                        .h(px(line_h))
+                        .w_full()
+                        .min_h(px(line_h))
                         .child(SharedString::from(before_lines[before_last].to_string()))
                         .child(selected_part(selected_lines[0]))
                         .when(selected_lines.len() == 1, |row| {
@@ -452,19 +464,28 @@ impl Render for TextArea {
                 );
                 if selected_lines.len() > 1 {
                     for text in &selected_lines[1..selected_lines.len() - 1] {
-                        body = body.child(div().flex().h(px(line_h)).child(selected_part(text)));
+                        body = body.child(
+                            div()
+                                .flex()
+                                .flex_wrap()
+                                .w_full()
+                                .min_h(px(line_h))
+                                .child(selected_part(text)),
+                        );
                     }
                     body = body.child(
                         div()
                             .flex()
+                            .flex_wrap()
                             .items_center()
-                            .h(px(line_h))
+                            .w_full()
+                            .min_h(px(line_h))
                             .child(selected_part(selected_lines[selected_lines.len() - 1]))
                             .child(SharedString::from(after_lines[0].to_string())),
                     );
                 }
                 for text in &after_lines[1..] {
-                    body = body.child(div().h(px(line_h)).child(line(text)));
+                    body = body.child(div().w_full().min_h(px(line_h)).child(line(text)));
                 }
             } else {
                 let (before, after) = self.edit.split();
@@ -472,32 +493,37 @@ impl Render for TextArea {
                 let after_lines: Vec<&str> = after.split('\n').collect();
                 let last = before_lines.len() - 1;
                 for text in &before_lines[..last] {
-                    body = body.child(div().h(px(line_h)).child(line(text)));
+                    body = body.child(div().w_full().min_h(px(line_h)).child(line(text)));
                 }
                 body = body.child(
                     div()
                         .flex()
+                        .flex_wrap()
                         .items_center()
-                        .h(px(line_h))
+                        .w_full()
+                        .min_h(px(line_h))
                         .child(SharedString::from(before_lines[last].to_string()))
                         .child(div().w(px(1.0)).h(px(font * 1.15)).bg(caret))
                         .child(SharedString::from(after_lines[0].to_string())),
                 );
                 for text in &after_lines[1..] {
-                    body = body.child(div().h(px(line_h)).child(line(text)));
+                    body = body.child(div().w_full().min_h(px(line_h)).child(line(text)));
                 }
             }
         } else if self.edit.is_empty() {
-            body = body
-                .text_color(dimmed)
-                .child(div().h(px(line_h)).child(self.placeholder.clone()));
+            body = body.text_color(dimmed).child(
+                div()
+                    .w_full()
+                    .min_h(px(line_h))
+                    .child(self.placeholder.clone()),
+            );
         } else {
             for l in self.edit.text().split('\n') {
-                body = body.child(div().h(px(line_h)).child(line(l)));
+                body = body.child(div().w_full().min_h(px(line_h)).child(line(l)));
             }
         }
 
-        let field = div()
+        let mut field = div()
             .id("guise-textarea")
             .track_focus(&self.focus)
             .on_key_down(cx.listener(Self::on_key))
@@ -510,9 +536,8 @@ impl Render for TextArea {
             )
             .flex()
             .items_start()
-            .overflow_hidden()
+            .overflow_x_hidden()
             .min_h(px(min_h))
-            .when_some(max_h, |field, max| field.max_h(px(max)))
             .w_full()
             .px(px(pad_x))
             .py(px(pad_y))
@@ -521,7 +546,15 @@ impl Render for TextArea {
             .border_color(border)
             .bg(surface)
             .text_size(px(font))
-            .child(div().w_full().min_w(px(0.0)).overflow_hidden().child(body));
+            .line_height(px(line_h))
+            .child(div().w_full().min_w(px(0.0)).child(body));
+
+        if let Some(max) = max_h {
+            field = field
+                .max_h(px(max))
+                .overflow_y_scroll()
+                .track_scroll(&self.scroll);
+        }
 
         let mut chrome = Field::new().child(if self.disabled {
             field.opacity(0.6)

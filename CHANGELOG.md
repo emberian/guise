@@ -5,6 +5,20 @@ follow [semver](https://semver.org): from 1.0 on, a breaking change means a
 major release, and is called out under **Breaking**. Releases before 1.0 landed
 breaking changes in minor versions.
 
+## 1.5.1 — 2026-08-26
+
+### Text overflow
+
+Single-line inputs now clip only across their horizontal viewport instead of
+masking the text's line box on both axes. Accents, fallback fonts, emoji, and
+other glyphs whose ink extends beyond their advance metrics are no longer cut
+off at the top or bottom.
+
+Labels, descriptions, picker values, table cells, and DevTools rows can now
+shrink inside flex layouts and ellipsize without the same vertical mask.
+`TextArea` rows wrap instead of clipping, and a textarea capped with
+`max_rows` scrolls vertically rather than hiding content.
+
 ## 1.5.0 — 2026-08-26
 
 ### GPU View

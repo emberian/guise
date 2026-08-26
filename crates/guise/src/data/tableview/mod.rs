@@ -55,7 +55,7 @@ use super::Content;
 use crate::devtools::Probed;
 use crate::layout::Align;
 use crate::reactive::Signal;
-use crate::style::FlexExt;
+use crate::style::{FlexExt, TextOverflowExt};
 use crate::theme::{theme, ColorName, Size};
 
 /// Events emitted by [`TableView`]. All row indices refer to the **source**
@@ -523,7 +523,7 @@ impl<T: 'static> TableView<T> {
                 .font_weight(FontWeight::SEMIBOLD);
             cell = sized(cell, self.col_width(ix));
             cell = aligned(cell, col.align);
-            cell = cell.child(div().min_w(px(0.0)).truncate().child(col.title.clone()));
+            cell = cell.child(div().truncate_text().child(col.title.clone()));
             if let Some(dir) = sort_dir {
                 cell = cell.child(div().text_size(px(font * 0.65)).text_color(accent).child(
                     SharedString::new_static(match dir {
@@ -630,7 +630,7 @@ impl<T: 'static> TableView<T> {
             cell = aligned(cell, col.align);
             cell = match &col.content {
                 Some(CellContent::Text(to_text)) => {
-                    cell.child(div().min_w(px(0.0)).truncate().child(to_text(row)))
+                    cell.child(div().truncate_text().child(to_text(row)))
                 }
                 Some(CellContent::Element(build)) => cell.child(build(row, window, cx)),
                 None => cell,

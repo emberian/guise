@@ -16,6 +16,7 @@ use super::date::{Date, Weekday};
 use crate::devtools::Probed;
 use crate::icon::{Icon, IconName};
 use crate::reactive::Signal;
+use crate::style::TextOverflowExt;
 use crate::theme::{theme, Size};
 
 /// Emitted when the user completes a pick.
@@ -251,9 +252,10 @@ impl Render for DatePicker {
             .bg(surface)
             .text_size(px(font))
             .text_color(if has_value { text_color } else { dimmed })
-            .child(shown)
+            .child(div().flex_1().truncate_text().child(shown))
             .child(
                 div()
+                    .flex_none()
                     .text_color(dimmed)
                     .child(Icon::new(IconName::CalendarDays).size(Size::Sm)),
             )
@@ -310,10 +312,11 @@ impl Render for DatePicker {
             wrap = wrap.child(deferred(panel));
         }
 
-        let mut column = div().flex().flex_col().gap(px(4.0));
+        let mut column = div().flex().flex_col().min_w(px(0.0)).gap(px(4.0));
         if let Some(label) = self.label.clone() {
             column = column.child(
                 div()
+                    .min_w(px(0.0))
                     .text_size(px(font_sm))
                     .text_color(text_color)
                     .child(label),

@@ -2,7 +2,7 @@
 //! background / foreground / border triple that every interactive component
 //! (Button, Badge, ActionIcon, ...) draws from. This is that resolver.
 
-use gpui::{Div, Hsla, Styled};
+use gpui::{px, Div, Hsla, Styled};
 
 use crate::theme::{ColorName, Size, Theme};
 
@@ -23,6 +23,22 @@ pub trait StyleExt: Sized {
 }
 
 impl<T: Styled> StyleExt for T {}
+
+/// Single-line ellipsis without gpui 0.2.2's two-axis overflow mask.
+///
+/// `Styled::truncate` also applies `overflow: hidden`, whose content mask clips
+/// glyph ink to the line box on both axes. The text shaper already constrains
+/// an ellipsized line to its measured width, so a zero minimum width is the
+/// only layout escape hatch it needs.
+pub(crate) trait TextOverflowExt: Sized {
+    fn truncate_text(self) -> Self;
+}
+
+impl TextOverflowExt for Div {
+    fn truncate_text(self) -> Self {
+        self.min_w(px(0.0)).whitespace_nowrap().text_ellipsis()
+    }
+}
 
 /// Flex helpers that reach into gpui's [`StyleRefinement`] for what the
 /// crates.io 0.2.2 `Styled` trait doesn't expose: arbitrary grow/shrink

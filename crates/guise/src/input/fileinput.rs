@@ -16,6 +16,7 @@ use super::accept::{filter_paths, normalize_ext};
 use super::control_metrics;
 use crate::devtools::Probed;
 use crate::icon::{Icon, IconName};
+use crate::style::TextOverflowExt;
 use crate::theme::{theme, Size};
 
 /// Emitted when the selection changes. Empty means cleared.
@@ -183,10 +184,11 @@ impl Render for FileInput {
             .hover(move |s| s.bg(surface_hover))
             .child(
                 div()
+                    .flex_none()
                     .text_color(dimmed)
                     .child(Icon::new(IconName::Paperclip).size(Size::Sm)),
             )
-            .child(div().flex_1().truncate().child(value_text))
+            .child(div().flex_1().truncate_text().child(value_text))
             .on_click(cx.listener(|this, _ev, _window, cx| {
                 if !this.disabled {
                     this.browse(cx);
@@ -198,6 +200,7 @@ impl Render for FileInput {
                 div()
                     .id("guise-fileinput-clear")
                     .flex()
+                    .flex_none()
                     .items_center()
                     .text_color(dimmed)
                     .child(Icon::new(IconName::X).size(Size::Xs))
@@ -209,10 +212,11 @@ impl Render for FileInput {
             );
         }
 
-        let mut column = div().flex().flex_col().gap(px(4.0));
+        let mut column = div().flex().flex_col().min_w(px(0.0)).gap(px(4.0));
         if let Some(label) = self.label.clone() {
             column = column.child(
                 div()
+                    .min_w(px(0.0))
                     .text_size(px(font_sm))
                     .text_color(text_color)
                     .child(label),

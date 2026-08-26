@@ -17,6 +17,7 @@ use super::tokenmeter::compact;
 use crate::devtools::ProbedAny;
 use crate::icon::{Icon, IconName};
 use crate::input::{control_metrics, Field};
+use crate::style::TextOverflowExt;
 use crate::theme::{theme, ColorName, Size};
 
 /// One selectable model.
@@ -209,9 +210,13 @@ impl Render for AIModelPicker {
                     )
                     .child(match current {
                         Some(model) => div()
+                            .truncate_text()
                             .text_color(text_color)
                             .child(SharedString::from(model.label.clone())),
-                        None => div().text_color(dimmed).child(self.placeholder.clone()),
+                        None => div()
+                            .truncate_text()
+                            .text_color(dimmed)
+                            .child(self.placeholder.clone()),
                     }),
             )
             .when_some(

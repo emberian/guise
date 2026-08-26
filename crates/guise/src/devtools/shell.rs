@@ -11,7 +11,7 @@ use gpui::prelude::*;
 use gpui::{div, px, App, Div, ElementId, Hsla, SharedString, Stateful};
 
 use crate::icon::{ensure_font, IconName, FONT_FAMILY};
-use crate::style::MONO_FAMILY;
+use crate::style::{TextOverflowExt, MONO_FAMILY};
 use crate::theme::{theme, ColorName, Theme};
 
 /// The inspector's row height. Safari's tables and trees are 20-22px; this is
@@ -244,7 +244,7 @@ pub(crate) fn header_cell(label: impl Into<SharedString>, width: Option<f32>, in
         .px(px(6.0))
         .text_size(px(LABEL_SIZE))
         .text_color(ink.dim)
-        .overflow_hidden()
+        .truncate_text()
         .child(label.into());
     match width {
         Some(width) => el = el.w(px(width)).flex_none(),
@@ -261,8 +261,7 @@ pub(crate) fn cell(text: impl Into<SharedString>, width: Option<f32>, color: Hsl
         .items_center()
         .h_full()
         .px(px(6.0))
-        .overflow_hidden()
-        .whitespace_nowrap()
+        .truncate_text()
         .text_color(color)
         .child(text.into());
     match width {

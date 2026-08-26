@@ -12,6 +12,7 @@ use gpui::{
 use super::control_metrics;
 use crate::devtools::Probed;
 use crate::reactive::Signal;
+use crate::style::TextOverflowExt;
 use crate::theme::{theme, Size};
 
 /// Emitted when the user picks an option. Carries the option index.
@@ -157,9 +158,10 @@ impl Render for Select {
             .bg(surface)
             .text_size(px(font))
             .text_color(if has_value { text_color } else { dimmed })
-            .child(value_text)
+            .child(div().flex_1().truncate_text().child(value_text))
             .child(
                 div()
+                    .flex_none()
                     .text_color(dimmed)
                     .child(SharedString::new_static("\u{25be}")),
             )
@@ -214,10 +216,11 @@ impl Render for Select {
             wrap = wrap.child(deferred(menu));
         }
 
-        let mut column = div().flex().flex_col().gap(px(4.0));
+        let mut column = div().flex().flex_col().min_w(px(0.0)).gap(px(4.0));
         if let Some(label) = self.label.clone() {
             column = column.child(
                 div()
+                    .min_w(px(0.0))
                     .text_size(px(font_sm))
                     .text_color(text_color)
                     .child(label),
