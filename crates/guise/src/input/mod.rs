@@ -83,35 +83,35 @@ pub(crate) type ClickHandler = Box<dyn Fn(&ClickEvent, &mut Window, &mut App) + 
 
 /// Move a stateless control through the window's tab order.
 pub(crate) fn handle_tab(event: &KeyDownEvent, window: &mut Window, cx: &mut App) {
-  let modifiers = &event.keystroke.modifiers;
-  if event.keystroke.key == "tab" && !modifiers.platform && !modifiers.control {
-    if modifiers.shift {
-      window.focus_prev();
-    } else {
-      window.focus_next();
+    let modifiers = &event.keystroke.modifiers;
+    if event.keystroke.key == "tab" && !modifiers.platform && !modifiers.control {
+        if modifiers.shift {
+            window.focus_prev(cx);
+        } else {
+            window.focus_next(cx);
+        }
+        cx.stop_propagation();
     }
-    cx.stop_propagation();
-  }
 }
 
 /// Box dimension (px) for square toggle controls (Checkbox, Radio).
 pub(crate) fn control_box_size(size: Size) -> f32 {
-  match size {
-    Size::Xs => 16.0,
-    Size::Sm => 18.0,
-    Size::Md => 20.0,
-    Size::Lg => 24.0,
-    Size::Xl => 28.0,
-  }
+    match size {
+        Size::Xs => 16.0,
+        Size::Sm => 18.0,
+        Size::Md => 20.0,
+        Size::Lg => 24.0,
+        Size::Xl => 28.0,
+    }
 }
 
 /// (height, horizontal padding, font size) for text-like controls.
 pub(crate) fn control_metrics(size: Size) -> (f32, f32, f32) {
-  match size {
-    Size::Xs => (30.0, 10.0, 12.0),
-    Size::Sm => (36.0, 12.0, 14.0),
-    Size::Md => (42.0, 14.0, 16.0),
-    Size::Lg => (50.0, 16.0, 18.0),
-    Size::Xl => (60.0, 20.0, 20.0),
-  }
+    match size {
+        Size::Xs => (30.0, 10.0, 12.0),
+        Size::Sm => (36.0, 12.0, 14.0),
+        Size::Md => (42.0, 14.0, 16.0),
+        Size::Lg => (50.0, 16.0, 18.0),
+        Size::Xl => (60.0, 20.0, 20.0),
+    }
 }

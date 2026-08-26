@@ -7,156 +7,193 @@ use super::id::ItemId;
 /// An ordered set of tab items with one active. Always non-empty.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Pane {
-  items: Vec<ItemId>,
-  active: usize,
+    items: Vec<ItemId>,
+    active: usize,
 }
 
 impl Pane {
-  /// A new pane holding a single item, active.
-  pub fn new(item: ItemId) -> Self {
-    Self {
-      items: vec![item],
-      active: 0,
+    /// A new pane holding a single item, active.
+    pub fn new(item: ItemId) -> Self {
+        Self {
+            items: vec![item],
+            active: 0,
+        }
     }
-  }
 
-  pub fn items(&self) -> &[ItemId] {
-    &self.items
-  }
-
-  pub fn len(&self) -> usize {
-    self.items.len()
-  }
-
-  pub fn is_empty(&self) -> bool {
-    self.items.is_empty()
-  }
-
-  pub fn active(&self) -> ItemId {
-    self.items[self.active]
-  }
-
-  pub fn active_index(&self) -> usize {
-    self.active
-  }
-
-  pub fn index_of(&self, item: ItemId) -> Option<usize> {
-    self.items.iter().position(|&i| i == item)
-  }
-
-  pub fn contains(&self, item: ItemId) -> bool {
-    self.items.contains(&item)
-  }
-
-  /// Activate the item at `index`. `false` if out of range.
-  pub fn activate(&mut self, index: usize) -> bool {
-    if index >= self.items.len() {
-      return false;
+    pub fn items(&self) -> &[ItemId] {
+        &self.items
     }
-    self.active = index;
-    true
-  }
 
-  /// Activate a specific item. `false` if absent.
-  pub fn activate_item(&mut self, item: ItemId) -> bool {
-    match self.index_of(item) {
-      Some(i) => {
-        self.active = i;
+    pub fn len(&self) -> usize {
+        self.items.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.items.is_empty()
+    }
+
+    pub fn active(&self) -> ItemId {
+        self.items[self.active]
+    }
+
+    pub fn active_index(&self) -> usize {
+        self.active
+    }
+
+    pub fn index_of(&self, item: ItemId) -> Option<usize> {
+        self.items.iter().position(|&i| i == item)
+    }
+
+    pub fn contains(&self, item: ItemId) -> bool {
+        self.items.contains(&item)
+    }
+
+    /// Activate the item at `index`. `false` if out of range.
+    pub fn activate(&mut self, index: usize) -> bool {
+        if index >= self.items.len() {
+            return false;
+        }
+        self.active = index;
         true
-      }
-      None => false,
     }
-  }
 
-  pub fn activate_next(&mut self) {
-    self.active = (self.active + 1) % self.items.len();
-  }
+    /// Activate a specific item. `false` if absent.
+    pub fn activate_item(&mut self, item: ItemId) -> bool {
+        match self.index_of(item) {
+            Some(i) => {
+                self.active = i;
+                true
+            }
+            None => false,
+        }
+    }
 
-  pub fn activate_prev(&mut self) {
-    self.active = (self.active + self.items.len() - 1) % self.items.len();
-  }
+    pub fn activate_next(&mut self) {
+        self.active = (self.active + 1) % self.items.len();
+    }
 
-  /// Insert `item` at `at` (clamped; appended when `None`) and activate it.
-  /// Returns the index it landed at. Ignores items already present (activates
-  /// the existing one instead).
-  pub fn add(&mut self, item: ItemId, at: Option<usize>) -> usize {
-    if let Some(i) = self.index_of(item) {
-      self.active = i;
-      return i;
+    pub fn activate_prev(&mut self) {
+        self.active = (self.active + self.items.len() - 1) % self.items.len();
     }
-    let index = at.unwrap_or(self.items.len()).min(self.items.len());
-    self.items.insert(index, item);
-    self.active = index;
-    index
-  }
 
-  /// Remove `item`. Returns `true` if the pane is now empty (the host should
-  /// drop the pane). Keeps a valid active index otherwise.
-  pub fn remove(&mut self, item: ItemId) -> bool {
-    let Some(i) = self.index_of(item) else {
-      return self.items.is_empty();
-    };
-    self.items.remove(i);
-    if self.items.is_empty() {
-      return true;
+    /// Insert `item` at `at` (clamped; appended when `None`) and activate it.
+    /// Returns the index it landed at. Ignores items already present (activates
+    /// the existing one instead).
+    pub fn add(&mut self, item: ItemId, at: Option<usize>) -> usize {
+        if let Some(i) = self.index_of(item) {
+            self.active = i;
+            return i;
+        }
+        let index = at.unwrap_or(self.items.len()).min(self.items.len());
+        self.items.insert(index, item);
+        self.active = index;
+        index
     }
-    if self.active >= self.items.len() {
-      self.active = self.items.len() - 1;
-    } else if i < self.active {
-      self.active -= 1;
-    }
-    false
-  }
 
-  /// Move the item at `from` to `to` (both clamped), keeping the active item
-  /// active. `false` if `from` is out of range.
-  pub fn reorder(&mut self, from: usize, to: usize) -> bool {
-    if from >= self.items.len() {
-      return false;
+    /// Remove `item`. Returns `true` if the pane is now empty (the host should
+    /// drop the pane). Keeps a valid active index otherwise.
+    pub fn remove(&mut self, item: ItemId) -> bool {
+        let Some(i) = self.index_of(item) else {
+            return self.items.is_empty();
+        };
+        self.items.remove(i);
+        if self.items.is_empty() {
+            return true;
+        }
+        if self.active >= self.items.len() {
+            self.active = self.items.len() - 1;
+        } else if i < self.active {
+            self.active -= 1;
+        }
+        false
     }
-    let to = to.min(self.items.len() - 1);
-    if from == to {
-      return true;
+
+    /// Move `item` into the gap at `index`, counted in the strip as it looks
+    /// now (`0..=len`, the boundaries a tab can be dropped between). Lifting the
+    /// item out from the left of the gap slides everything after it down one, so
+    /// that is where the two indices part company. `false` if `item` is absent.
+    pub fn move_to_gap(&mut self, item: ItemId, index: usize) -> bool {
+        let Some(from) = self.index_of(item) else {
+            return false;
+        };
+        let to = if from < index { index - 1 } else { index };
+        self.reorder(from, to)
     }
-    let active_item = self.items[self.active];
-    let item = self.items.remove(from);
-    self.items.insert(to, item);
-    self.active = self.index_of(active_item).unwrap_or(self.active);
-    true
-  }
+
+    /// Move the item at `from` to `to` (both clamped), keeping the active item
+    /// active. `false` if `from` is out of range.
+    pub fn reorder(&mut self, from: usize, to: usize) -> bool {
+        if from >= self.items.len() {
+            return false;
+        }
+        let to = to.min(self.items.len() - 1);
+        if from == to {
+            return true;
+        }
+        let active_item = self.items[self.active];
+        let item = self.items.remove(from);
+        self.items.insert(to, item);
+        self.active = self.index_of(active_item).unwrap_or(self.active);
+        true
+    }
 }
 
 #[cfg(test)]
 mod tests {
-  use super::super::id::ItemIds;
-  use super::*;
+    use super::super::id::ItemIds;
+    use super::*;
 
-  fn items(n: usize) -> Vec<ItemId> {
-    let mut a = ItemIds::new();
-    (0..n).map(|_| a.next()).collect()
-  }
+    fn items(n: usize) -> Vec<ItemId> {
+        let mut a = ItemIds::new();
+        (0..n).map(|_| a.next()).collect()
+    }
 
-  #[test]
-  fn add_activate_and_reorder() {
-    let it = items(3);
-    let mut p = Pane::new(it[0]);
-    assert_eq!(p.add(it[1], None), 1);
-    assert_eq!(p.add(it[2], Some(0)), 0);
-    assert_eq!(p.items(), &[it[2], it[0], it[1]]);
-    assert_eq!(p.active(), it[2]);
-    assert!(p.reorder(0, 2));
-    assert_eq!(p.items(), &[it[0], it[1], it[2]]);
-    assert_eq!(p.active(), it[2]); // active item preserved
-  }
+    #[test]
+    fn add_activate_and_reorder() {
+        let it = items(3);
+        let mut p = Pane::new(it[0]);
+        assert_eq!(p.add(it[1], None), 1);
+        assert_eq!(p.add(it[2], Some(0)), 0);
+        assert_eq!(p.items(), &[it[2], it[0], it[1]]);
+        assert_eq!(p.active(), it[2]);
+        assert!(p.reorder(0, 2));
+        assert_eq!(p.items(), &[it[0], it[1], it[2]]);
+        assert_eq!(p.active(), it[2]); // active item preserved
+    }
 
-  #[test]
-  fn remove_keeps_active_and_reports_empty() {
-    let it = items(2);
-    let mut p = Pane::new(it[0]);
-    p.add(it[1], None); // active = it[1]
-    assert!(!p.remove(it[0])); // remove before active
-    assert_eq!(p.active(), it[1]);
-    assert!(p.remove(it[1])); // last one -> empty
-    assert!(p.is_empty());
-  }
+    #[test]
+    fn gap_drop_lands_where_the_insertion_line_pointed() {
+        let it = items(3); // [0, 1, 2]
+        let mut p = Pane::new(it[0]);
+        p.add(it[1], None);
+        p.add(it[2], None);
+
+        let mut a = p.clone();
+        assert!(a.move_to_gap(it[0], 2)); // between 1 and 2
+        assert_eq!(a.items(), &[it[1], it[0], it[2]]);
+
+        let mut b = p.clone();
+        assert!(b.move_to_gap(it[2], 0)); // before 0
+        assert_eq!(b.items(), &[it[2], it[0], it[1]]);
+
+        let mut c = p.clone();
+        assert!(c.move_to_gap(it[0], 3)); // past the last tab
+        assert_eq!(c.items(), &[it[1], it[2], it[0]]);
+
+        // Both gaps touching a tab leave it exactly where it is.
+        let mut d = p.clone();
+        assert!(d.move_to_gap(it[1], 1) && d.move_to_gap(it[1], 2));
+        assert_eq!(d.items(), p.items());
+    }
+
+    #[test]
+    fn remove_keeps_active_and_reports_empty() {
+        let it = items(2);
+        let mut p = Pane::new(it[0]);
+        p.add(it[1], None); // active = it[1]
+        assert!(!p.remove(it[0])); // remove before active
+        assert_eq!(p.active(), it[1]);
+        assert!(p.remove(it[1])); // last one -> empty
+        assert!(p.is_empty());
+    }
 }
