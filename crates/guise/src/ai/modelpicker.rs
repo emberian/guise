@@ -235,7 +235,7 @@ impl Render for AIModelPicker {
                 cx.listener(|this, _event, window, cx| {
                     if !this.disabled {
                         this.open = !this.open;
-                        window.focus(&this.focus);
+                        window.focus(&this.focus, cx);
                         cx.notify();
                     }
                 }),

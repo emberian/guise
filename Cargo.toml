@@ -25,6 +25,7 @@ categories = ["gui"]
 [workspace.dependencies]
 gpui = "0.2.2"
 guise-ui = { path = "crates/guise" }
+gpui_platform = { git = "https://github.com/zed-industries/zed", rev = "96285fc1" }
 
 # Tailor — the visual interface builder that ships in this repo. Its crates are
 # `publish = false`; the library above is the only thing that goes to crates.io.
@@ -37,6 +38,13 @@ tailor-render = { path = "crates/tailor/render" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 dirs = "6"
+
+# Sinclair carries the zed gpui snapshot that also supplies gpui_platform.
+# Keep this compatibility branch testable on that exact API surface.
+[patch.crates-io]
+gpui = { git = "https://github.com/zed-industries/zed", rev = "96285fc1" }
+async-process = { git = "https://github.com/zed-industries/async-process.git", rev = "0b6d6713570af61806e1e5cb40e0f757cb93fd9d" }
+async-task = { git = "https://github.com/smol-rs/async-task.git", rev = "b4486cd71e4e94fbda54ce6302444de14f4d190e" }
 
 [profile.dev]
 debug = "limited"

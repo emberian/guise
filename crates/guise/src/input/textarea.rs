@@ -253,9 +253,9 @@ impl TextArea {
         // the host can dismiss. (Enter inserts a newline: this is multi-line.)
         if ks.key == "tab" && !m.platform && !m.control {
             if m.shift {
-                window.focus_prev();
+                window.focus_prev(cx);
             } else {
-                window.focus_next();
+                window.focus_next(cx);
             }
             cx.notify();
             cx.stop_propagation();
@@ -504,7 +504,7 @@ impl Render for TextArea {
             .on_mouse_down(
                 MouseButton::Left,
                 cx.listener(|this, _ev, window, cx| {
-                    window.focus(&this.focus);
+                    window.focus(&this.focus, cx);
                     cx.notify();
                 }),
             )
