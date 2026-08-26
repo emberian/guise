@@ -410,7 +410,7 @@ sections:
 
 ```toml
 [dependencies]
-guise-ui = "1.2"
+guise-ui = "1.5"
 gpui = "0.2.2"
 ```
 
@@ -421,7 +421,7 @@ gpui = "0.2.2"
 Pinning via git works too:
 
 ```toml
-guise-ui = { git = "https://github.com/wess/guise", tag = "v1.2.0" }
+guise-ui = { git = "https://github.com/wess/guise", tag = "v1.5.3" }
 ```
 
 ## Building

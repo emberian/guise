@@ -13,7 +13,7 @@ import { shell } from "./shell";
 import { ribbon, plate } from "./bits";
 
 const REPO = "https://github.com/wess/guise";
-const DEP = 'guise-ui = { git = "https://github.com/wess/guise" }';
+const DEP = 'guise-ui = "1.5"';
 const DEP_HTML = DEP.replace(/&/g, "&amp;").replace(/</g, "&lt;");
 
 // A guise interface, in mock. `compact` drops the two rows the hero has no

@@ -5,6 +5,14 @@ follow [semver](https://semver.org): from 1.0 on, a breaking change means a
 major release, and is called out under **Breaking**. Releases before 1.0 landed
 breaking changes in minor versions.
 
+## 1.5.3 — 2026-08-26
+
+### Installation docs
+
+The README, getting-started guide, tutorial, WebView guide, crate README, and
+website now point at the current 1.5 release line. The optional git pin now
+targets `v1.5.3`.
+
 ## 1.5.2 — 2026-08-26
 
 ### Settings sidebar

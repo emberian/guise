@@ -70,7 +70,7 @@ edition = "2021"
 
 [dependencies]
 gpui = "0.2.2"
-guise-ui = "1.2"
+guise-ui = "1.5"
 ```
 
 > **Note** gpui ships on crates.io as of 0.2 — no git pin required. You need

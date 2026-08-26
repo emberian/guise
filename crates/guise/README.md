@@ -215,8 +215,8 @@ or in `Cargo.toml`:
 
 ```toml
 [dependencies]
-guise-ui = "0.2"
-gpui = "0.2"
+guise-ui = "1.5"
+gpui = "0.2.2"
 ```
 
 > The crate is published on crates.io as **`guise-ui`** (the `guise` name was
