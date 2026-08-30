@@ -325,6 +325,8 @@ pub struct PaneGroup {
   /// window-draggable filler after its tabs. The host overlays its own
   /// controls in those insets and renders the group flush to the window top.
   titlebar: Option<(f32, f32)>,
+  /// Whether each tab bar draws its own split controls.
+  split_controls: bool,
 }
 
 impl EventEmitter<PaneGroupEvent> for PaneGroup {}
@@ -356,6 +358,7 @@ impl PaneGroup {
       tab_height: 28.0,
       zoomed: false,
       titlebar: None,
+      split_controls: true,
     }
   }
 
@@ -364,6 +367,25 @@ impl PaneGroup {
   pub fn tab_height(mut self, px: f32) -> Self {
     self.tab_height = px;
     self
+  }
+
+  /// Show the split controls at the right of every tab bar. On by default;
+  /// turn them off when the host draws its own somewhere else, such as in a
+  /// titlebar that is no longer the tab bar.
+  pub fn split_controls(mut self, show: bool) -> Self {
+    self.split_controls = show;
+    self
+  }
+
+  /// Change the titlebar integration after construction, for a host whose
+  /// setting for it can be flipped while the window is open.
+  pub fn set_titlebar(&mut self, insets: Option<(f32, f32)>) {
+    self.titlebar = insets;
+  }
+
+  /// Change whether the tab bars draw split controls, after construction.
+  pub fn set_split_controls(&mut self, show: bool) {
+    self.split_controls = show;
   }
 
   /// Make the group double as the window titlebar: the top-row tab bars
@@ -1589,7 +1611,7 @@ impl PaneGroup {
     };
     let (leading, trailing) = self.titlebar.unwrap_or((0.0, 0.0));
 
-    let mut tab_bar = div()
+    let tab_bar = div()
       .flex()
       .flex_row()
       .items_center()
@@ -1659,49 +1681,54 @@ impl PaneGroup {
             cx.emit(PaneGroupEvent::NewRequested(pane));
           })),
       )
-      // Splitting was reachable only from a keybinding or a menu, which
-      // is why most windows only ever have one pane. The controls sit
-      // with the `+` because they answer the same question — where the
-      // next terminal goes — and they are drawn dimmed so a row of panes
-      // does not turn into a row of buttons.
-      .child(split_control(
-        ("pg-splitright", pane.0 as usize),
-        SplitDirection::Horizontal,
-        tab_h,
-        (dimmed, active_bg),
-        cx.listener(move |_this, _ev, _w, cx| {
-          cx.emit(PaneGroupEvent::SplitRequested {
-            pane,
-            axis: SplitDirection::Horizontal,
-            first: false,
-          });
-        }),
-      ))
-      .child(split_control(
-        ("pg-splitdown", pane.0 as usize),
-        SplitDirection::Vertical,
-        tab_h,
-        (dimmed, active_bg),
-        cx.listener(move |_this, _ev, _w, cx| {
-          cx.emit(PaneGroupEvent::SplitRequested {
-            pane,
-            axis: SplitDirection::Vertical,
-            first: false,
-          });
-        }),
-      ));
-    // A window-drag filler fills the rest of every top-row tab bar
-    // (double-click zooms, per the platform titlebar convention).
-    if is_top_edge {
-      tab_bar = tab_bar.child(
+      // A flexible gap separates the tabs from the controls that follow, so
+      // those sit against the right edge however few tabs there are. On a
+      // top-row bar it doubles as the window-drag region (double-click
+      // zooms, per the platform titlebar convention).
+      .child(if is_top_edge {
         div()
           .id(("pg-titledrag", pane.0 as usize))
           .flex_1()
           .h_full()
           .window_control_area(WindowControlArea::Drag)
-          .on_mouse_down(MouseButton::Left, |_, window, _| window.start_window_move()),
-      );
-    }
+          .on_mouse_down(MouseButton::Left, |_, window, _| window.start_window_move())
+          .into_any_element()
+      } else {
+        div().flex_1().h_full().into_any_element()
+      })
+      // Splitting was reachable only from a keybinding or a menu, which is
+      // why most windows only ever have one pane. The controls are drawn
+      // dimmed so a row of panes does not turn into a row of buttons, and a
+      // host that puts its own splits somewhere else turns them off.
+      .when(self.split_controls, |bar| {
+        bar
+          .child(split_control(
+            ("pg-splitright", pane.0 as usize),
+            SplitDirection::Horizontal,
+            tab_h,
+            (dimmed, active_bg),
+            cx.listener(move |_this, _ev, _w, cx| {
+              cx.emit(PaneGroupEvent::SplitRequested {
+                pane,
+                axis: SplitDirection::Horizontal,
+                first: false,
+              });
+            }),
+          ))
+          .child(split_control(
+            ("pg-splitdown", pane.0 as usize),
+            SplitDirection::Vertical,
+            tab_h,
+            (dimmed, active_bg),
+            cx.listener(move |_this, _ev, _w, cx| {
+              cx.emit(PaneGroupEvent::SplitRequested {
+                pane,
+                axis: SplitDirection::Vertical,
+                first: false,
+              });
+            }),
+          ))
+      });
 
     let content = render_item
       .as_ref()
