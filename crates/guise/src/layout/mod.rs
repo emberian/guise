@@ -23,8 +23,6 @@ pub use stack::Stack;
 use gpui::prelude::*;
 use gpui::Div;
 
-use crate::style::FlexExt;
-
 /// Cross-axis alignment of flex children.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Align {
@@ -49,7 +47,7 @@ pub(crate) fn apply_align(div: Div, align: Align) -> Div {
     Align::Start => div.items_start(),
     Align::Center => div.items_center(),
     Align::End => div.items_end(),
-    Align::Stretch => div.items_stretch(),
+    Align::Stretch => gpui::Styled::items_stretch(div),
   }
 }
 

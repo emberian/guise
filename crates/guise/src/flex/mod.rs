@@ -31,8 +31,6 @@ pub use wrap::Wrap;
 use gpui::prelude::*;
 use gpui::{px, Div};
 
-use crate::style::FlexExt;
-
 /// Distribution of children along the main axis.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MainAxisAlignment {
@@ -128,7 +126,7 @@ pub(crate) fn apply_main(div: Div, main: MainAxisAlignment) -> Div {
     MainAxisAlignment::Center => div.justify_center(),
     MainAxisAlignment::SpaceBetween => div.justify_between(),
     MainAxisAlignment::SpaceAround => div.justify_around(),
-    MainAxisAlignment::SpaceEvenly => div.justify_evenly(),
+    MainAxisAlignment::SpaceEvenly => gpui::Styled::justify_evenly(div),
   }
 }
 
@@ -137,7 +135,7 @@ pub(crate) fn apply_cross(div: Div, cross: CrossAxisAlignment) -> Div {
     CrossAxisAlignment::Start => div.items_start(),
     CrossAxisAlignment::End => div.items_end(),
     CrossAxisAlignment::Center => div.items_center(),
-    CrossAxisAlignment::Stretch => div.items_stretch(),
+    CrossAxisAlignment::Stretch => gpui::Styled::items_stretch(div),
     CrossAxisAlignment::Baseline => div.items_baseline(),
   }
 }

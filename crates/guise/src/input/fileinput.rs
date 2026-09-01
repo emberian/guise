@@ -108,6 +108,8 @@ impl FileInput {
       directories: self.directories,
       multiple: self.multiple,
       prompt: None,
+      initial_directory: None,
+      extensions: Vec::new(),
     });
     cx.spawn(async move |this, cx| {
       if let Ok(Ok(Some(paths))) = receiver.await {

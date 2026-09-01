@@ -27,4 +27,4 @@ serde_json = { workspace = true }
 # Entity-level tests (`#[gpui::test]` + `TestAppContext`) — the same harness
 # guise's own tests run on. The pure logic lives in `tailor-model` and
 # `tailor-codegen`; what needs a live app is the workbench's commands.
-gpui = { version = "0.2.2", features = ["test-support"] }
+gpui = { workspace = true, features = ["test-support"] }

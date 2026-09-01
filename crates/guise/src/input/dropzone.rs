@@ -184,11 +184,13 @@ impl RenderOnce for Dropzone {
           directories: false,
           multiple,
           prompt: None,
+          initial_directory: None,
+          extensions: Vec::new(),
         });
         let deliver = deliver.clone();
         cx.spawn(async move |cx| {
           if let Ok(Ok(Some(paths))) = receiver.await {
-            cx.update(|cx| deliver(paths, cx)).ok();
+            cx.update(|cx| deliver(paths, cx));
           }
         })
         .detach();

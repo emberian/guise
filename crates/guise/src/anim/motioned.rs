@@ -9,7 +9,7 @@
 //! already sits in — this puts the sampled values on that element directly
 //! and adds nothing to the tree.
 
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use gpui::prelude::*;
 use gpui::{Animation, AnimationElement, AnimationExt, ElementId, SharedString};
@@ -65,7 +65,7 @@ pub trait Motioned: IntoElement + Styled + Sized + 'static {
     clip: impl Into<Clip>,
   ) -> AnimationElement<Self> {
     let id = ElementId::NamedChild(
-      Box::new(id.into()),
+      Arc::new(id.into()),
       SharedString::new_static(if condition { "on" } else { "off" }),
     );
     let clip = if condition {

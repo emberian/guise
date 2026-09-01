@@ -419,7 +419,7 @@ impl AIChatView {
   /// is where `offset.y` reaches `-max_offset.height`.
   fn distance_from_bottom(&self) -> f32 {
     let offset = self.scroll.offset().y;
-    let max = self.scroll.max_offset().height;
+    let max = self.scroll.max_offset().y;
     f32::from(max + offset).max(0.0)
   }
 
