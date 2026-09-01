@@ -42,7 +42,7 @@ pub fn main_rs(project: &Project) -> Generated {
   );
   source.line("");
   source.open("fn main() {");
-  source.open("Application::new().run(|cx: &mut gpui::App| {");
+  source.open("Application::with_platform(gpui_miniapp::current_platform().expect(\"GPUI platform\")).run(|cx: &mut gpui::App| {");
   source.line("theme::build().init(cx);");
   source.line("");
   source.line(format!(

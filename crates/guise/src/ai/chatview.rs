@@ -344,7 +344,7 @@ impl AIChatView {
   /// proves virtualizing doesn't change the layout.
   #[cfg(test)]
   pub(crate) fn scroll_extent(&self) -> Pixels {
-    self.scroll.max_offset().height
+    self.scroll.max_offset().y
   }
 
   fn streaming_turn(&mut self) -> Option<&mut AITurn> {

@@ -15,6 +15,7 @@ path = "src/main.rs"
 
 [dependencies]
 gpui = { workspace = true }
+gpui-miniapp.workspace = true
 guise-ui = { workspace = true }
 tailor-model = { workspace = true }
 tailor-codegen = { workspace = true }

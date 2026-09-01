@@ -379,19 +379,21 @@ fn starting_tab() -> DevToolsTab {
 }
 
 fn main() {
-  gpui::Application::new().run(|cx: &mut App| {
-    Theme::dark().init(cx);
-    DevToolsState::new().init(cx);
+  gpui::Application::with_platform(gpui_miniapp::current_platform().expect("GPUI platform")).run(
+    |cx: &mut App| {
+      Theme::dark().init(cx);
+      DevToolsState::new().init(cx);
 
-    let bounds = Bounds::centered(None, size(px(1360.0), px(840.0)), cx);
-    cx.open_window(
-      WindowOptions {
-        window_bounds: Some(WindowBounds::Windowed(bounds)),
-        ..Default::default()
-      },
-      |_window, cx| cx.new(Demo::new),
-    )
-    .expect("open window");
-    cx.activate(true);
-  });
+      let bounds = Bounds::centered(None, size(px(1360.0), px(840.0)), cx);
+      cx.open_window(
+        WindowOptions {
+          window_bounds: Some(WindowBounds::Windowed(bounds)),
+          ..Default::default()
+        },
+        |_window, cx| cx.new(Demo::new),
+      )
+      .expect("open window");
+      cx.activate(true);
+    },
+  );
 }

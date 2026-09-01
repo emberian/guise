@@ -418,34 +418,36 @@ fn main() {
   // screen — what a double-click in Finder and a shell alias both need.
   let opened = args.into_iter().next().map(std::path::PathBuf::from);
 
-  Application::new().run(move |cx: &mut App| {
-    let settings = tailor_store::Settings::load().sanitized();
-    theme::chrome(settings.scheme).init(cx);
+  Application::with_platform(gpui_miniapp::current_platform().expect("GPUI platform")).run(
+    move |cx: &mut App| {
+      let settings = tailor_store::Settings::load().sanitized();
+      theme::chrome(settings.scheme).init(cx);
 
-    cx.bind_keys(keys());
-    cx.set_menus(menus());
-    cx.on_action::<Quit>(|_, cx| cx.quit());
-    cx.on_action::<Hide>(|_, cx| cx.hide());
-    cx.on_action::<HideOthers>(|_, cx| cx.hide_other_apps());
-    cx.on_action::<ShowAll>(|_, cx| cx.unhide_other_apps());
-    cx.on_action::<ShowDocs>(|_, cx| cx.open_url("https://github.com/wess/guise"));
+      cx.bind_keys(keys());
+      cx.set_menus(menus());
+      cx.on_action::<Quit>(|_, cx| cx.quit());
+      cx.on_action::<Hide>(|_, cx| cx.hide());
+      cx.on_action::<HideOthers>(|_, cx| cx.hide_other_apps());
+      cx.on_action::<ShowAll>(|_, cx| cx.unhide_other_apps());
+      cx.on_action::<ShowDocs>(|_, cx| cx.open_url("https://github.com/wess/guise"));
 
-    let bounds = Bounds::centered(None, size(px(1440.0), px(900.0)), cx);
-    cx.open_window(
-      WindowOptions {
-        window_bounds: Some(WindowBounds::Windowed(bounds)),
-        window_min_size: Some(size(px(1080.0), px(680.0))),
-        titlebar: Some(TitlebarOptions {
-          title: Some(format!("Tailor {}", env!("CARGO_PKG_VERSION")).into()),
+      let bounds = Bounds::centered(None, size(px(1440.0), px(900.0)), cx);
+      cx.open_window(
+        WindowOptions {
+          window_bounds: Some(WindowBounds::Windowed(bounds)),
+          window_min_size: Some(size(px(1080.0), px(680.0))),
+          titlebar: Some(TitlebarOptions {
+            title: Some(format!("Tailor {}", env!("CARGO_PKG_VERSION")).into()),
+            ..Default::default()
+          }),
           ..Default::default()
-        }),
-        ..Default::default()
-      },
-      |_, cx| cx.new(|cx| root::Root::new(settings, opened, cx)),
-    )
-    .unwrap();
-    cx.activate(true);
-  });
+        },
+        |_, cx| cx.new(|cx| root::Root::new(settings, opened, cx)),
+      )
+      .unwrap();
+      cx.activate(true);
+    },
+  );
 }
 
 #[cfg(test)]

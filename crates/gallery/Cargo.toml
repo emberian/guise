@@ -16,5 +16,6 @@ treesitter = ["guise-ui/treesitter", "dep:tree-sitter-rust"]
 
 [dependencies]
 gpui.workspace = true
+gpui-miniapp.workspace = true
 guise-ui.workspace = true
 tree-sitter-rust = { version = "0.24", optional = true }

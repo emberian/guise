@@ -28,6 +28,7 @@ categories = ["gui"]
 # so Guise's public API and source imports remain unchanged while selecting
 # the toolkit's namespaced package at a reviewable, reproducible revision.
 gpui = { package = "gpui-toolkit-gpui", git = "https://github.com/emberian/gpui-toolkit.git", rev = "65c7e35908e88def2f90db366f75e4f704444e39" }
+gpui-miniapp = { git = "https://github.com/emberian/gpui-toolkit.git", rev = "65c7e35908e88def2f90db366f75e4f704444e39", default-features = false }
 guise-ui = { path = "crates/guise" }
 
 # Tailor — the visual interface builder that ships in this repo. Its crates are

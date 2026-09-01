@@ -2733,47 +2733,49 @@ pub fn toggle_theme(window: &mut Window, cx: &mut App) {
 }
 
 fn main() {
-  gpui::Application::new().run(|cx: &mut App| {
-    Theme::dark().init(cx);
-    // The inspector's record store. Installing it is what makes the
-    // `devtools::*` reporting calls anything other than a no-op.
-    DevToolsState::new().init(cx);
+  gpui::Application::with_platform(gpui_miniapp::current_platform().expect("GPUI platform")).run(
+    |cx: &mut App| {
+      Theme::dark().init(cx);
+      // The inspector's record store. Installing it is what makes the
+      // `devtools::*` reporting calls anything other than a no-op.
+      DevToolsState::new().init(cx);
 
-    // The native window menu. Actions dispatch to the global handlers below.
-    cx.set_menus(vec![
-      gpui::Menu {
-        name: SharedString::new_static("guise gallery"),
-        items: vec![
-          gpui::MenuItem::action("Toggle Theme", ToggleThemeAction),
-          gpui::MenuItem::separator(),
-          gpui::MenuItem::action("Quit", QuitAction),
-        ],
-      },
-      gpui::Menu {
-        name: SharedString::new_static("View"),
-        items: vec![gpui::MenuItem::action("Toggle Theme", ToggleThemeAction)],
-      },
-    ]);
-    cx.on_action::<QuitAction>(|_, cx| cx.quit());
-    cx.on_action::<ToggleThemeAction>(|_, cx| {
-      let next = cx.global::<Theme>().scheme.toggled();
-      cx.global_mut::<Theme>().scheme = next;
-      cx.refresh_windows();
-    });
+      // The native window menu. Actions dispatch to the global handlers below.
+      cx.set_menus(vec![
+        gpui::Menu {
+          name: SharedString::new_static("guise gallery"),
+          items: vec![
+            gpui::MenuItem::action("Toggle Theme", ToggleThemeAction),
+            gpui::MenuItem::separator(),
+            gpui::MenuItem::action("Quit", QuitAction),
+          ],
+        },
+        gpui::Menu {
+          name: SharedString::new_static("View"),
+          items: vec![gpui::MenuItem::action("Toggle Theme", ToggleThemeAction)],
+        },
+      ]);
+      cx.on_action::<QuitAction>(|_, cx| cx.quit());
+      cx.on_action::<ToggleThemeAction>(|_, cx| {
+        let next = cx.global::<Theme>().scheme.toggled();
+        cx.global_mut::<Theme>().scheme = next;
+        cx.refresh_windows();
+      });
 
-    let bounds = Bounds::centered(None, size(px(960.0), px(880.0)), cx);
-    cx.open_window(
-      WindowOptions {
-        window_bounds: Some(WindowBounds::Windowed(bounds)),
-        titlebar: Some(TitlebarOptions {
-          title: Some(SharedString::new_static("guise gallery")),
+      let bounds = Bounds::centered(None, size(px(960.0), px(880.0)), cx);
+      cx.open_window(
+        WindowOptions {
+          window_bounds: Some(WindowBounds::Windowed(bounds)),
+          titlebar: Some(TitlebarOptions {
+            title: Some(SharedString::new_static("guise gallery")),
+            ..Default::default()
+          }),
           ..Default::default()
-        }),
-        ..Default::default()
-      },
-      |_window, cx| cx.new(Gallery::new),
-    )
-    .expect("open window");
-    cx.activate(true);
-  });
+        },
+        |_window, cx| cx.new(Gallery::new),
+      )
+      .expect("open window");
+      cx.activate(true);
+    },
+  );
 }
