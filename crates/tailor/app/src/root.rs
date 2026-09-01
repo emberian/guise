@@ -82,6 +82,8 @@ impl Root {
       directories: false,
       multiple: false,
       prompt: None,
+      initial_directory: None,
+      extensions: Vec::new(),
     });
     cx.spawn(async move |this, cx| {
       if let Ok(Ok(Some(paths))) = receiver.await {
@@ -217,7 +219,7 @@ impl Render for Root {
     // Self-healing: whenever focus goes nowhere — a field was destroyed, a
     // menu closed — it comes back here, and the menu bar stays alive.
     if window.focused(cx).is_none() {
-      window.focus(&self.focus);
+      window.focus(&self.focus, cx);
     }
 
     let mut root = div()

@@ -78,7 +78,7 @@ impl Workbench {
               .flex()
               .items_center()
               .justify_center()
-              .flex_grow()
+              .flex_grow(1.0)
               .py(px(5.))
               .min_w(px(30.))
               .rounded(px(5.))
@@ -114,7 +114,7 @@ impl Workbench {
           .id("inspector-body")
           .flex()
           .flex_col()
-          .flex_grow()
+          .flex_grow(1.0)
           .overflow_y_scroll()
           .p(px(10.))
           .gap(px(10.))
@@ -487,7 +487,7 @@ impl Workbench {
       .child(div().text_color(chrome.accent).child(icon("link")))
       .child(
         div()
-          .flex_grow()
+          .flex_grow(1.0)
           .text_size(px(12.))
           .child(SharedString::from(name)),
       )
@@ -915,7 +915,7 @@ impl Workbench {
           .flex()
           .flex_col()
           .gap(px(2.))
-          .flex_grow()
+          .flex_grow(1.0)
           .child(
             div()
               .text_size(px(9.))
@@ -1843,7 +1843,7 @@ impl Workbench {
     match self.fields.get(&key) {
       Some(field) => {
         let handle = field.read(cx).focus_handle();
-        window.focus(&handle);
+        window.focus(&handle, cx);
         field.update(cx, |field, cx| field.select_all(cx));
       }
       None if waited < 4 => self.focus_field = Some((key, waited + 1)),

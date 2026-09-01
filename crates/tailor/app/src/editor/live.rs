@@ -118,7 +118,7 @@ impl LiveView {
       self.devtools = Some(devtools);
     }
     self.fit_to_dock(window, cx);
-    window.focus(&self.focus);
+    window.focus(&self.focus, cx);
     cx.notify();
   }
 
@@ -255,7 +255,7 @@ impl Render for LiveView {
     // Same self-healing as the workbench root: an action reaches a window
     // through whatever is focused in it, so focus must land somewhere.
     if window.focused(cx).is_none() {
-      window.focus(&self.focus);
+      window.focus(&self.focus, cx);
     }
 
     let ctx = RenderCtx {

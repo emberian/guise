@@ -76,7 +76,7 @@ pub fn render_in(
         node,
         absolute,
         root
-          .flex_grow()
+          .flex_grow(1.0)
           .min_h(px(8.))
           .min_w(px(8.))
           .children(overlays(ctx, node, cx)),
@@ -390,13 +390,13 @@ fn apply_box(
     Dimension::Auto => root,
     Dimension::Px(v) => root.w(px(v)),
     Dimension::Full => root.w_full(),
-    Dimension::Grow(_) => root.flex_grow(),
+    Dimension::Grow(factor) => root.flex_grow(factor),
   };
   root = match style.height {
     Dimension::Auto => root,
     Dimension::Px(v) => root.h(px(v)),
     Dimension::Full => root.h_full(),
-    Dimension::Grow(_) => root.flex_grow(),
+    Dimension::Grow(factor) => root.flex_grow(factor),
   };
   if let Some(v) = style.min_width {
     root = root.min_w(px(v));

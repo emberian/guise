@@ -21,7 +21,7 @@ impl Workbench {
   ) -> impl IntoElement {
     let chrome = theme::colors(cx);
     let Some(doc) = self.doc() else {
-      return div().flex_grow().into_any_element();
+      return div().flex_grow(1.0).into_any_element();
     };
     let (width, height) = (doc.canvas.width, doc.canvas.height);
     let background = doc
@@ -60,7 +60,7 @@ impl Workbench {
       .id("canvas-field")
       .flex()
       .flex_col()
-      .flex_grow()
+      .flex_grow(1.0)
       .overflow_scroll()
       .bg(chrome.body)
       // Clicking the field, not the artboard, deselects.

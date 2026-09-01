@@ -180,7 +180,7 @@ pub fn element(ctx: &RenderCtx, node: &Node, window: &mut Window, cx: &mut App) 
         .into_any_element()
     }
     "expanded" => div()
-      .flex_grow()
+      .flex_grow(1.0)
       .children(children(ctx, node, window, cx))
       .into_any_element(),
 
@@ -955,7 +955,7 @@ fn splitpanel(
   let second = div()
     .flex()
     .flex_col()
-    .flex_grow()
+    .flex_grow(1.0)
     .children(slot_children(ctx, node, "second", window, cx));
 
   div()
@@ -1031,13 +1031,11 @@ fn appshell(
     .border_t(px(1.))
     .border_color(border)
     .children(slot_children(ctx, node, "footer", window, cx));
-  let body = div().flex().flex_col().flex_grow().children(slot_children(
-    ctx,
-    node,
-    DEFAULT_SLOT,
-    window,
-    cx,
-  ));
+  let body = div()
+    .flex()
+    .flex_col()
+    .flex_grow(1.0)
+    .children(slot_children(ctx, node, DEFAULT_SLOT, window, cx));
 
   div()
     .flex()
@@ -1049,7 +1047,7 @@ fn appshell(
       div()
         .flex()
         .flex_row()
-        .flex_grow()
+        .flex_grow(1.0)
         .overflow_hidden()
         .child(navbar)
         .child(body)

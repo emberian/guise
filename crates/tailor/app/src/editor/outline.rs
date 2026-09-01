@@ -54,7 +54,7 @@ impl Workbench {
           .id("outline-list")
           .flex()
           .flex_col()
-          .flex_grow()
+          .flex_grow(1.0)
           .overflow_y_scroll()
           .py(px(4.))
           .children(rows.into_iter().map(|row| self.outline_row(row, cx))),
@@ -229,11 +229,11 @@ impl Workbench {
 
     if renaming {
       if let Some(field) = self.rename_field.clone() {
-        root = root.child(div().flex_grow().child(field));
+        root = root.child(div().flex_grow(1.0).child(field));
         return root.into_any_element();
       }
     }
-    root = root.child(div().flex_grow().child(SharedString::from(label)));
+    root = root.child(div().flex_grow(1.0).child(SharedString::from(label)));
 
     let hidden = row.hidden;
     let locked = row.locked;

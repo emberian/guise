@@ -91,7 +91,7 @@ impl Workbench {
           .flex()
           .items_center()
           .justify_center()
-          .flex_grow()
+          .flex_grow(1.0)
           .text_size(px(12.))
           .text_color(chrome.dimmed)
           .child("Nothing to report.")
@@ -101,7 +101,7 @@ impl Workbench {
           .id("problems-list")
           .flex()
           .flex_col()
-          .flex_grow()
+          .flex_grow(1.0)
           .overflow_y_scroll()
           .children(problems.into_iter().map(|row| {
             let color = match row.severity {

@@ -27,7 +27,7 @@ impl Root {
           .flex()
           .flex_col()
           .gap(px(28.))
-          .flex_grow()
+          .flex_grow(1.0)
           .px(px(56.))
           .py(px(56.))
           .child(

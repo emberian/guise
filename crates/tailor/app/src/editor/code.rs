@@ -75,7 +75,7 @@ impl Workbench {
       .child(
         div()
           .id("code-body")
-          .flex_grow()
+          .flex_grow(1.0)
           .overflow_hidden()
           .on_mouse_down(
             MouseButton::Right,

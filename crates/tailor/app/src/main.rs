@@ -115,6 +115,7 @@ fn menu(name: &'static str, items: Vec<MenuItem>) -> Menu {
   Menu {
     name: SharedString::new_static(name),
     items,
+    disabled: false,
   }
 }
 

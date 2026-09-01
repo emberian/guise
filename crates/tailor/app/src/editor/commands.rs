@@ -1083,6 +1083,8 @@ impl Workbench {
       directories: true,
       multiple: false,
       prompt: Some("Export".into()),
+      initial_directory: None,
+      extensions: Vec::new(),
     });
     cx.spawn(async move |this, cx| {
       let Ok(Ok(Some(paths))) = receiver.await else {

@@ -2744,6 +2744,7 @@ fn main() {
       cx.set_menus(vec![
         gpui::Menu {
           name: SharedString::new_static("guise gallery"),
+          disabled: false,
           items: vec![
             gpui::MenuItem::action("Toggle Theme", ToggleThemeAction),
             gpui::MenuItem::separator(),
@@ -2752,6 +2753,7 @@ fn main() {
         },
         gpui::Menu {
           name: SharedString::new_static("View"),
+          disabled: false,
           items: vec![gpui::MenuItem::action("Toggle Theme", ToggleThemeAction)],
         },
       ]);

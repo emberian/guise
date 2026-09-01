@@ -481,12 +481,12 @@ impl Render for Workbench {
     let focus = self.focus.clone();
     if !self.focused {
       self.focused = true;
-      window.focus(&focus);
+      window.focus(&focus, cx);
     }
     let settings = self.settings.clone();
     let split = settings.canvas_mode == CanvasMode::Split;
 
-    let mut columns = div().flex().flex_row().flex_grow().overflow_hidden();
+    let mut columns = div().flex().flex_row().flex_grow(1.0).overflow_hidden();
 
     if settings.palette_open {
       columns = columns
@@ -499,11 +499,11 @@ impl Render for Workbench {
     let mut middle = div()
       .flex()
       .flex_col()
-      .flex_grow()
+      .flex_grow(1.0)
       .overflow_hidden()
       .child(self.render_doc_tabs(cx));
 
-    let mut stage = div().flex().flex_row().flex_grow().overflow_hidden();
+    let mut stage = div().flex().flex_row().flex_grow(1.0).overflow_hidden();
     if settings.outline_open {
       stage = stage
         .child(self.render_outline(window, cx))

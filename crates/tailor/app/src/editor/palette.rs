@@ -82,7 +82,7 @@ impl Workbench {
           .id("palette-list")
           .flex()
           .flex_col()
-          .flex_grow()
+          .flex_grow(1.0)
           .overflow_y_scroll()
           .p(px(8.))
           .gap(px(2.))
