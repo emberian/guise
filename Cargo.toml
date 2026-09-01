@@ -27,8 +27,8 @@ categories = ["gui"]
 # Rust type universe as gpui-toolkit. Keep the local dependency name `gpui`
 # so Guise's public API and source imports remain unchanged while selecting
 # the toolkit's namespaced package at a reviewable, reproducible revision.
-gpui = { package = "gpui-toolkit-gpui", git = "https://github.com/emberian/gpui-toolkit.git", rev = "65c7e35908e88def2f90db366f75e4f704444e39" }
-gpui-miniapp = { git = "https://github.com/emberian/gpui-toolkit.git", rev = "65c7e35908e88def2f90db366f75e4f704444e39", default-features = false }
+gpui = { package = "gpui-toolkit-gpui", git = "https://github.com/emberian/gpui-toolkit.git", rev = "1c770138ff68d1773784e4ff277872cbb4d4d90b" }
+gpui-miniapp = { git = "https://github.com/emberian/gpui-toolkit.git", rev = "1c770138ff68d1773784e4ff277872cbb4d4d90b", default-features = false }
 guise-ui = { path = "crates/guise" }
 
 # Tailor — the visual interface builder that ships in this repo. Its crates are
