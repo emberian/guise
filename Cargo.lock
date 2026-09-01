@@ -2414,7 +2414,7 @@ dependencies = [
 [[package]]
 name = "gpui-android"
 version = "0.9.5"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "accesskit",
  "android-activity",
@@ -2440,7 +2440,7 @@ dependencies = [
 [[package]]
 name = "gpui-builder"
 version = "0.9.9"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "gpui-pretext",
  "serde",
@@ -2449,7 +2449,7 @@ dependencies = [
 [[package]]
 name = "gpui-d3rs"
 version = "0.9.15"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "delaunator",
  "fontdue",
@@ -2470,7 +2470,7 @@ dependencies = [
 [[package]]
 name = "gpui-design"
 version = "0.9.5"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "gpui-toolkit-gpui",
  "serde",
@@ -2479,7 +2479,7 @@ dependencies = [
 [[package]]
 name = "gpui-ios"
 version = "0.9.12"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "anyhow",
  "block2 0.6.2",
@@ -2504,7 +2504,7 @@ dependencies = [
 [[package]]
 name = "gpui-miniapp"
 version = "0.9.9"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "console_error_panic_hook",
  "gpui-android",
@@ -2523,7 +2523,7 @@ dependencies = [
 [[package]]
 name = "gpui-pretext"
 version = "0.9.9"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "hashbrown 0.17.1",
  "unicode-bidi",
@@ -2533,12 +2533,12 @@ dependencies = [
 [[package]]
 name = "gpui-profiler"
 version = "0.9.2"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 
 [[package]]
 name = "gpui-toolkit-collections"
 version = "0.1.0"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "gpui-toolkit-gpui-util",
  "indexmap",
@@ -2548,7 +2548,7 @@ dependencies = [
 [[package]]
 name = "gpui-toolkit-derive-refineable"
 version = "0.1.0"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2558,7 +2558,7 @@ dependencies = [
 [[package]]
 name = "gpui-toolkit-gpui"
 version = "0.2.3"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "accesskit",
  "anyhow",
@@ -2641,7 +2641,7 @@ dependencies = [
 [[package]]
 name = "gpui-toolkit-gpui-linux"
 version = "0.1.0"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "accesskit",
  "accesskit_unix",
@@ -2692,7 +2692,7 @@ dependencies = [
 [[package]]
 name = "gpui-toolkit-gpui-macos"
 version = "0.1.1"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "accesskit",
  "accesskit_macos",
@@ -2739,7 +2739,7 @@ dependencies = [
 [[package]]
 name = "gpui-toolkit-gpui-macros"
 version = "0.1.0"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -2750,7 +2750,7 @@ dependencies = [
 [[package]]
 name = "gpui-toolkit-gpui-shared-string"
 version = "0.1.0"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "schemars",
  "serde",
@@ -2760,7 +2760,7 @@ dependencies = [
 [[package]]
 name = "gpui-toolkit-gpui-util"
 version = "0.1.0"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "anyhow",
  "log",
@@ -2770,7 +2770,7 @@ dependencies = [
 [[package]]
 name = "gpui-toolkit-gpui-web"
 version = "0.1.1"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "anyhow",
  "console_error_panic_hook",
@@ -2794,7 +2794,7 @@ dependencies = [
 [[package]]
 name = "gpui-toolkit-gpui-wgpu"
 version = "0.1.2"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -2822,7 +2822,7 @@ dependencies = [
 [[package]]
 name = "gpui-toolkit-gpui-windows"
 version = "0.1.2"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "anyhow",
  "etagere",
@@ -2847,7 +2847,7 @@ dependencies = [
 [[package]]
 name = "gpui-toolkit-http-client"
 version = "0.1.0"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "anyhow",
  "async-compression",
@@ -2867,7 +2867,7 @@ dependencies = [
 [[package]]
 name = "gpui-toolkit-media"
 version = "0.1.0"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "anyhow",
  "bindgen",
@@ -2882,7 +2882,7 @@ dependencies = [
 [[package]]
 name = "gpui-toolkit-perf"
 version = "0.1.0"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "gpui-toolkit-collections",
  "serde",
@@ -2892,7 +2892,7 @@ dependencies = [
 [[package]]
 name = "gpui-toolkit-refineable"
 version = "0.1.0"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "gpui-toolkit-derive-refineable",
 ]
@@ -2900,7 +2900,7 @@ dependencies = [
 [[package]]
 name = "gpui-toolkit-scheduler"
 version = "0.1.0"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "async-task",
  "backtrace",
@@ -2914,7 +2914,7 @@ dependencies = [
 [[package]]
 name = "gpui-toolkit-sum-tree"
 version = "0.1.0"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "heapless",
  "log",
@@ -2925,7 +2925,7 @@ dependencies = [
 [[package]]
 name = "gpui-toolkit-util"
 version = "0.1.1"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "anyhow",
  "async-fs",
@@ -2965,7 +2965,7 @@ dependencies = [
 [[package]]
 name = "gpui-toolkit-util-macros"
 version = "0.1.0"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "gpui-toolkit-perf",
  "quote",
@@ -2975,7 +2975,7 @@ dependencies = [
 [[package]]
 name = "gpui-ui-kit"
 version = "0.9.40"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "gpui-builder",
  "gpui-d3rs",
@@ -2995,7 +2995,7 @@ dependencies = [
 [[package]]
 name = "gpui-ui-kit-macros"
 version = "0.9.6"
-source = "git+https://github.com/emberian/gpui-toolkit.git?rev=1c770138ff68d1773784e4ff277872cbb4d4d90b#1c770138ff68d1773784e4ff277872cbb4d4d90b"
+source = "git+https://github.com/emberian/gpui-toolkit.git?rev=8ea60d1bfb1816a19871d1c97d0090166a3ea105#8ea60d1bfb1816a19871d1c97d0090166a3ea105"
 dependencies = [
  "proc-macro2",
  "quote",
